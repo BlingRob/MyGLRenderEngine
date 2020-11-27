@@ -1,0 +1,7 @@
+/.vs
+/x64
+/Debug
+OpenGl/Debug
+OpenGl/x64
+*.pdb
+*.exp
