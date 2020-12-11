@@ -18,31 +18,8 @@ GLfloat pitch;
 GLboolean clicked;
 GLboolean firstMouse;
 
-/*struct PointLight
-{
-	glm::vec3 position;
-
-	float constant;
-	float linear;
-	float quadratic;
-
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
-};*/
 
 PointLight light(0.6f, 0.09f, 0.032f,glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 15.0f, 0.0f));
-/*void LightInit()
-{
-	light.position = glm::vec3(0.0f, 15.0f, 0.0f);
-	light.ambient = glm::vec3(0.1f, 0.1f, 0.1f);
-	light.diffuse = glm::vec3(0.8f, 0.8f, 0.8f);
-	light.specular = glm::vec3(1.0f, 1.0f, 1.0f);
-	light.constant = 0.6f;
-	light.linear = 0.09f;
-	light.quadratic = 0.032f;
-}*/
-//void LightInit();
 
 glm::mat4 model(1.0f), view(1.0f), proj(1.0f), NormalMat(1.0f), lightSpaceMatrix(1.0f);
 
@@ -162,8 +139,8 @@ inline void Scene(std::shared_ptr <Model> Scen, std::shared_ptr < Shader> shader
 
 inline void Light()
 {
-	static std::shared_ptr<Shader> shaders = std::make_shared<Shader>("C:\\VSProg\\GLTemplate\\Shaders\\Light.vs", "C:\\VSProg\\GLTemplate\\Shaders\\Light.frag");
-	static Model Scen("C:\\VSProg\\GLTemplate\\Models\\SpotLight.obj");
+	static std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Light.vs", "..\\Shaders\\Light.frag");
+	static Model Scen("..\\Models\\SpotLight.obj");
 	shaders->Use();
 
 	light.SendToShader(shaders);

@@ -71,7 +71,7 @@ vec4 culcLight()
     // затухание
     //float distance    = length(light.position - fs_in.FragPos);
     //float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance); 
-    float attenuation = 3.0f;
+    float attenuation = 1.0f;
 
     // комбинируем результаты
     vec3 Tex = vec3(texture(texture_diffuse1, fs_in.TexCoords));
