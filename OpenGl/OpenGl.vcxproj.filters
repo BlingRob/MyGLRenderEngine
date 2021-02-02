@@ -100,5 +100,11 @@
     <None Include="..\Shaders\DepthMap.vs">
       <Filter>Файлы ресурсов</Filter>
     </None>
+    <None Include="Default.vs">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="Default.frag">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
   </ItemGroup>
 </Project>
