@@ -1,6 +1,6 @@
 #include "Light.h"
 
-void Light::SendToShader(std::shared_ptr<Shader> shader)
+void BLight::SendToShader(std::shared_ptr<Shader> shader)
 {
 	glUniform3f(glGetUniformLocation(shader->Program, "light.ambient"), ambient.x, ambient.y, ambient.z);
 	glUniform3f(glGetUniformLocation(shader->Program, "light.diffuse"), diffuse.x, diffuse.y, diffuse.z);
@@ -11,10 +11,9 @@ void Light::SendToShader(std::shared_ptr<Shader> shader)
 }
 
 
-
 void AmbientLight::SendToShader(std::shared_ptr<Shader> shader) 
 {
-	Light::SendToShader(shader);
+	BLight::SendToShader(shader);
 	glUniform3f(glGetUniformLocation(shader->Program, "light.direction"), direction.x, direction.y, direction.z);
 }
 
@@ -26,7 +25,7 @@ glm::vec3 AmbientLight::ChangeDirection(glm::vec3 NewDir)
 
 void PointLight::SendToShader(std::shared_ptr<Shader> shader)
 {
-	Light::SendToShader(shader);
+	BLight::SendToShader(shader);
 
 	glUniform3f(glGetUniformLocation(shader->Program, "light.position"), position.x, position.y, position.z);
 }

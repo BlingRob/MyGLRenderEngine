@@ -2,7 +2,7 @@
 #include "Headers.h"
 #include "Shader.h"
 
-class Light
+class BLight
 {
 	float constant;
 	float linear;
@@ -13,7 +13,7 @@ class Light
 	glm::vec3 specular;
 
 	public:
-	Light(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f), glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f))
+	BLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f), glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f))
 		{
 			constant = c;
 			linear = l;
@@ -25,24 +25,24 @@ class Light
 		virtual void SendToShader(std::shared_ptr<Shader> shader);
 };
 
-class AmbientLight:public Light 
+class AmbientLight:public BLight 
 {
 	glm::vec3 direction;
 
 public:
 	AmbientLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f),
 		glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f), glm::vec3 p = glm::vec3(0.0f), glm::vec3 dir = glm::vec3(0.0f)) :
-		Light(c, l, q, a, d, s), direction(dir) {}
+		BLight(c, l, q, a, d, s), direction(dir) {}
 	virtual void SendToShader(std::shared_ptr<Shader> shader);
 	glm::vec3 ChangeDirection(glm::vec3);
 };
 
-class PointLight : public Light
+class PointLight : public BLight
 {
 	glm::vec3 position;
 	public:
 	PointLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f), glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f), glm::vec3 p = glm::vec3(0.0f)):
-		Light(c,l,q,a,d,s),position(p){}
+		BLight(c,l,q,a,d,s),position(p){}
 	/*Return old pos, set new pos*/
 	virtual glm::vec3 SetPos(glm::vec3 p);
 	/*Return current pos*/
@@ -53,7 +53,6 @@ class PointLight : public Light
 
 class SpotLight: public AmbientLight
 {
-	glm::vec3 direction;
 	float Theta; //angel of big cone
 	float Alpha; //angel of small cone
 	public:
@@ -65,3 +64,6 @@ class SpotLight: public AmbientLight
 	std::pair<float, float> GetAngels();
 	std::pair<float, float> GetAngels(std::pair<float, float> NewAngels);
 };
+
+using TypeLight = std::variant<PointLight, AmbientLight, SpotLight>;
+using Light = std::variant<PointLight, AmbientLight, SpotLight>;
