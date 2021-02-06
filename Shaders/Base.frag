@@ -5,6 +5,7 @@ in VS_OUT {
     vec3 Normal;
     vec2 TexCoords;
     vec4 FragPosLightSpace;
+    mat3 toObjectLocal;
 } fs_in;
 
 out vec4 FragColor;
@@ -25,10 +26,11 @@ struct PointLight
 uniform PointLight light;
 uniform vec3 viewPos;
 uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_normal1;
 uniform sampler2D texture_specular1;
 uniform sampler2D texture_emissive1;
 
-layout (binding = 10) uniform sampler2D shadowMap;
+//layout (binding = 10) uniform sampler2D shadowMap;
 
 vec4 culcLight();
 float ShadowCalculation(vec4);
@@ -38,7 +40,7 @@ void main()
     FragColor = culcLight() + texture(texture_emissive1, fs_in.TexCoords);
 }
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+/*float ShadowCalculation(vec4 fragPosLightSpace)
 {
     // perform perspective divide
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -52,20 +54,22 @@ float ShadowCalculation(vec4 fragPosLightSpace)
     float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
     return shadow;
-}
+}*/
 
 
 vec4 culcLight()
 {
-    vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+    vec3 viewDir = fs_in.toObjectLocal * normalize(viewPos - fs_in.FragPos);
+    vec3 lightDir = normalize(fs_in.toObjectLocal * (light.position - fs_in.FragPos));
 
-    vec3 lightDir = normalize(light.position - fs_in.FragPos);
+    vec4 normal = 2 * texture(texture_normal1,fs_in.TexCoords) - 1.0f;
+    
     vec3 halfwayDir = normalize(lightDir + viewDir);
     // диффузное освещение
-    float diff = max(dot(fs_in.Normal, lightDir), 0.0);
+    float diff = max(dot(normal.xyz, lightDir), 0.0);
 
     // освещение зеркальных бликов
-    vec3 reflectDir = reflect(-lightDir, fs_in.Normal);
+    vec3 reflectDir = reflect(-lightDir, normal.xyz);
     float spec = pow(max(dot(halfwayDir, reflectDir), 0.0), 100.0f);
 
     // затухание

@@ -4,9 +4,10 @@
 #include "Light.h"
 #include "Shader.h"
 
+/*
 struct Object
 {
-	Object(std::function<void(const std::list<std::shared_ptr<TypeLight>>, const std::vector< std::shared_ptr <glm::mat4>>)> f) : Draw(f) {}
-	std::function< void(const std::list<std::shared_ptr<TypeLight>>,const std::vector< std::shared_ptr<glm::mat4> >) > Draw;
-};
+	Object(std::function<void(std::shared_ptr < Scene>)> f) : Draw(f) {}
+	std::function< void(std::shared_ptr < Scene>) > Draw;
+};*/
 

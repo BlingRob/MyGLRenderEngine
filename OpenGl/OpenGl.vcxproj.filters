@@ -97,9 +97,6 @@
     <None Include="..\Shaders\Base.frag">
       <Filter>Файлы ресурсов</Filter>
     </None>
-    <None Include="..\Shaders\Base.vs">
-      <Filter>Файлы ресурсов</Filter>
-    </None>
     <None Include="..\Shaders\Light.frag">
       <Filter>Файлы ресурсов</Filter>
     </None>
@@ -116,6 +113,9 @@
       <Filter>Файлы ресурсов</Filter>
     </None>
     <None Include="Default.frag">
+      <Filter>Файлы ресурсов</Filter>
+    </None>
+    <None Include="..\Shaders\Base.vert">
       <Filter>Файлы ресурсов</Filter>
     </None>
   </ItemGroup>

@@ -6,16 +6,25 @@ void Scene::Draw()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	for (auto mod : Objects)
-		mod->Draw(lights, matrixs);
+		mod.second->Draw(this);
 }
-void Scene::AddObject(std::shared_ptr<Object> obj) 
+void Scene::AddObject(std::string name,std::shared_ptr<Object> obj) 
 {
-	Objects.push_back(obj);
+	Objects[std::hash<std::string>{}(name)] = obj;
 }
 
-void Scene::AddLight(std::shared_ptr<Light> lig)
+void Scene::AddLight(std::string name, std::shared_ptr<Light> lig)
 {
-	lights.push_back(lig);
+	Lights[std::hash<std::string>{}(name)] = lig;
+}
+
+std::shared_ptr<Object> Scene::GetObj(std::string name)
+{
+	return Objects.find(std::hash<std::string>{}(name))->second;
+}
+std::shared_ptr<Light> Scene::GetLight(std::string name)
+{
+	return Lights.find(std::hash<std::string>{}(name))->second;
 }
 
 void Scene::SetView(std::shared_ptr < glm::mat4> m)

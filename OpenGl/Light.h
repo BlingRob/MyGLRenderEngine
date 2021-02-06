@@ -22,15 +22,16 @@ class BLight
 			diffuse = d;
 			specular = s;
 		}
-		virtual void SendToShader(std::shared_ptr<Shader> shader);
+	virtual void SendToShader(std::shared_ptr<Shader> shader);
+
 };
 
-class AmbientLight:public BLight 
+class DirectionalLight:public BLight
 {
 	glm::vec3 direction;
 
 public:
-	AmbientLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f),
+	DirectionalLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f),
 		glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f), glm::vec3 p = glm::vec3(0.0f), glm::vec3 dir = glm::vec3(0.0f)) :
 		BLight(c, l, q, a, d, s), direction(dir) {}
 	virtual void SendToShader(std::shared_ptr<Shader> shader);
@@ -44,26 +45,47 @@ class PointLight : public BLight
 	PointLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f), glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f), glm::vec3 p = glm::vec3(0.0f)):
 		BLight(c,l,q,a,d,s),position(p){}
 	/*Return old pos, set new pos*/
-	virtual glm::vec3 SetPos(glm::vec3 p);
+	glm::vec3 SetPos(glm::vec3 p);
 	/*Return current pos*/
-	virtual glm::vec3 GetPos() const;
+	glm::vec3 GetPos() const;
 	virtual void SendToShader(std::shared_ptr<Shader> shader);
 
 };
 
-class SpotLight: public AmbientLight
+class SpotLight: public PointLight,public DirectionalLight
 {
 	float Theta; //angel of big cone
 	float Alpha; //angel of small cone
 	public:
 		SpotLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f),
 			glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f), glm::vec3 p = glm::vec3(0.0f),glm::vec3 dir = glm::vec3(0.0f),
-			float BigAngel = 60, float SmallAngel = 30):AmbientLight(c, l, q, a, d, s, p, dir),Theta(BigAngel),Alpha(SmallAngel){}
+			float BigAngel = 60, float SmallAngel = 30):
+			PointLight(c, l, q, a, d, s, p),
+			DirectionalLight(c, l, q, a, d, s,dir),
+			Theta(BigAngel),Alpha(SmallAngel){}
 
-	void SendToShader(std::shared_ptr<Shader> shader);
-	std::pair<float, float> GetAngels();
-	std::pair<float, float> GetAngels(std::pair<float, float> NewAngels);
+	virtual void SendToShader(std::shared_ptr<Shader> shader);
+	std::pair<float, float> GetAngels() const;
+	std::pair<float, float> SetAngels(std::pair<float, float> NewAngels);
 };
 
-using TypeLight = std::variant<PointLight, AmbientLight, SpotLight>;
-using Light = std::variant<PointLight, AmbientLight, SpotLight>;
+
+enum class LightTypes
+{
+	Directional = 0, Point, Spot
+};
+
+
+class Light:public SpotLight
+{
+	LightTypes Type = LightTypes::Directional;
+	public:
+		Light(float constant = 0.0f, float linear = 0.0f, float quadric = 0.0f, glm::vec3 ambient = glm::vec3(0.0f),
+			glm::vec3 diffuse = glm::vec3(0.0f), glm::vec3 specular = glm::vec3(0.0f), glm::vec3 position = glm::vec3(0.0f), glm::vec3 direction = glm::vec3(0.0f),
+			float BigAngel = 60, float SmallAngel = 30) :
+			SpotLight(constant, linear, quadric, ambient, diffuse, specular, position, direction, BigAngel, SmallAngel) {}
+		void SendToShader(std::shared_ptr<Shader> shader) final;
+		void SetType(LightTypes);
+		LightTypes GetType() const;
+};
+

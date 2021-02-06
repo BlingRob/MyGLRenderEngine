@@ -11,13 +11,13 @@ void BLight::SendToShader(std::shared_ptr<Shader> shader)
 }
 
 
-void AmbientLight::SendToShader(std::shared_ptr<Shader> shader) 
+void DirectionalLight::SendToShader(std::shared_ptr<Shader> shader)
 {
 	BLight::SendToShader(shader);
 	glUniform3f(glGetUniformLocation(shader->Program, "light.direction"), direction.x, direction.y, direction.z);
 }
 
-glm::vec3 AmbientLight::ChangeDirection(glm::vec3 NewDir) 
+glm::vec3 DirectionalLight::ChangeDirection(glm::vec3 NewDir)
 {
 	std::swap(NewDir, direction);
 	return NewDir;
@@ -42,18 +42,43 @@ glm::vec3 PointLight::GetPos() const
 
 void SpotLight::SendToShader(std::shared_ptr<Shader> shader) 
 {
-	AmbientLight::SendToShader(shader);
+	PointLight::SendToShader(shader);
 	glUniform1f(glGetUniformLocation(shader->Program, "light.Theta"),Theta);
 	glUniform1f(glGetUniformLocation(shader->Program, "light.Alpha"), Alpha);
 }
-std::pair<float, float> SpotLight::GetAngels() 
+std::pair<float, float> SpotLight::GetAngels() const
 {
 	return std::make_pair(Theta,Alpha);
 }
-std::pair<float, float> SpotLight::GetAngels(std::pair<float, float> NewAngels) 
+std::pair<float, float> SpotLight::SetAngels(std::pair<float, float> NewAngels) 
 {
 	std::pair<float, float> Old = std::make_pair(Theta, Alpha);
 	Theta = NewAngels.first;
 	Alpha = NewAngels.second;
 	return Old;
+}
+
+void Light::SetType(LightTypes type) 
+{
+	Type = type;
+}
+LightTypes Light::GetType() const
+{
+	return Type;
+}
+void Light::SendToShader(std::shared_ptr<Shader> shader)
+{
+	switch (Type) 
+	{
+		case LightTypes::Directional:
+			DirectionalLight::SendToShader(shader);
+		break;
+		case LightTypes::Spot:
+			SpotLight::SendToShader(shader);
+		break;
+		case LightTypes::Point:
+		default:
+			PointLight::SendToShader(shader);
+		break;
+	}
 }

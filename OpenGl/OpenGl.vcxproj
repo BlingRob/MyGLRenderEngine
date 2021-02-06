@@ -177,7 +177,7 @@
     <None Include="..\Shaders\GroundSh.frag" />
     <None Include="..\Shaders\GroundSh.vs" />
     <None Include="..\Shaders\Base.frag" />
-    <None Include="..\Shaders\Base.vs" />
+    <None Include="..\Shaders\Base.vert" />
     <None Include="..\Shaders\Light.frag" />
     <None Include="..\Shaders\Light.vs" />
     <None Include="Default.frag" />

@@ -23,6 +23,13 @@ struct Texture
     aiString path;
 };
 
+struct Material 
+{
+    unsigned int id;
+    std::string type;
+    aiColor3D value;
+};
+
 class Mesh
 {
     
@@ -31,6 +38,7 @@ public:
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     std::vector<Texture> textures;
+    std::vector<Material> materials;
     /*  Functions  */
     Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures);
     void Draw(Shader* shader);
