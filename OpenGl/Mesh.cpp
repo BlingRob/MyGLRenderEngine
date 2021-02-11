@@ -1,11 +1,12 @@
 #include "Mesh.h"
 
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::vector<Texture> textures)
+Mesh :: Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures, std::vector<Material>&& materials)
 {
-    this->vertices = vertices;
-    this->indices = indices;
-    this->textures = textures;
+    this->vertices = std::move(vertices);
+    this->indices = std::move(indices);
+    this->textures = std::move(textures);
+    this->materials = std::move(materials);
 
     setupMesh();
 }
@@ -50,34 +51,53 @@ void Mesh::setupMesh()
 
 void Mesh::Draw(Shader* shader)
 {
+    const size_t BufferSize = 32;
     // bind appropriate textures
-    unsigned int diffuseNr = 1;
-    unsigned int specularNr = 1;
-    unsigned int normalNr = 1;
-    unsigned int heightNr = 1;
-    unsigned int emissiveNr = 1;
-    for (unsigned int i = 0; i < textures.size(); i++)
+    unsigned int diffuseNr = 0;
+    unsigned int specularNr = 0;
+    unsigned int normalNr = 0;
+    unsigned int heightNr = 0;
+    unsigned int emissiveNr = 0;
+    std::string number;
+    std::string name;
+    char Address[BufferSize];
+
+    for (unsigned int i = 0; i < textures.size(); ++i)
     {
         glBindTextureUnit(i, textures[i].id);
         //glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
         // retrieve texture number (the N in diffuse_textureN)
-        std::string number;
-        std::string name = textures[i].type;
+
+        name = textures[i].type;
         if (name == "texture_diffuse")
-            number = std::to_string(diffuseNr++);
+            sprintf_s(Address, BufferSize,"tex[%d].diffuse", diffuseNr++);
+            //number = "[" + std::to_string(diffuseNr++) + "]";
         else if (name == "texture_specular")
-            number = std::to_string(specularNr++); // transfer unsigned int to stream
+            sprintf_s(Address, BufferSize, "tex[%d].specular", specularNr++);
+            //number = std::to_string(specularNr++); // transfer unsigned int to stream
         else if (name == "texture_normal")
-            number = std::to_string(normalNr++); // transfer unsigned int to stream
+            sprintf_s(Address, BufferSize, "tex[%d].normal", normalNr++);
+            //number = std::to_string(normalNr++); // transfer unsigned int to stream
         else if (name == "texture_height")
-            number = std::to_string(heightNr++); // transfer unsigned int to stream
+            sprintf_s(Address, BufferSize, "tex[%d].height", heightNr++);
+            //number = std::to_string(heightNr++); // transfer unsigned int to stream
         else if (name == "texture_emissive")
-            number = std::to_string(emissiveNr++); // transfer unsigned int to stream
+            sprintf_s(Address, BufferSize, "tex[%d].emissive", emissiveNr++);
+            //number = std::to_string(emissiveNr++); // transfer unsigned int to stream
 
         // now set the sampler to the correct texture unit
-        glUniform1i(glGetUniformLocation(shader->Program, (name + number).c_str()), i);
+        glUniform1i(glGetUniformLocation(shader->Program, Address), i);
         // and finally bind the texture
         //glBindTexture(GL_TEXTURE_2D, textures[i].id);
+    }
+    name = std::string("mat[");
+    for (unsigned int i = 0; i < materials.size(); ++i) 
+    {
+        number = std::to_string(i);
+        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].ambient").c_str()), materials[i].ambient.r, materials[i].ambient.g, materials[i].ambient.b);
+        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].diffuse").c_str()), materials[i].diffuse.r, materials[i].diffuse.g, materials[i].diffuse.b);
+        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].specular").c_str()), materials[i].specular.r, materials[i].specular.g, materials[i].specular.b);
+        glUniform1f(glGetUniformLocation(shader->Program, (name + number + "].shininess").c_str()), materials[i].shininess);
     }
 
     // draw mesh

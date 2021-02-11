@@ -17,7 +17,7 @@ out VS_OUT {
     vec3 Normal;
     vec2 TexCoords;
     vec4 FragPosLightSpace;
-    mat3 toObjectLocal;
+    mat3 TBN;
 } vs_out;
 
 uniform Transform transform;
@@ -26,19 +26,15 @@ uniform mat3 NormalMatrix;
 
 void main()
 {
-    vec3 norm = normalize(NormalMatrix * VertexNormal);
-    vec3 tang = normalize(NormalMatrix * aTangent);
-    vec3 binormal = normalize(cross(norm,tang) * (-1.0f));
+    vec3 N = normalize(NormalMatrix * VertexNormal);
+    vec3 T = normalize(NormalMatrix * aTangent);
+    vec3 B = normalize(NormalMatrix * aBitangent);
+    //vec3 binormal = normalize(cross(norm,tang) * (-1.0f));
 
-    vs_out.toObjectLocal = mat3
-    (
-        tang.x,binormal.x,norm.x,
-        tang.y,binormal.y,norm.y,
-        tang.z,binormal.z,norm.z
-    );
+    vs_out.TBN = mat3(T,N,B);
 
     vs_out.FragPos = vec3(transform.model * vec4(position, 1.0));
-    vs_out.Normal = transpose(inverse(mat3(transform.model))) * VertexNormal;
+    vs_out.Normal = NormalMatrix * VertexNormal;
     vs_out.TexCoords = texCoord;
     //vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
 

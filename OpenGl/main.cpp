@@ -63,7 +63,8 @@ void rend()
 			lightSpaceMatrix = std::make_shared<glm::mat4>(1.0f);
 		Scene scen;
 		std::shared_ptr<Object> obj1 = std::make_shared<Object>(Base),
-								sphere = std::make_shared<Object>(LightSphere);
+								sphere = std::make_shared<Object>(LightSphere),
+								ground = std::make_shared<Object>(Ground);
 		std::shared_ptr <Light> light = std::make_shared<Light>(0.6f, 0.09f, 0.032f, glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 15.0f, 0.0f));
 		light->SetType(LightTypes::Point);
 
@@ -75,6 +76,7 @@ void rend()
 		scen.AddLight("PointLight",light);
 		scen.AddObject("Base", obj1);
 		scen.AddObject("Sphere", sphere);
+		scen.AddObject("Ground", ground);
 		
 		//world transform
 		while (!glfwWindowShouldClose(window))
@@ -106,18 +108,48 @@ int main()
 	return 0;
 }
 
-void Ground(Scene*);
+void Ground(Scene* scene) 
+{
+	static std::shared_ptr<Model> Base = std::make_shared<Model>("..\\Models\\Earth.obj");
+	static std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
+
+	static glm::mat4 model = glm::identity<glm::mat4>();
+	static glm::mat4 MVP;
+	static glm::mat3 NormalMat;
+
+	shaders->Use();
+
+	//something
+	MVP = (*scene->matrixs[2]) * (*scene->matrixs[1]) * model;
+
+	glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "transform.view"), 1, GL_FALSE, glm::value_ptr(*scene->matrixs[1]));
+	glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "transform.projection"), 1, GL_FALSE, glm::value_ptr(*scene->matrixs[2]));
+	glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "transform.model"), 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "transform.MVP"), 1, GL_FALSE, glm::value_ptr(MVP));
+	//glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+	for (auto el : scene->Lights)
+		el.second->SendToShader(shaders);
+
+	NormalMat = glm::mat3(transpose(inverse(model)));
+	glUniformMatrix3fv(glGetUniformLocation(shaders->Program, "NormalMatrix"), 1, GL_FALSE, glm::value_ptr(NormalMat));
+
+	glUniform3f(glGetUniformLocation(shaders->Program, "viewPos"), camera->Position.x, camera->Position.y, camera->Position.z);
+
+	Base->Draw(shaders.get());
+
+}
 
 void LightSphere(Scene* scene)
 {
 	static std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Light.vs", "..\\Shaders\\Light.frag");
 	static Model Scen("..\\Models\\SpotLight.obj");
+	static glm::mat4 model;
 	shaders->Use();
 
 	for (auto el : scene->Lights)
 		el.second->SendToShader(shaders);
 
-	glm::mat4 model = glm::identity<glm::mat4>();
+	model = glm::identity<glm::mat4>();
 	model = glm::translate(model, scene->GetLight("PointLight")->GetPos());
 
 	glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "transform.view"), 1, GL_FALSE, glm::value_ptr(*scene->matrixs[1]));
@@ -132,9 +164,11 @@ void Base(Scene* scene)
 	static std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
 	shaders->Use();
 
-	static glm::mat4 model = glm::identity<glm::mat4>();
+	static glm::mat4 model;
 	static glm::mat4 MVP;
+	static glm::mat3 NormalMat;
 
+	model = glm::identity<glm::mat4>();
 
 	//something
 	MVP = (*scene->matrixs[2]) * (*scene->matrixs[1]) *  model;
@@ -147,7 +181,8 @@ void Base(Scene* scene)
 	for (auto el : scene->Lights)
 		el.second->SendToShader(shaders);
 
-	static glm::mat4 NormalMat = glm::mat3(transpose(inverse(model)));
+	
+	NormalMat = glm::mat3(transpose(inverse(model)));
 	glUniformMatrix3fv(glGetUniformLocation(shaders->Program, "NormalMatrix"), 1, GL_FALSE, glm::value_ptr(NormalMat));
 
 	glUniform3f(glGetUniformLocation(shaders->Program, "viewPos"), camera->Position.x, camera->Position.y, camera->Position.z);
