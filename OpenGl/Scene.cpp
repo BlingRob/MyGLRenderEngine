@@ -5,7 +5,7 @@ void Scene::Draw()
 	glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	for (auto mod : Objects)
+	for (const auto& mod : Objects)
 		mod.second->Draw(this);
 }
 void Scene::AddObject(std::string name,std::shared_ptr<Object> obj) 
@@ -27,21 +27,52 @@ std::shared_ptr<Light> Scene::GetLight(std::string name)
 	return Lights.find(std::hash<std::string>{}(name))->second;
 }
 
+const std::map<std::size_t, std::shared_ptr<Light>>* Scene::GetLights() const
+{
+	return &Lights;
+}
+
 void Scene::SetView(std::shared_ptr < glm::mat4> m)
 {
-	matrixs[1] = m;
+	ViewMatrix = m;
 }
 void Scene::SetProj(std::shared_ptr < glm::mat4>m)
 {
-	matrixs[2] = m;
+	ProjectMatrix = m;
 }
 void Scene::SetModel(std::shared_ptr < glm::mat4>m)
 {
-	matrixs[0] = m;
+	ModelMatrix = m;
 }
+
+std::shared_ptr < glm::mat4> Scene::GetView() const
+{
+	return ViewMatrix;
+}
+std::shared_ptr < glm::mat4> Scene::GetProj() const 
+{
+	return ProjectMatrix;
+}
+std::shared_ptr < glm::mat4> Scene::GelModel() const
+{
+	return ModelMatrix;
+}
+
 
 glm::vec4 Scene::SetBackGround(glm::vec4 col) 
 {
 	std::swap(col, BackGroundColour);
 	return col;
+}
+
+
+std::unique_ptr<Camera> Scene::SetCam(std::unique_ptr<Camera> Cam)
+{
+	std::swap(camera,Cam);
+	return Cam;
+}
+
+Camera* Scene::GetCam() const 
+{
+	return camera.get();
 }

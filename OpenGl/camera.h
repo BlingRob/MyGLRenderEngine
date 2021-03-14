@@ -17,7 +17,7 @@ const float ZOOM = 45.0f;
 class Camera
 {
 public:
-    enum Camera_Movement
+    enum class Camera_Movement
     {
         FORWARD,
         BACKWARD,
@@ -67,14 +67,21 @@ public:
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
-        if (direction == FORWARD)
-            Position += Front * velocity;
-        if (direction == BACKWARD)
-            Position -= Front * velocity;
-        if (direction == LEFT)
-            Position -= Right * velocity;
-        if (direction == RIGHT)
-            Position += Right * velocity;
+        switch (direction) 
+        {
+            case Camera_Movement::FORWARD:
+                Position += Front * velocity;
+            break;
+            case Camera_Movement::BACKWARD:
+                Position -= Front * velocity;
+            break;
+            case Camera_Movement::LEFT:
+                Position -= Right * velocity;
+            break;
+            case Camera_Movement::RIGHT:
+                Position += Right * velocity;
+            break;
+        }
     }
 
     //Обрабатываем входные данные, полученные от системы ввода с помощью мыши. Ожидаем в качестве параметров значения смещения как в направлении X, так и в направлении Y.

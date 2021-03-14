@@ -1,42 +1,85 @@
 #include "Application.h"
 
-namespace Application 
+void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 {
-	bool Init()
+	auto source_str = [source]() -> std::string {
+		switch (source)
+		{
+		case GL_DEBUG_SOURCE_API: return "API";
+		case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW SYSTEM";
+		case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER COMPILER";
+		case GL_DEBUG_SOURCE_THIRD_PARTY:  return "THIRD PARTY";
+		case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
+		case GL_DEBUG_SOURCE_OTHER: return "OTHER";
+		default: return "UNKNOWN";
+		}
+	}();
+
+	auto type_str = [type]() {
+		switch (type)
+		{
+		case GL_DEBUG_TYPE_ERROR: return "ERROR";
+		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
+		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
+		case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
+		case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
+		case GL_DEBUG_TYPE_MARKER:  return "MARKER";
+		case GL_DEBUG_TYPE_OTHER: return "OTHER";
+		default: return "UNKNOWN";
+		}
+	}();
+
+	auto severity_str = [severity]() {
+		switch (severity)
+		{
+		case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
+		case GL_DEBUG_SEVERITY_LOW: return "LOW";
+		case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
+		case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+		default: return "UNKNOWN";
+		}
+	}();
+
+	std::cerr
+		<< source_str << ", "
+		<< type_str << ", "
+		<< severity_str << ", "
+		<< id << ": "
+		<< message << std::endl;
+}
+
+	RenderEngine::RenderEngine() 
 	{
-		lastX = 400, lastY = 400;
-		yaw = -90.0f, pitch = 0.0f;
+		lastX = SDL_WINDOWPOS_CENTERED, lastY = SDL_WINDOWPOS_CENTERED;
 		clicked = false;
 		firstMouse = true;
 		dt = 0.0f;
-		lt = 0.0f;
 
-		//glfw init
-		glfwInit();
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
-		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
+		//SDL init
+		if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
+			throw(std::string("Failed SDL init ") + SDL_GetError());
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
+		//SDL buffer init
+		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 5);
+		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 5);
+		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 5);
+		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 		//glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-		window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "GLApplication", nullptr, nullptr);
-		if (window == nullptr)
-		{
-			std::cout << "Failed to create GLFW window" << std::endl;
-			glfwTerminate();
-			return false;
-		}
-		glfwMakeContextCurrent(window);
+		window = SDL_CreateWindow("GL Render engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCR_WIDTH, SCR_HEIGHT, SDL_WINDOW_OPENGL);
+		if (!window)
+			throw(std::string("Failed to create SDL window ") + SDL_GetError());
+		context = SDL_GL_CreateContext(window);
+		if (!context)
+			throw(std::string("Failed to create SDL context ") + SDL_GetError());
 
-		int width, height;
-		glfwGetFramebufferSize(window, &width, &height);
-		glViewport(0, 0, width, height);
+		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
 		//callbacks
-		glfwSetKeyCallback(window, key_callback);
-		glfwSetCursorPosCallback(window, mouse_callback);
-		glfwSetMouseButtonCallback(window, mouse_click);
-		glfwSetScrollCallback(window, scroll_callback);
 		glDebugMessageCallback(MessageCallback, nullptr);
 
 		//gl options
@@ -49,130 +92,117 @@ namespace Application
 		glFrontFace(GL_CCW);
 		//texture load option
 		//stbi_set_flip_vertically_on_load(true);
+	}
 
-		camera = std::make_shared<Camera>(glm::vec3(10.0f, 10.0f, 20.0f));
+
+
+	double RenderEngine::GetTime() 
+	{
+		return chron.GetTime();
+	}
+
+	void RenderEngine::SetScen(std::unique_ptr<Scene> s)
+	{
+		scene = std::move(s);
+	}
+
+	bool RenderEngine::ProcEvents() 
+	{
+		SDL_Event e;
+		while (SDL_PollEvent(&e))
+		{
+			switch (e.type)
+			{
+				case SDL_QUIT:
+				{
+					return false;
+				}
+				case SDL_MOUSEBUTTONDOWN:
+				{
+					if (e.button.button == SDL_BUTTON_LEFT)
+					{
+						clicked = true;
+						lastX = e.button.x;
+						lastY = e.button.y;
+						SDL_SetRelativeMouseMode(SDL_TRUE);
+					}
+					break;
+				}
+				case SDL_MOUSEBUTTONUP: 
+				{
+					if (e.button.button == SDL_BUTTON_LEFT)
+					{
+						clicked = false;
+						SDL_SetRelativeMouseMode(SDL_FALSE);
+					}
+					break;
+				}
+				case SDL_MOUSEMOTION: 
+				{
+					if (clicked)
+					{
+						float xoffset = e.button.x - lastX;
+						float yoffset = lastY - e.button.y; // перевернуто, так как Y-координаты идут снизу вверх
+
+						lastX = e.button.x;
+						lastY = e.button.y;
+
+						scene->GetCam()->ProcessMouseMovement(xoffset, yoffset);
+					}
+					break;
+				}
+				case SDL_MOUSEWHEEL: 
+				{
+					if (clicked)
+						scene->GetCam()->ProcessMouseScroll(static_cast<float>(e.wheel.y));
+					break;
+				}
+
+				case SDL_KEYDOWN: 
+				{
+					if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
+						return false;
+					keys[e.key.keysym.scancode] = true;
+					break;
+				}
+				case SDL_KEYUP:
+				{
+					keys[e.key.keysym.scancode] = false;
+					break;
+				}
+			}
+		}
 		return true;
-
 	}
 
 
-	void GLAPIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
+	bool RenderEngine::MainLoop()
 	{
-		auto source_str = [source]() -> std::string {
-			switch (source)
-			{
-			case GL_DEBUG_SOURCE_API: return "API";
-			case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW SYSTEM";
-			case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER COMPILER";
-			case GL_DEBUG_SOURCE_THIRD_PARTY:  return "THIRD PARTY";
-			case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
-			case GL_DEBUG_SOURCE_OTHER: return "OTHER";
-			default: return "UNKNOWN";
-			}
-		}();
+		dt = static_cast<float>(chron());
+		SDL_GL_SwapWindow(window);
+		if(!ProcEvents())
+			return false;
+		do_movement();
 
-		auto type_str = [type]() {
-			switch (type)
-			{
-			case GL_DEBUG_TYPE_ERROR: return "ERROR";
-			case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
-			case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
-			case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
-			case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
-			case GL_DEBUG_TYPE_MARKER:  return "MARKER";
-			case GL_DEBUG_TYPE_OTHER: return "OTHER";
-			default: return "UNKNOWN";
-			}
-		}();
-
-		auto severity_str = [severity]() {
-			switch (severity)
-			{
-			case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
-			case GL_DEBUG_SEVERITY_LOW: return "LOW";
-			case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
-			case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
-			default: return "UNKNOWN";
-			}
-		}();
-
-		std::cout
-			<< source_str << ", "
-			<< type_str << ", "
-			<< severity_str << ", "
-			<< id << ": "
-			<< message << std::endl;
+		scene->Draw();
+		return true;
 	}
 
-
-	void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+	void RenderEngine::do_movement()
 	{
-		if (clicked)
-			camera->ProcessMouseScroll(yoffset);
+			// Camera controls
+		if (keys[SDL_SCANCODE_W])
+			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::FORWARD, dt);
+		if (keys[SDL_SCANCODE_S])
+			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::BACKWARD, dt);
+		if (keys[SDL_SCANCODE_A])
+			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::LEFT, dt);
+		if (keys[SDL_SCANCODE_D])
+			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::RIGHT, dt);
+
 	}
 
-	void mouse_click(GLFWwindow* window, int button, int action, int mods)
+	const Scene* RenderEngine::GetScen() const
 	{
-		if (button == GLFW_MOUSE_BUTTON_1)
-		{
-			if (action == GLFW_PRESS)
-			{
-				clicked = true;
-				glfwGetCursorPos(window, static_cast<double*>(&lastX), static_cast<double*>(&lastY));
-				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			}
-			else if (action == GLFW_RELEASE)
-			{
-				clicked = false;
-				glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			}
-		}
+		return scene.get();
 	}
-
-	void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-	{
-		if (clicked)
-		{
-			float xoffset = xpos - lastX;
-			float yoffset = lastY - ypos; // перевернуто, так как Y-координаты идут снизу вверх
-
-			lastX = xpos;
-			lastY = ypos;
-
-			camera->ProcessMouseMovement(xoffset, yoffset);
-		}
-	}
-
-	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
-	{
-		if (action == GLFW_PRESS)
-			keys[key] = true;
-		else if (action == GLFW_RELEASE)
-			keys[key] = false;
-		switch (key)
-		{
-		case GLFW_KEY_ESCAPE:
-			glfwSetWindowShouldClose(window, GL_TRUE);
-			break;
-		default:
-			break;
-		}
-
-	}
-
-	void do_movement()
-	{
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-			glfwSetWindowShouldClose(window, true);
-
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-			camera->ProcessKeyboard(camera->FORWARD, dt);
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-			camera->ProcessKeyboard(camera->BACKWARD, dt);
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-			camera->ProcessKeyboard(camera->LEFT, dt);
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-			camera->ProcessKeyboard(camera->RIGHT, dt);
-	}
-
-};

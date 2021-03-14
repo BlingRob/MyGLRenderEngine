@@ -1,45 +1,56 @@
 #pragma once
 #include "Headers.h"
-#include "camera.h"
+#include "Scene.h"
+#include "Time.h"
 
-namespace Application
-{
-	class RenderEngine;
-	GLFWwindow* window;
-	std::shared_ptr <Camera> camera;
+	class RenderEngine 
+	{
+		//windows
+		SDL_Window* window;
+		SDL_GLContext context;
+		//Scene
+		std::unique_ptr<Scene> scene;
+		//time:difference, current, last
+		float dt;
+		//queue of pressed keys
+		bool keys[1024];
 
-	GLfloat dt,t,lt;
-	GLuint SCR_WIDTH = 800, SCR_HEIGHT = 800;
-	//frame
-	bool keys[1024];
-	//mouse controll
-	GLdouble lastX, lastY;
-	GLfloat yaw, pitch;
-	GLboolean clicked, firstMouse;
+		//mouse controll
+		GLfloat lastX, lastY;
+		GLboolean clicked, firstMouse;
+		//Time
+		Chronometr chron;
+		//callbacks
+		void do_movement();
 
-	bool Init();
-	void Render();
-	void Resize();
-	void Exit();
+		bool ProcEvents();
 
-	//io
-	void GLAPIENTRY MessageCallback(GLenum source,
+		public:
+			RenderEngine();
+			~RenderEngine()
+			{
+				// Close and destroy the window
+				SDL_DestroyWindow(window);
+
+				// Clean up
+				SDL_Quit();
+
+			}
+			bool MainLoop();
+			double GetTime();
+			void SetScen(std::unique_ptr<Scene>);
+			const Scene* GetScen() const;
+
+		//Size of window
+		GLuint SCR_WIDTH = 800,
+			SCR_HEIGHT = 800;
+			
+	};
+
+	void APIENTRY MessageCallback(GLenum source,
 		GLenum type,
 		GLuint id,
 		GLenum severity,
 		GLsizei length,
 		const GLchar* message,
 		const void* userParam);
-
-	void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-
-	void mouse_click(GLFWwindow* window, int button, int action, int mods);
-
-	void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-
-	void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
-
-	void do_movement();
-
-};
-

@@ -9,25 +9,37 @@ struct Object;
 class Scene
 {
 	std::unique_ptr<Camera> camera;
-	public:
 	std::map<std::size_t, std::shared_ptr<Object>> Objects;
 	std::map<std::size_t, std::shared_ptr<Light>> Lights;
-	std::vector<std::shared_ptr<glm::mat4>> matrixs;
+
+	std::shared_ptr<glm::mat4> ViewMatrix,
+							   ProjectMatrix,
+							   ModelMatrix;
+
 	glm::vec4 BackGroundColour;
+
 	public:
-		Scene() { matrixs.resize(5); }
-		glm::vec4 SetBackGround(glm::vec4 col);
+	
+	glm::vec4 SetBackGround(glm::vec4 col);
 
-		void AddObject(std::string name, std::shared_ptr<Object> obj);
-		void AddLight(std::string name, std::shared_ptr<Light> lig);
-		std::shared_ptr<Object> GetObj(std::string name);
-		std::shared_ptr<Light> GetLight(std::string name);
+	void AddObject(std::string name, std::shared_ptr<Object> obj);
+	void AddLight(std::string name, std::shared_ptr<Light> lig);
+	std::shared_ptr<Object> GetObj(std::string name);
+	std::shared_ptr<Light> GetLight(std::string name);
+	const std::map<std::size_t, std::shared_ptr<Light>>* GetLights() const;
 
-		void Draw();
+	void Draw();
 
-		void SetView(std::shared_ptr < glm::mat4>);
-		void SetProj(std::shared_ptr < glm::mat4>);
-		void SetModel(std::shared_ptr < glm::mat4>);
+	void SetView(std::shared_ptr < glm::mat4>);
+	void SetProj(std::shared_ptr < glm::mat4>);
+	void SetModel(std::shared_ptr < glm::mat4>);
+
+	std::shared_ptr < glm::mat4> GetView() const;
+	std::shared_ptr < glm::mat4> GetProj() const;
+	std::shared_ptr < glm::mat4> GelModel() const;
+
+	std::unique_ptr<Camera> SetCam(std::unique_ptr<Camera>);
+	Camera* GetCam() const;
 };
 
 struct Object

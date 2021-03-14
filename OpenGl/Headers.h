@@ -10,11 +10,11 @@
 #include <memory>
 #include <list>
 #include <functional>
-#include <variant>
+#include <type_traits>
 
 
 #include "gl/gl.h"
-#include <glfw/glfw3.h>
+#include <sdl/SDL.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -25,4 +25,4 @@
 
 #include "stb_image.h"
 
-
+#undef main
