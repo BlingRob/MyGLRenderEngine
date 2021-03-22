@@ -24,6 +24,7 @@ void Model::loadModel(const std::string& path)
 
     // process ASSIMP's root node recursively
     processNode(scene->mRootNode, scene);
+    importer.FreeScene();
 }
 
 void Model::processNode(aiNode* node, const aiScene* scene)
@@ -265,7 +266,7 @@ GLuint TextureFromFile(const void* path,std::size_t width, std::size_t height, b
     {
         if (height == 0)
         {
-            data = static_cast<const unsigned char*>(stbi_load_from_memory((unsigned char*)path, width, &w, &h, &nrComponents, 4));
+            data = static_cast<const unsigned char*>(stbi_load_from_memory((unsigned char*)path, width, &w, &h, &nrComponents, 0));
             //std::cout << stbi_failure_reason() << std::endl;
             Loaded = true;
         }
@@ -278,7 +279,7 @@ GLuint TextureFromFile(const void* path,std::size_t width, std::size_t height, b
     }
     else
     {
-       data = stbi_load(static_cast<const char*>(path), &w, &h, &nrComponents, 4);
+       data = stbi_load(static_cast<const char*>(path), &w, &h, &nrComponents, 0);
        Loaded = true;
     }
 
