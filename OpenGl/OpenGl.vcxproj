@@ -96,7 +96,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;sdl/SDL2.lib;sdl/SDL2main.lib;sdl/SDL2test.lib;soil/SOIL.lib;assimp/assimp-vc142-mtd.lib;assimp/assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;sdl/SDL2.lib;sdl/SDL2main.lib;sdl/SDL2test.lib;assimp/assimp-vc142-mtd.lib;assimp/assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -110,7 +110,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;sdl/SDL2.lib;sdl/SDL2main.lib;sdl/SDL2test.lib;soil/SOIL.lib;assimp/assimp-vc142-mtd.lib;assimp/assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opengl32.lib;sdl/SDL2.lib;sdl/SDL2main.lib;sdl/SDL2test.lib;assimp/assimp-vc142-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -175,8 +175,6 @@
   <ItemGroup>
     <None Include="..\Shaders\DepthMap.frag" />
     <None Include="..\Shaders\DepthMap.vs" />
-    <None Include="..\Shaders\GroundSh.frag" />
-    <None Include="..\Shaders\GroundSh.vs" />
     <None Include="..\Shaders\Base.frag" />
     <None Include="..\Shaders\Base.vert" />
     <None Include="..\Shaders\Light.frag" />

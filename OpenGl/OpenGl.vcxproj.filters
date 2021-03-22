@@ -88,12 +88,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\Shaders\GroundSh.frag">
-      <Filter>Файлы ресурсов</Filter>
-    </None>
-    <None Include="..\Shaders\GroundSh.vs">
-      <Filter>Файлы ресурсов</Filter>
-    </None>
     <None Include="..\Shaders\Base.frag">
       <Filter>Файлы ресурсов</Filter>
     </None>

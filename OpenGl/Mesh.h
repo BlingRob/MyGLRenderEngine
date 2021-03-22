@@ -18,14 +18,14 @@ struct Vertex
 
 struct Texture
 {
-    unsigned int id;
+    GLuint id;
     std::string type;
-    aiString path;
+    aiString name;
 };
 
 struct Material 
 {
-    unsigned int id;
+    GLuint id;
     aiColor3D ambient;
     aiColor3D diffuse;
     aiColor3D specular;
@@ -38,15 +38,15 @@ class Mesh
 public:
     /*  Mesh Data  */
     std::vector<Vertex> vertices;
-    std::vector<unsigned int> indices;
+    std::vector<GLuint> indices;
     std::vector<Texture> textures;
-    std::vector<Material> materials;
+    Material material;
     /*  Functions  */
-    Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures, std::vector<Material>&& materials);
+    Mesh(std::vector<Vertex>&& vertices, std::vector<GLuint>&& indices, std::vector<Texture>&& textures, Material&& material);
     void Draw(Shader* shader);
 private:
     /*  Render data  */
-    unsigned int VAO, VBO, EBO;
+    GLuint VAO, VBO, EBO;
     /*  Functions    */
     void setupMesh();
     

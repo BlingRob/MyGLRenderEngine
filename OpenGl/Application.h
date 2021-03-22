@@ -22,8 +22,10 @@
 		Chronometr chron;
 		//callbacks
 		void do_movement();
-
 		bool ProcEvents();
+		//
+		bool ChangedProj = false;
+		bool ChangedView = false;
 
 		public:
 			RenderEngine();

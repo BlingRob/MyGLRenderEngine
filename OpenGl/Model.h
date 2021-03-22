@@ -3,7 +3,8 @@
 #include "Headers.h"
 #include "Mesh.h"
 
-unsigned int TextureFromFile(const char* path, const std::string& directory, bool gamma);
+//GLuint TextureFromExternalFile(const char* path, const std::string& directory, bool gamma);
+GLuint TextureFromFile(const void* path, std::size_t width, std::size_t height, bool FromProc);
 class Model
 {
 public:
@@ -20,9 +21,9 @@ private:
     std::string directory;
     bool gammaCorrection;
     /*  Ìועמהû   */
-    void loadModel(std::string path);
+    void loadModel(const std::string& path);
     void processNode(aiNode* node, const aiScene* scene);
     Mesh processMesh(aiMesh* mesh, const aiScene* scene);
-    std::vector<Texture> loadTexture(aiMaterial* mat, aiTextureType type, std::string typeName);
-    std::vector<Material> loadMaterial(aiMaterial* mat,uint16_t num);
+    std::vector<Texture> loadTexture(aiMaterial* mat, aiTexture** tex, aiTextureType type, std::string typeName, bool embedded);
+    Material loadMaterial(aiMaterial* mat,uint16_t indx);
 };

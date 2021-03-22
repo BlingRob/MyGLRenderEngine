@@ -1,12 +1,12 @@
 #include "Mesh.h"
 
 
-Mesh :: Mesh(std::vector<Vertex>&& vertices, std::vector<unsigned int>&& indices, std::vector<Texture>&& textures, std::vector<Material>&& materials)
+Mesh :: Mesh(std::vector<Vertex>&& vertices, std::vector<GLuint>&& indices, std::vector<Texture>&& textures, Material&& material)
 {
     this->vertices = std::move(vertices);
     this->indices = std::move(indices);
     this->textures = std::move(textures);
-    this->materials = std::move(materials);
+    this->material = std::move(material);
 
     setupMesh();
 }
@@ -53,16 +53,16 @@ void Mesh::Draw(Shader* shader)
 {
     const size_t BufferSize = 32;
     // bind appropriate textures
-    unsigned int diffuseNr = 0;
-    unsigned int specularNr = 0;
-    unsigned int normalNr = 0;
-    unsigned int heightNr = 0;
-    unsigned int emissiveNr = 0;
+    GLuint diffuseNr = 0;
+    GLuint specularNr = 0;
+    GLuint normalNr = 0;
+    GLuint heightNr = 0;
+    GLuint emissiveNr = 0;
     std::string number;
     std::string name;
     char Address[BufferSize];
 
-    for (unsigned int i = 0; i < textures.size(); ++i)
+    for (size_t i = 0; i < textures.size(); ++i)
     {
         glBindTextureUnit(i, textures[i].id);
         //glActiveTexture(GL_TEXTURE0 + i); // active proper texture unit before binding
@@ -91,13 +91,13 @@ void Mesh::Draw(Shader* shader)
         //glBindTexture(GL_TEXTURE_2D, textures[i].id);
     }
     name = std::string("mat[");
-    for (unsigned int i = 0; i < materials.size(); ++i) 
+    //for (size_t i = 0; i < materials.size(); ++i) 
     {
-        number = std::to_string(i);
-        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].ambient").c_str()), materials[i].ambient.r, materials[i].ambient.g, materials[i].ambient.b);
-        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].diffuse").c_str()), materials[i].diffuse.r, materials[i].diffuse.g, materials[i].diffuse.b);
-        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].specular").c_str()), materials[i].specular.r, materials[i].specular.g, materials[i].specular.b);
-        glUniform1f(glGetUniformLocation(shader->Program, (name + number + "].shininess").c_str()), materials[i].shininess);
+        //number = std::to_string(i);
+        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].ambient").c_str()), material.ambient.r, material.ambient.g, material.ambient.b);
+        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].diffuse").c_str()), material.diffuse.r, material.diffuse.g, material.diffuse.b);
+        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].specular").c_str()), material.specular.r, material.specular.g, material.specular.b);
+        glUniform1f(glGetUniformLocation(shader->Program, (name + number + "].shininess").c_str()), material.shininess);
     }
 
     // draw mesh

@@ -56,6 +56,7 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		dt = 0.0f;
 
 		//SDL init
+		SDL_SetMainReady();
 		if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
 			throw(std::string("Failed SDL init ") + SDL_GetError());
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -70,7 +71,7 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
 		//glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
-		window = SDL_CreateWindow("GL Render engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCR_WIDTH, SCR_HEIGHT, SDL_WINDOW_OPENGL);
+		window = SDL_CreateWindow("GL Render engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCR_WIDTH, SCR_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);// | SDL_WINDOW_FULLSCREEN_DESKTOP
 		if (!window)
 			throw(std::string("Failed to create SDL window ") + SDL_GetError());
 		context = SDL_GL_CreateContext(window);
@@ -148,6 +149,7 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 						lastY = e.button.y;
 
 						scene->GetCam()->ProcessMouseMovement(xoffset, yoffset);
+						ChangedView = true;
 					}
 					break;
 				}
@@ -155,6 +157,7 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 				{
 					if (clicked)
 						scene->GetCam()->ProcessMouseScroll(static_cast<float>(e.wheel.y));
+						ChangedProj = true;
 					break;
 				}
 
@@ -170,6 +173,24 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 					keys[e.key.keysym.scancode] = false;
 					break;
 				}
+
+				case SDL_WINDOWEVENT: 
+				{
+				
+					switch (e.window.event)
+					{
+						case SDL_WINDOWEVENT_SIZE_CHANGED:
+
+							SCR_WIDTH = static_cast<uint32_t>(e.window.data1);
+							SCR_HEIGHT = static_cast<uint32_t>(e.window.data2);
+							glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
+							ChangedProj = true;
+
+						break;
+						default:
+							break;
+					}
+				}
 			}
 		}
 		return true;
@@ -183,6 +204,17 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		if(!ProcEvents())
 			return false;
 		do_movement();
+
+		//if (ChangedProj)
+		{
+			*scene->GetProj() = glm::perspective(glm::radians(scene->GetCam()->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f);
+			ChangedProj = false;
+		}
+		//if (ChangedView)
+		{
+			*scene->GetView() = scene->GetCam()->GetViewMatrix();
+			ChangedView = false;
+		}
 
 		scene->Draw();
 		return true;

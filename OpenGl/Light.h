@@ -22,11 +22,11 @@ class BLight
 			diffuse = d;
 			specular = s;
 		}
-	virtual void SendToShader(std::shared_ptr<Shader> shader);
+	virtual void SendToShader(const Shader& shader);
 
 };
 
-class DirectionalLight:public BLight
+class DirectionalLight:public virtual BLight
 {
 	glm::vec3 direction;
 
@@ -34,11 +34,11 @@ public:
 	DirectionalLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f),
 		glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f), glm::vec3 p = glm::vec3(0.0f), glm::vec3 dir = glm::vec3(0.0f)) :
 		BLight(c, l, q, a, d, s), direction(dir) {}
-	virtual void SendToShader(std::shared_ptr<Shader> shader);
+	virtual void SendToShader(const Shader& shader);
 	glm::vec3 ChangeDirection(glm::vec3);
 };
 
-class PointLight : public BLight
+class PointLight : public virtual BLight
 {
 	glm::vec3 position;
 	public:
@@ -48,7 +48,7 @@ class PointLight : public BLight
 	glm::vec3 SetPos(glm::vec3 p);
 	/*Return current pos*/
 	glm::vec3 GetPos() const;
-	virtual void SendToShader(std::shared_ptr<Shader> shader);
+	virtual void SendToShader(const Shader& shader);
 
 };
 
@@ -64,7 +64,7 @@ class SpotLight: public PointLight,public DirectionalLight
 			DirectionalLight(c, l, q, a, d, s,dir),
 			Theta(BigAngel),Alpha(SmallAngel){}
 
-	virtual void SendToShader(std::shared_ptr<Shader> shader);
+	virtual void SendToShader(const Shader& shader);
 	std::pair<float, float> GetAngels() const;
 	std::pair<float, float> SetAngels(std::pair<float, float> NewAngels);
 };
@@ -84,7 +84,7 @@ class Light:public SpotLight
 			glm::vec3 diffuse = glm::vec3(0.0f), glm::vec3 specular = glm::vec3(0.0f), glm::vec3 position = glm::vec3(0.0f), glm::vec3 direction = glm::vec3(0.0f),
 			float BigAngel = 60, float SmallAngel = 30) :
 			SpotLight(constant, linear, quadric, ambient, diffuse, specular, position, direction, BigAngel, SmallAngel) {}
-		void SendToShader(std::shared_ptr<Shader> shader) final;
+		void SendToShader(const Shader& shader) final;
 		void SetType(LightTypes);
 		LightTypes GetType() const;
 };

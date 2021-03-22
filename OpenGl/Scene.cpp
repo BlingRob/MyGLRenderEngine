@@ -45,15 +45,15 @@ void Scene::SetModel(std::shared_ptr < glm::mat4>m)
 	ModelMatrix = m;
 }
 
-std::shared_ptr < glm::mat4> Scene::GetView() const
+std::shared_ptr < glm::mat4> Scene::GetView()
 {
 	return ViewMatrix;
 }
-std::shared_ptr < glm::mat4> Scene::GetProj() const 
+std::shared_ptr < glm::mat4> Scene::GetProj()
 {
 	return ProjectMatrix;
 }
-std::shared_ptr < glm::mat4> Scene::GelModel() const
+std::shared_ptr < glm::mat4> Scene::GelModel()
 {
 	return ModelMatrix;
 }

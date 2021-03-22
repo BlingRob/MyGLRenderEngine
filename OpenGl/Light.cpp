@@ -1,20 +1,19 @@
 #include "Light.h"
 
-void BLight::SendToShader(std::shared_ptr<Shader> shader)
+void BLight::SendToShader(const Shader& shader)
 {
-	glUniform3f(glGetUniformLocation(shader->Program, "light.ambient"), ambient.x, ambient.y, ambient.z);
-	glUniform3f(glGetUniformLocation(shader->Program, "light.diffuse"), diffuse.x, diffuse.y, diffuse.z);
-	glUniform3f(glGetUniformLocation(shader->Program, "light.specular"), specular.x, specular.y, specular.z);
-	glUniform1f(glGetUniformLocation(shader->Program, "light.constant"), constant);
-	glUniform1f(glGetUniformLocation(shader->Program, "light.linear"),   linear);
-	glUniform1f(glGetUniformLocation(shader->Program, "light.quadratic"), quadratic);
+	shader.setVec("light.ambient",ambient);
+	shader.setVec("light.diffuse", diffuse);
+	shader.setVec("light.specular", specular);
+	shader.setScal("light.constant", constant);
+	shader.setScal("light.linear", linear);
+	shader.setScal("light.quadratic", quadratic);
 }
 
-
-void DirectionalLight::SendToShader(std::shared_ptr<Shader> shader)
+void DirectionalLight::SendToShader(const Shader& shader)
 {
 	BLight::SendToShader(shader);
-	glUniform3f(glGetUniformLocation(shader->Program, "light.direction"), direction.x, direction.y, direction.z);
+	shader.setVec("light.direction",direction);
 }
 
 glm::vec3 DirectionalLight::ChangeDirection(glm::vec3 NewDir)
@@ -23,11 +22,10 @@ glm::vec3 DirectionalLight::ChangeDirection(glm::vec3 NewDir)
 	return NewDir;
 }
 
-void PointLight::SendToShader(std::shared_ptr<Shader> shader)
+void PointLight::SendToShader(const Shader& shader)
 {
 	BLight::SendToShader(shader);
-
-	glUniform3f(glGetUniformLocation(shader->Program, "light.position"), position.x, position.y, position.z);
+	shader.setVec("light.position",position);
 }
 glm::vec3 PointLight::SetPos(glm::vec3 p) 
 {
@@ -40,16 +38,18 @@ glm::vec3 PointLight::GetPos() const
 	return position;
 }
 
-void SpotLight::SendToShader(std::shared_ptr<Shader> shader) 
+void SpotLight::SendToShader(const Shader& shader)
 {
 	PointLight::SendToShader(shader);
-	glUniform1f(glGetUniformLocation(shader->Program, "light.Theta"),Theta);
-	glUniform1f(glGetUniformLocation(shader->Program, "light.Alpha"), Alpha);
+	shader.setScal("light.Theta", Theta);
+	shader.setScal("light.Alpha", Alpha);
 }
+
 std::pair<float, float> SpotLight::GetAngels() const
 {
 	return std::make_pair(Theta,Alpha);
 }
+
 std::pair<float, float> SpotLight::SetAngels(std::pair<float, float> NewAngels) 
 {
 	std::pair<float, float> Old = std::make_pair(Theta, Alpha);
@@ -66,7 +66,7 @@ LightTypes Light::GetType() const
 {
 	return Type;
 }
-void Light::SendToShader(std::shared_ptr<Shader> shader)
+void Light::SendToShader(const Shader& shader)
 {
 	switch (Type) 
 	{

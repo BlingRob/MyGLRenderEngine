@@ -34,9 +34,9 @@ class Scene
 	void SetProj(std::shared_ptr < glm::mat4>);
 	void SetModel(std::shared_ptr < glm::mat4>);
 
-	std::shared_ptr < glm::mat4> GetView() const;
-	std::shared_ptr < glm::mat4> GetProj() const;
-	std::shared_ptr < glm::mat4> GelModel() const;
+	std::shared_ptr < glm::mat4> GetView();
+	std::shared_ptr < glm::mat4> GetProj();
+	std::shared_ptr < glm::mat4> GelModel();
 
 	std::unique_ptr<Camera> SetCam(std::unique_ptr<Camera>);
 	Camera* GetCam() const;

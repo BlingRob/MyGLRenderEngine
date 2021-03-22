@@ -30,7 +30,7 @@ inline void shadowMap()
 }*/
 
 void Base(Scene*);
-void Ground(Scene*);
+//void Ground(Scene*);
 void LightSphere(Scene*);
 
 void rend() 
@@ -45,10 +45,10 @@ void rend()
 			proj = std::make_shared<glm::mat4>(1.0f),
 			lightSpaceMatrix = std::make_shared<glm::mat4>(1.0f);
 		std::unique_ptr<Scene> scen = std::make_unique<Scene>();
-		std::shared_ptr<Object> obj1 = std::make_shared<Object>(Base),
-								sphere = std::make_shared<Object>(LightSphere),
-								ground = std::make_shared<Object>(Ground);
-		std::shared_ptr <Light> light = std::make_shared<Light>(0.6f, 0.09f, 0.032f, glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 15.0f, 0.0f));
+		std::shared_ptr<Object> obj1 = std::make_shared<Object>(Base);
+		//	sphere = std::make_shared<Object>(LightSphere);
+								//ground = std::make_shared<Object>(Ground);
+		std::shared_ptr <Light> light = std::make_shared<Light>(0.6f, 0.09f, 0.032f, glm::vec3(0.1f, 0.1f, 0.1f), glm::vec3(0.8f, 0.8f, 0.8f), glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(-1.5f, 10.0f, 0.0f));
 		light->SetType(LightTypes::Point);
 
 		scen->SetView(view);
@@ -58,111 +58,131 @@ void rend()
 		scen->SetBackGround(glm::vec4(0.117f, 0.187f, 0.253f, 1.0f));
 		scen->AddLight("PointLight",light);
 		scen->AddObject("Base", obj1);
-		scen->AddObject("Sphere", sphere);
-		scen->AddObject("Ground", ground);
+		//scen->AddObject("Sphere", sphere);
+		//scen->AddObject("Ground", ground);
 
 		scen->SetCam(std::move(cam));
 
 		RenderEngine eng;
 		eng.SetScen(std::move(scen));
+
+		light->SetPos(glm::vec3(sin(eng.GetTime()) * 5.0f, light->GetPos().y, cos(eng.GetTime()) * 5.0f));
 		while(eng.MainLoop())
 		{
 			light->SetPos(glm::vec3(sin(eng.GetTime()) * 5.0f, light->GetPos().y, cos(eng.GetTime()) * 5.0f));
-
-			*proj = glm::perspective(glm::radians(eng.GetScen()->GetCam()->Zoom), (float)eng.SCR_WIDTH / (float)eng.SCR_HEIGHT, 0.1f, 100.0f);
-			*view = eng.GetScen()->GetCam()->GetViewMatrix();
 		}
 		std::cout << std::endl;
 	}
 
 
-int main() 
+int SDL_main(int argc, char* args[])
 {
 	rend();
 
 	return 0;
 }
 
-void Ground(Scene* scene) 
+/*void Ground(Scene* scene) 
 {
-	static std::shared_ptr<Model> Base = std::make_shared<Model>("..\\Models\\Earth.obj");
-	static std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
+	try
+	{
+		static Shader shaders("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
+		static Model figure("..\\Models\\Earth.obj");
+		static glm::mat4 model = glm::identity<glm::mat4>();
+		static glm::mat4 MVP;
+		static glm::mat3 NormalMat;
 
-	static glm::mat4 model = glm::identity<glm::mat4>();
-	static glm::mat4 MVP;
-	static glm::mat3 NormalMat;
+		shaders.Use();
 
-	shaders->Use();
+		//something
+		MVP = (*scene->GetProj()) * (*scene->GetView()) * model;
 
-	//something
-	MVP = (*scene->GetProj()) * (*scene->GetView()) * model;
+		shaders.setMat("transform.view", *scene->GetView());
+		shaders.setMat("transform.projection", *scene->GetProj());
+		shaders.setMat("transform.model", model);
+		shaders.setMat("transform.MVP", MVP);
 
-	shaders->setMat("transform.view", *scene->GetView());
-	shaders->setMat("transform.projection", *scene->GetProj());
-	shaders->setMat("transform.model", model);
-	shaders->setMat("transform.MVP", MVP);
+		const auto lights = scene->GetLights();
+		for (const auto& el : *lights)
+			el.second->SendToShader(shaders);
 
-	const auto lights = scene->GetLights();
-	for (const auto& el : *lights)
-		el.second->SendToShader(shaders);
+		NormalMat = glm::mat3(transpose(inverse(model)));
+		shaders.setMat("NormalMatrix", NormalMat);
+		shaders.setVec("viewPos", scene->GetCam()->Position);
 
-	NormalMat = glm::mat3(transpose(inverse(model)));
-	shaders->setMat("NormalMatrix", NormalMat);
-	shaders->setVec("viewPos", scene->GetCam()->Position);
-
-	Base->Draw(shaders.get());
-}
+		figure.Draw(&shaders);
+	}
+	catch (std::string str)
+	{
+		std::cerr << str << std::endl;
+	}
+}*/
 
 void LightSphere(Scene* scene)
 {
-	static std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Light.vs", "..\\Shaders\\Light.frag");
-	static Model Scen("..\\Models\\SpotLight.obj");
-	static glm::mat4 model;
-	shaders->Use();
-	const auto lights = scene->GetLights();
-	for (const auto& el : *lights)
-		el.second->SendToShader(shaders);
+	try
+	{
+		static Shader shaders("..\\Shaders\\Light.vs", "..\\Shaders\\Light.frag");
+		static Model figure("..\\Models\\SpotLight.obj");
 
-	model = glm::identity<glm::mat4>();
-	model = glm::translate(model, scene->GetLight("PointLight")->GetPos());
+		static glm::mat4 model;
+		shaders.Use();
+		const auto lights = scene->GetLights();
+		for (const auto& el : *lights)
+			el.second->SendToShader(shaders);
 
-	shaders->setMat("transform.view", *scene->GetView());
-	shaders->setMat("transform.projection", *scene->GetProj());
-	shaders->setMat("transform.model", model);
+		model = glm::identity<glm::mat4>();
+		model = glm::translate(model, scene->GetLight("PointLight")->GetPos());
 
-	Scen.Draw(shaders.get());
+		shaders.setMat("transform.view", *scene->GetView());
+		shaders.setMat("transform.projection", *scene->GetProj());
+		shaders.setMat("transform.model", model);
+
+		figure.Draw(&shaders);
+	}
+	catch (std::string str)
+	{
+		std::cerr << str << std::endl;
+	}
 }
 void Base(Scene* scene)
 {
-	static std::shared_ptr<Model> Base = std::make_shared<Model>("..\\Models\\OnlyBase.obj");
-	static std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
-	shaders->Use();
+	try
+	{
+		static Shader shaders("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
+		static Model figure("..\\Models\\Base.obj");
 
-	static glm::mat4 model;
-	static glm::mat4 MVP;
-	static glm::mat3 NormalMat;
+		shaders.Use();
 
-	model = glm::identity<glm::mat4>();
+		static glm::mat4 model;
+		static glm::mat4 MVP;
+		static glm::mat3 NormalMat;
 
-	//something
-	MVP = (*scene->GetProj()) * (*scene->GetView()) * model;
+		model = glm::identity<glm::mat4>();
 
-	shaders->setMat("transform.view", *scene->GetView());
-	shaders->setMat("transform.projection", *scene->GetProj());
-	shaders->setMat("transform.model", model);
-	shaders->setMat("transform.MVP", MVP);
+		//something
+		MVP = (*scene->GetProj()) * (*scene->GetView()) * model;
 
-	//glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-	const auto lights = scene->GetLights();
-	for (const auto& el : *lights)
-		el.second->SendToShader(shaders);
+		shaders.setMat("transform.view", *scene->GetView());
+		shaders.setMat("transform.projection", *scene->GetProj());
+		shaders.setMat("transform.model", model);
+		shaders.setMat("transform.MVP", MVP);
 
+		//glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+		const auto lights = scene->GetLights();
+		for (const auto& el : *lights)
+			el.second->SendToShader(shaders);
 	
-	NormalMat = glm::mat3(transpose(inverse(model)));
-	shaders->setMat("NormalMatrix", NormalMat);
-	shaders->setVec("viewPos", scene->GetCam()->Position);
+		NormalMat = glm::mat3(transpose(inverse(model)));
+		shaders.setMat("NormalMatrix", NormalMat);
+		shaders.setVec("viewPos", scene->GetCam()->Position);
 
-	Base->Draw(shaders.get());
+		figure.Draw(&shaders);
+	}
+	catch (std::string str)
+	{
+		std::cerr << str << std::endl;
+	}
 
 }
 /*

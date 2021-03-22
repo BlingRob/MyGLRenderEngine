@@ -13,16 +13,20 @@
 #include <type_traits>
 
 
+//opengl
 #include "gl/gl.h"
+//interface libs
+#define SDL_MAIN_HANDLED
 #include <sdl/SDL.h>
+//math's libs
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-//#include <assimp/Importer.hpp>
+//scence's loader
+#include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
-#include <assimp/cimport.h>
 
 #include "stb_image.h"
 
-#undef main
+//#undef main
