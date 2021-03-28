@@ -56,7 +56,7 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		dt = 0.0f;
 
 		//SDL init
-		SDL_SetMainReady();
+		//SDL_SetMainReady();
 		if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
 			throw(std::string("Failed SDL init ") + SDL_GetError());
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -88,14 +88,12 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-		//glEnable(GL_CULL_FACE);
+		glEnable(GL_CULL_FACE);
 
 		glFrontFace(GL_CCW);
 		//texture load option
 		//stbi_set_flip_vertically_on_load(true);
 	}
-
-
 
 	double RenderEngine::GetTime() 
 	{
@@ -123,8 +121,8 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 					if (e.button.button == SDL_BUTTON_LEFT)
 					{
 						clicked = true;
-						lastX = e.button.x;
-						lastY = e.button.y;
+						lastX = static_cast<GLfloat>(e.button.x);
+						lastY = static_cast<GLfloat>(e.button.y);
 						SDL_SetRelativeMouseMode(SDL_TRUE);
 					}
 					break;
@@ -145,8 +143,8 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 						float xoffset = e.button.x - lastX;
 						float yoffset = lastY - e.button.y; // перевернуто, так как Y-координаты идут снизу вверх
 
-						lastX = e.button.x;
-						lastY = e.button.y;
+						lastX = static_cast<GLfloat>(e.button.x);
+						lastY = static_cast<GLfloat>(e.button.y);
 
 						scene->GetCam()->ProcessMouseMovement(xoffset, yoffset);
 						ChangedView = true;

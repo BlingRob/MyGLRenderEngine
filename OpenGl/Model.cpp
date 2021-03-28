@@ -1,11 +1,29 @@
 #include "Model.h"
 
-void Model::Draw(Shader* shader)
+void Model::Draw()
 {
-    for (std::size_t i = 0; i < meshes.size(); i++)
-        meshes[i].Draw(shader);
+    mRootNode->Draw(shader);
 }
 
+void Model::SetRoot(std::shared_ptr<Node> root)
+{
+    mRootNode = root;
+}
+
+std::string Model::GetName() const
+{
+    return name;
+}
+void Model::SetName(std::string name)
+{
+    this->name = name;
+}
+
+void Model::SetShader(std::shared_ptr <Shader> sh) 
+{
+    shader = sh;
+}
+/*
 // loads a model with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
 void Model::loadModel(const std::string& path)
 {
@@ -205,7 +223,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     return Mesh(std::move(vertices), std::move(indices), std::move(textures),std::move(material));
 }
 
-/*GLuint TextureFromFile(const char* path, const std::string& directory, bool gamma)
+GLuint TextureFromFile(const char* path, const std::string& directory, bool gamma)
 {
     std::string filename = std::string(path);
     filename = directory + '\\' + filename;
@@ -255,7 +273,7 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
     return textureID;
 }*/
 
-GLuint TextureFromFile(const void* path,std::size_t width, std::size_t height, bool FromProc)
+/*GLuint TextureFromFile(const void* path,std::size_t width, std::size_t height, bool FromProc)
 {
     GLuint textureID;
     const unsigned char* data;
@@ -322,7 +340,7 @@ GLuint TextureFromFile(const void* path,std::size_t width, std::size_t height, b
         stbi_image_free(const_cast<unsigned char*>(data));
 
     return textureID;
-}
+}*/
 
 
 

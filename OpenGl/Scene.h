@@ -1,16 +1,16 @@
 #pragma once
-#include "Headers.h"
-#include "Model.h"
-#include "camera.h"
-//#include "Object.h"
 #include "Light.h"
+#include "Ñamera.h"
+#include "Node.h"
+#include "Model.h"
+#include "Loader.h"
 
-struct Object;
 class Scene
 {
 	std::unique_ptr<Camera> camera;
-	std::map<std::size_t, std::shared_ptr<Object>> Objects;
+	std::map<std::size_t, std::shared_ptr<Model>> Models;
 	std::map<std::size_t, std::shared_ptr<Light>> Lights;
+	std::map<std::size_t, std::shared_ptr<Shader>> Shaders;
 
 	std::shared_ptr<glm::mat4> ViewMatrix,
 							   ProjectMatrix,
@@ -20,12 +20,16 @@ class Scene
 
 	public:
 	
-	glm::vec4 SetBackGround(glm::vec4 col);
+	void SetBackGround(glm::vec4 col);
 
-	void AddObject(std::string name, std::shared_ptr<Object> obj);
-	void AddLight(std::string name, std::shared_ptr<Light> lig);
-	std::shared_ptr<Object> GetObj(std::string name);
-	std::shared_ptr<Light> GetLight(std::string name);
+	void AddModel(std::shared_ptr<Model> obj);
+	void AddLight(std::shared_ptr<Light> lig);
+
+	void AddShader(std::shared_ptr<Shader> sh);
+	const std::shared_ptr<Shader> GetShader(const std::string& name) const;
+
+	std::shared_ptr<Model> GetModel(const std::string& name);
+	std::shared_ptr<Light> GetLight(const std::string& name);
 	const std::map<std::size_t, std::shared_ptr<Light>>* GetLights() const;
 
 	void Draw();
@@ -34,17 +38,17 @@ class Scene
 	void SetProj(std::shared_ptr < glm::mat4>);
 	void SetModel(std::shared_ptr < glm::mat4>);
 
-	std::shared_ptr < glm::mat4> GetView();
-	std::shared_ptr < glm::mat4> GetProj();
-	std::shared_ptr < glm::mat4> GelModel();
+	const std::shared_ptr < glm::mat4> GetView() const;
+	const std::shared_ptr < glm::mat4> GetProj() const;
+	const std::shared_ptr < glm::mat4> GetModel() const;
 
-	std::unique_ptr<Camera> SetCam(std::unique_ptr<Camera>);
+	void SetCam(std::unique_ptr<Camera>);
 	Camera* GetCam() const;
+
+	Scene(const std::string& path);
+	Scene();
+	bool LoadModels(const std::string& path);
+	bool LoadLights(const std::string& path);
 };
 
-struct Object
-{
-	Object(std::function<void(Scene*)> f) : Draw(f) {}
-	std::function< void(Scene*) > Draw;
-};
 

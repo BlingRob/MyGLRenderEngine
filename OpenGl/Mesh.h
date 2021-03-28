@@ -2,18 +2,19 @@
 #include "Headers.h"
 #include "Shader.h"
 
-struct Vertex
+
+struct Vertexes
 {
-    // position
-    glm::vec3 Position;
-    // normal
-    glm::vec3 Normal;
+    // positions
+    std::vector < GLfloat> Positions;
+    // normals
+    std::vector < GLfloat> Normals;
     // texCoords
-    glm::vec2 TexCoords;
-    // tangent
-    glm::vec3 Tangent;
-    // bitangent
-    glm::vec3 Bitangent;
+    std::vector < GLfloat> TexCoords;
+    // tangents
+    std::vector < GLfloat> Tangents;
+    // bitangents
+    std::vector < GLfloat> Bitangents;
 };
 
 struct Texture
@@ -21,6 +22,7 @@ struct Texture
     GLuint id;
     std::string type;
     aiString name;
+    aiString path;
 };
 
 struct Material 
@@ -37,18 +39,21 @@ class Mesh
     
 public:
     /*  Mesh Data  */
-    std::vector<Vertex> vertices;
+    static inline std::map<std::size_t, std::weak_ptr<Texture>> GlobalTextures;
+    Vertexes vertices;
+    std::vector< std::shared_ptr<Texture>> textures;
     std::vector<GLuint> indices;
-    std::vector<Texture> textures;
     Material material;
     /*  Functions  */
-    Mesh(std::vector<Vertex>&& vertices, std::vector<GLuint>&& indices, std::vector<Texture>&& textures, Material&& material);
+    //Mesh(Vertexes&& vertices, std::vector<GLuint>&& indices, std::vector < Texture>&& textures, Material&& material);
+    /*  Functions    */
+    void setupMesh();
     void Draw(Shader* shader);
 private:
     /*  Render data  */
-    GLuint VAO, VBO, EBO;
-    /*  Functions    */
-    void setupMesh();
-    
+    GLuint VAO, VBO[5], EBO;
 };
+
+
+//std::map<std::size_t, std::weak_ptr<Texture>> Mesh::GlobalTextures;
 

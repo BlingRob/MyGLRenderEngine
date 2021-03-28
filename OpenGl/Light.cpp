@@ -9,6 +9,48 @@ void BLight::SendToShader(const Shader& shader)
 	shader.setScal("light.linear", linear);
 	shader.setScal("light.quadratic", quadratic);
 }
+std::string BLight::GetName() const
+{
+	return name;
+}
+void BLight::SetName(const std::string& name) 
+{
+	this->name = name;
+}
+glm::vec3 BLight::GetAttenuation() const 
+{
+	return glm::vec3(constant, linear, quadratic);
+}
+glm::vec3 BLight::GetAmbient() const 
+{
+	return ambient;
+}
+glm::vec3 BLight::GetDiffuse() const
+{
+	return diffuse;
+}
+glm::vec3 BLight::GetSpecular() const
+{
+	return specular;
+}
+void BLight::SetAttenuation(const glm::vec3& CLQ)
+{
+	constant = CLQ.x;
+	linear = CLQ.y;
+	quadratic = CLQ.z;
+}
+void BLight::SetAmbient(const glm::vec3& amb)
+{
+	ambient = amb;
+}
+void BLight::SetSpecular(const glm::vec3& spec)
+{
+	specular = spec;
+}
+void BLight::SetDiffuse(const glm::vec3& dif)
+{
+	diffuse = dif;
+}
 
 void DirectionalLight::SendToShader(const Shader& shader)
 {
@@ -16,10 +58,9 @@ void DirectionalLight::SendToShader(const Shader& shader)
 	shader.setVec("light.direction",direction);
 }
 
-glm::vec3 DirectionalLight::ChangeDirection(glm::vec3 NewDir)
+void DirectionalLight::ChangeDirection(const glm::vec3& NewDir)
 {
-	std::swap(NewDir, direction);
-	return NewDir;
+	direction = NewDir;
 }
 
 void PointLight::SendToShader(const Shader& shader)
@@ -27,10 +68,9 @@ void PointLight::SendToShader(const Shader& shader)
 	BLight::SendToShader(shader);
 	shader.setVec("light.position",position);
 }
-glm::vec3 PointLight::SetPos(glm::vec3 p) 
+void PointLight::SetPos(const glm::vec3& p)
 {
-	std::swap(p, position);
-	return p;
+	position = p;
 }
 
 glm::vec3 PointLight::GetPos() const
@@ -50,12 +90,10 @@ std::pair<float, float> SpotLight::GetAngels() const
 	return std::make_pair(Theta,Alpha);
 }
 
-std::pair<float, float> SpotLight::SetAngels(std::pair<float, float> NewAngels) 
+void SpotLight::SetAngels(const std::pair<float, float>& NewAngels) 
 {
-	std::pair<float, float> Old = std::make_pair(Theta, Alpha);
 	Theta = NewAngels.first;
 	Alpha = NewAngels.second;
-	return Old;
 }
 
 void Light::SetType(LightTypes type) 

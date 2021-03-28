@@ -51,7 +51,7 @@ vec3 PhongLight(PointLight,Material,Texture);
 
 void main()
 { 
-    FragColor =  texture(tex[0].diffuse,fs_in.TexCoords);//vec4(PhongLight(fs_in.light, mat[0], tex[0]),1.0f);// + vec4(texture(tex[0].emissive, fs_in.TexCoords).rgb,0.0f);//
+    FragColor =  vec4(PhongLight(fs_in.light, mat[0], tex[0]),1.0f);// + vec4(texture(tex[0].emissive, fs_in.TexCoords).rgb,0.0f);//texture(tex[0].diffuse,fs_in.TexCoords);//
 }
 
 /*float ShadowCalculation(vec4 fragPosLightSpace)

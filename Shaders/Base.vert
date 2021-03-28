@@ -10,7 +10,7 @@ struct Transform
 	mat4 model;
 	mat4 view;
 	mat4 projection;
-    mat4 MVP;
+    mat4 VP;
 };
 struct PointLight
  {    
@@ -64,6 +64,6 @@ void main()
     vs_out.TexCoords = texCoord;
     //vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
 
-	gl_Position = transform.MVP * vec4(position,1.0f);
+	gl_Position = (transform.VP * transform.model) * vec4(position,1.0f);
 
 };

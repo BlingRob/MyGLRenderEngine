@@ -2,7 +2,6 @@
 #include "Shader.h"
 #include "Model.h"
 #include "Light.h"
-//#include "Object.h"
 #include "Scene.h"
 #include "Application.h"
 
@@ -39,7 +38,7 @@ void rend()
 		std::shared_ptr<Model> Base = std::make_shared<Model>("..\\Models\\OnlyBase.obj");
 		std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Base.vs", "..\\Shaders\\Base.frag"),
 			 shad2 = std::make_shared<Shader>("..\\Shaders\\GroundSh.vs", "..\\Shaders\\GroundSh.frag");*/
-		std::unique_ptr<Camera> cam = std::make_unique<Camera>(glm::vec3(10.0f, 10.0f, 20.0f));
+		/*std::unique_ptr<Camera> cam = std::make_unique<Camera>(glm::vec3(10.0f, 10.0f, 20.0f));
 		std::shared_ptr <glm::mat4> model = std::make_shared<glm::mat4>(1.0f),
 			view = std::make_shared<glm::mat4>(1.0f),
 			proj = std::make_shared<glm::mat4>(1.0f),
@@ -66,10 +65,19 @@ void rend()
 		RenderEngine eng;
 		eng.SetScen(std::move(scen));
 
-		light->SetPos(glm::vec3(sin(eng.GetTime()) * 5.0f, light->GetPos().y, cos(eng.GetTime()) * 5.0f));
+		light->SetPos(glm::vec3(sin(eng.GetTime()) * 5.0f, light->GetPos().y, cos(eng.GetTime()) * 5.0f));*/
+		RenderEngine eng;
+		std::unique_ptr<Scene> scen = std::make_unique<Scene>(std::string("..\\Models\\Models.glb"));
+		std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
+		shaders->SetName("Default");
+		scen->SetBackGround(glm::vec4(0.117f, 0.187f, 0.253f, 1.0f));
+		scen->AddShader(shaders);
+		
+		eng.SetScen(std::move(scen));
+
 		while(eng.MainLoop())
 		{
-			light->SetPos(glm::vec3(sin(eng.GetTime()) * 5.0f, light->GetPos().y, cos(eng.GetTime()) * 5.0f));
+			//light->SetPos(glm::vec3(sin(eng.GetTime()) * 5.0f, light->GetPos().y, cos(eng.GetTime()) * 5.0f));
 		}
 		std::cout << std::endl;
 	}
@@ -117,7 +125,7 @@ int SDL_main(int argc, char* args[])
 		std::cerr << str << std::endl;
 	}
 }*/
-
+/*
 void LightSphere(Scene* scene)
 {
 	try
@@ -185,7 +193,6 @@ void Base(Scene* scene)
 	}
 
 }
-/*
 inline void scene(std::shared_ptr <Model> Scen, std::shared_ptr < Shader> shaders)
 {
 	shaders->Use();

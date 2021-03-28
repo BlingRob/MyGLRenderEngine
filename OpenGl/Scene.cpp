@@ -4,25 +4,44 @@ void Scene::Draw()
 {
 	glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	std::shared_ptr<Shader> sh = GetShader("Default");
 
-	for (const auto& mod : Objects)
-		mod.second->Draw(this);
+		static glm::mat4 VP;
+		//something
+		VP = (*ProjectMatrix) * (*ViewMatrix);
+
+		sh->setMat("transform.view", *ViewMatrix);
+		sh->setMat("transform.projection", *ProjectMatrix);
+		sh->setMat("transform.VP", VP);
+
+		//glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
+		const auto lights = GetLights();
+		for (const auto& el : *lights)
+			el.second->SendToShader(*(sh.get()));
+
+		sh->setVec("viewPos", GetCam()->Position);
+
+	for (auto& mod : Models)
+	{
+		mod.second->SetShader(GetShader("Default"));
+		mod.second->Draw();
+	}
 }
-void Scene::AddObject(std::string name,std::shared_ptr<Object> obj) 
+void Scene::AddModel(std::shared_ptr<Model> mod) 
 {
-	Objects[std::hash<std::string>{}(name)] = obj;
+	Models[std::hash<std::string>{}(mod->GetName())] = mod;
 }
 
-void Scene::AddLight(std::string name, std::shared_ptr<Light> lig)
+void Scene::AddLight(std::shared_ptr<Light> lig)
 {
-	Lights[std::hash<std::string>{}(name)] = lig;
+	Lights[std::hash<std::string>{}(lig->GetName())] = lig;
 }
 
-std::shared_ptr<Object> Scene::GetObj(std::string name)
+std::shared_ptr<Model> Scene::GetModel(const std::string& name)
 {
-	return Objects.find(std::hash<std::string>{}(name))->second;
+	return Models.find(std::hash<std::string>{}(name))->second;
 }
-std::shared_ptr<Light> Scene::GetLight(std::string name)
+std::shared_ptr<Light> Scene::GetLight(const std::string& name)
 {
 	return Lights.find(std::hash<std::string>{}(name))->second;
 }
@@ -45,34 +64,96 @@ void Scene::SetModel(std::shared_ptr < glm::mat4>m)
 	ModelMatrix = m;
 }
 
-std::shared_ptr < glm::mat4> Scene::GetView()
+const std::shared_ptr < glm::mat4> Scene::GetView() const
 {
 	return ViewMatrix;
 }
-std::shared_ptr < glm::mat4> Scene::GetProj()
+const std::shared_ptr < glm::mat4> Scene::GetProj() const
 {
 	return ProjectMatrix;
 }
-std::shared_ptr < glm::mat4> Scene::GelModel()
+const std::shared_ptr < glm::mat4> Scene::GetModel() const
 {
 	return ModelMatrix;
 }
 
-
-glm::vec4 Scene::SetBackGround(glm::vec4 col) 
+void Scene::SetBackGround(glm::vec4 col) 
 {
-	std::swap(col, BackGroundColour);
-	return col;
+	BackGroundColour = col;
+}
+
+void Scene::AddShader(std::shared_ptr<Shader> sh) 
+{
+	Shaders[std::hash<std::string>{}(sh->GetName())] = sh;
+}
+const std::shared_ptr<Shader> Scene::GetShader(const std::string& name) const
+{
+	return Shaders.find(std::hash<std::string>{}(name))->second;
 }
 
 
-std::unique_ptr<Camera> Scene::SetCam(std::unique_ptr<Camera> Cam)
+void Scene::SetCam(std::unique_ptr<Camera> Cam)
 {
-	std::swap(camera,Cam);
-	return Cam;
+	camera = std::move(Cam);
 }
 
 Camera* Scene::GetCam() const 
 {
 	return camera.get();
+}
+
+Scene::Scene(const std::string& path) 
+{
+	Loader loader(path);
+
+	if (!loader.Is_Load())
+		throw(std::string("Problem with scene loading!"));
+	if (!loader.Has_Camera())
+		//default camera
+		SetCam(std::make_unique<Camera>(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+	else
+		SetCam(loader.GetCamera());
+	std::shared_ptr <Light> light;
+	if (!loader.Has_Light())
+	{
+		//default light
+		light = std::make_shared<Light>(0.6f, 0.09f, 0.032f,
+										glm::vec3(0.1f, 0.1f, 0.1f),
+										glm::vec3(0.8f, 0.8f, 0.8f),
+										glm::vec3(1.0f, 1.0f, 1.0f),
+										glm::vec3(-1.5f, 10.0f, 0.0f));
+		light->SetType(LightTypes::Point);
+		light->SetName("Default light");
+		AddLight(light);
+	}
+	else
+		while ((light = std::shared_ptr<Light>(loader.GetLight().release())))
+			AddLight(light);
+
+	std::shared_ptr<Model> mod;
+	while ((mod = std::shared_ptr<Model>(loader.GetModel().release())))
+		AddModel(mod);
+
+	SetView(std::make_shared<glm::mat4>(1.0f));
+	SetProj(std::make_shared<glm::mat4>(1.0f));
+}
+Scene::Scene() 
+{
+};
+bool Scene::LoadModels(const std::string& path)
+{
+	Loader loader(path);
+	std::shared_ptr<Model> mod;
+	while ((mod = std::shared_ptr<Model>(loader.GetModel().release())))
+		AddModel(mod);
+	return true;///No finished!
+}
+bool Scene::LoadLights(const std::string& path)
+{
+	Loader loader(path);
+	std::shared_ptr <Light> light;
+
+	while ((light = std::shared_ptr<Light>(loader.GetLight().release())))
+		AddLight(light);
+	return true;//No finished!
 }

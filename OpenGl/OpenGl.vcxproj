@@ -149,10 +149,11 @@
     <ClCompile Include="..\Deps\Include\gl\gl.c" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Light.cpp" />
+    <ClCompile Include="Loader.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="Model.cpp" />
-    <ClCompile Include="Object.cpp" />
+    <ClCompile Include="Node.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="stb_image.cpp" />
@@ -161,12 +162,13 @@
   <ItemGroup>
     <ClInclude Include="..\Deps\Include\gl\gl.h" />
     <ClInclude Include="Application.h" />
-    <ClInclude Include="camera.h" />
+    <ClInclude Include="Сamera.h" />
     <ClInclude Include="Headers.h" />
     <ClInclude Include="Light.h" />
+    <ClInclude Include="Loader.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Model.h" />
-    <ClInclude Include="Object.h" />
+    <ClInclude Include="Node.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="stb_image.h" />
@@ -179,6 +181,9 @@
     <None Include="..\Shaders\Base.vert" />
     <None Include="..\Shaders\Light.frag" />
     <None Include="..\Shaders\Light.vs" />
+    <None Include="ClassDiagram.cd" />
+    <None Include="ClassDiagram1.cd" />
+    <None Include="ClassDiagram2.cd" />
     <None Include="Default.frag" />
     <None Include="Default.vs" />
   </ItemGroup>

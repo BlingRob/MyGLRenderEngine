@@ -100,3 +100,12 @@ void Shader::setMat(const std::string& name, const glm::mat4& mat) const
 {
 	glUniformMatrix4fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
 }
+
+std::string Shader::GetName() const
+{
+	return name;
+}
+void Shader::SetName(std::string name)
+{
+	this->name = name;
+}

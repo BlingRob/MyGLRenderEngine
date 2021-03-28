@@ -6,7 +6,7 @@
 class Shader 
 {
 	GLuint CreateShader(const GLchar* Path, GLenum types);
-
+	std::string name;
 public:
 	GLuint Program;
 	Shader(const GLchar* vertexPath, const GLchar* framentPath);
@@ -23,6 +23,9 @@ public:
 	void setMat(const std::string&, const glm::mat2&) const;
 	void setMat(const std::string&, const glm::mat3&) const;
 	void setMat(const std::string&, const glm::mat4&) const;
+
+	std::string GetName() const;
+	void SetName(std::string name);
 	
 };
 
