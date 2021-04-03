@@ -2,6 +2,9 @@
 #include "Headers.h"
 #include "Time.h"
 #include "Scene.h"
+//interface libs
+#define SDL_MAIN_HANDLED
+#include <sdl/SDL.h>
 
 	class RenderEngine 
 	{

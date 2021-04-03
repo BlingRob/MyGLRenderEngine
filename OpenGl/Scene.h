@@ -17,10 +17,13 @@ class Scene
 							   ModelMatrix;
 
 	glm::vec4 BackGroundColour;
+	bool SkyBoxSetted = false;
+	std::unique_ptr<Node> SkyBox;
 
 	public:
 	
 	void SetBackGround(glm::vec4 col);
+	void SetBackGround(std::vector<std::string_view> paths);
 
 	void AddModel(std::shared_ptr<Model> obj);
 	void AddLight(std::shared_ptr<Light> lig);

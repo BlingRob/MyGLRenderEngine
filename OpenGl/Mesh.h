@@ -1,7 +1,7 @@
 #pragma once
 #include "Headers.h"
 #include "Shader.h"
-
+#include <assimp/scene.h>
 
 struct Vertexes
 {
@@ -43,17 +43,17 @@ public:
     Vertexes vertices;
     std::vector< std::shared_ptr<Texture>> textures;
     std::vector<GLuint> indices;
-    Material material;
+    std::vector <Material> material;
     /*  Functions  */
     //Mesh(Vertexes&& vertices, std::vector<GLuint>&& indices, std::vector < Texture>&& textures, Material&& material);
     /*  Functions    */
     void setupMesh();
     void Draw(Shader* shader);
+    /* Mesh's constants */
+    static const uint16_t CardCoordsPerPoint = 3;
+    static const uint16_t CardCoordsPerTextPoint = 2;
 private:
     /*  Render data  */
     GLuint VAO, VBO[5], EBO;
 };
-
-
-//std::map<std::size_t, std::weak_ptr<Texture>> Mesh::GlobalTextures;
 

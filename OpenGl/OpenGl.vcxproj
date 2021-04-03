@@ -147,6 +147,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Deps\Include\gl\gl.c" />
+    <ClCompile Include="..\Deps\Include\STB\stb_image.cpp" />
     <ClCompile Include="Application.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="Loader.cpp" />
@@ -156,12 +157,16 @@
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shader.cpp" />
-    <ClCompile Include="stb_image.cpp" />
     <ClCompile Include="Time.cpp" />
+    <ClCompile Include="Transformation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Deps\Include\gl\gl.h" />
+    <ClInclude Include="..\Deps\Include\STB\stbi_DDS_aug.h" />
+    <ClInclude Include="..\Deps\Include\STB\stbi_DDS_aug_c.h" />
+    <ClInclude Include="..\Deps\Include\STB\stb_image.h" />
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Transformation.h" />
     <ClInclude Include="Сamera.h" />
     <ClInclude Include="Headers.h" />
     <ClInclude Include="Light.h" />
@@ -171,7 +176,6 @@
     <ClInclude Include="Node.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
-    <ClInclude Include="stb_image.h" />
     <ClInclude Include="Time.h" />
   </ItemGroup>
   <ItemGroup>
@@ -181,6 +185,8 @@
     <None Include="..\Shaders\Base.vert" />
     <None Include="..\Shaders\Light.frag" />
     <None Include="..\Shaders\Light.vs" />
+    <None Include="..\Shaders\SkyBox.frag" />
+    <None Include="..\Shaders\SkyBox.vert" />
     <None Include="ClassDiagram.cd" />
     <None Include="ClassDiagram1.cd" />
     <None Include="ClassDiagram2.cd" />

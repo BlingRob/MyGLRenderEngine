@@ -176,24 +176,22 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
     CurMesh->vertices.Tangents.reserve(mesh->mNumVertices);
     CurMesh->vertices.Bitangents.reserve(mesh->mNumVertices);
     */
-    const uint16_t CardCoordsPerPoint = 3;
-    const uint16_t CardCoordsPerTextPoint = 2;
-    CurMesh->vertices.Positions.resize(CardCoordsPerPoint * mesh->mNumVertices);
-    CurMesh->vertices.Normals.resize(CardCoordsPerPoint * mesh->mNumVertices);
-    CurMesh->vertices.TexCoords.resize(CardCoordsPerTextPoint * mesh->mNumVertices);
-    CurMesh->vertices.Tangents.resize(CardCoordsPerPoint * mesh->mNumVertices);
-    CurMesh->vertices.Bitangents.resize(CardCoordsPerPoint * mesh->mNumVertices);
+    CurMesh->vertices.Positions.resize(Mesh::CardCoordsPerPoint * mesh->mNumVertices);
+    CurMesh->vertices.Normals.resize(Mesh::CardCoordsPerPoint * mesh->mNumVertices);
+    CurMesh->vertices.TexCoords.resize(Mesh::CardCoordsPerTextPoint * mesh->mNumVertices);
+    CurMesh->vertices.Tangents.resize(Mesh::CardCoordsPerPoint * mesh->mNumVertices);
+    CurMesh->vertices.Bitangents.resize(Mesh::CardCoordsPerPoint * mesh->mNumVertices);
     for (std::size_t i = 0; i < mesh->mNumVertices; ++i)
     {
         // positions
-        CurMesh->vertices.Positions[CardCoordsPerPoint * i] = mesh->mVertices[i].x;
-        CurMesh->vertices.Positions[CardCoordsPerPoint * i + 1] = mesh->mVertices[i].y;
-        CurMesh->vertices.Positions[CardCoordsPerPoint * i + 2] = mesh->mVertices[i].z;
+        CurMesh->vertices.Positions[Mesh::CardCoordsPerPoint * i] = mesh->mVertices[i].x;
+        CurMesh->vertices.Positions[Mesh::CardCoordsPerPoint * i + 1] = mesh->mVertices[i].y;
+        CurMesh->vertices.Positions[Mesh::CardCoordsPerPoint * i + 2] = mesh->mVertices[i].z;
         //CurMesh->vertices.Positions.push_back(glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z));
         // normals
-        CurMesh->vertices.Normals[CardCoordsPerPoint * i] = mesh->mNormals[i].x;
-        CurMesh->vertices.Normals[CardCoordsPerPoint * i + 1] = mesh->mNormals[i].y;
-        CurMesh->vertices.Normals[CardCoordsPerPoint * i + 2] = mesh->mNormals[i].z;
+        CurMesh->vertices.Normals[Mesh::CardCoordsPerPoint * i] = mesh->mNormals[i].x;
+        CurMesh->vertices.Normals[Mesh::CardCoordsPerPoint * i + 1] = mesh->mNormals[i].y;
+        CurMesh->vertices.Normals[Mesh::CardCoordsPerPoint * i + 2] = mesh->mNormals[i].z;
         //CurMesh->vertices.Normals.push_back(glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z));
         // texture coordinates
         
@@ -202,26 +200,26 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
             // a vertex can contain up to 8 different texture coordinates. We thus make the assumption that we won't 
             // use models where a vertex can have multiple texture coordinates so we always take the first set (0).
             //CurMesh->vertices.TexCoords.push_back(glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y));
-            CurMesh->vertices.TexCoords[CardCoordsPerTextPoint * i] = mesh->mTextureCoords[0][i].x;
-            CurMesh->vertices.TexCoords[CardCoordsPerTextPoint * i + 1] = mesh->mTextureCoords[0][i].y;
+            CurMesh->vertices.TexCoords[Mesh::CardCoordsPerTextPoint * i] = mesh->mTextureCoords[0][i].x;
+            CurMesh->vertices.TexCoords[Mesh::CardCoordsPerTextPoint * i + 1] = mesh->mTextureCoords[0][i].y;
         }
         else
         {
            // CurMesh->vertices.TexCoords.push_back(glm::vec2(0.0f, 0.0f));
-            CurMesh->vertices.TexCoords[CardCoordsPerTextPoint * i] = 0.0f;
-            CurMesh->vertices.TexCoords[CardCoordsPerTextPoint * i + 1] = 0.0f;
+            CurMesh->vertices.TexCoords[Mesh::CardCoordsPerTextPoint * i] = 0.0f;
+            CurMesh->vertices.TexCoords[Mesh::CardCoordsPerTextPoint * i + 1] = 0.0f;
         }
         if (mesh->HasTangentsAndBitangents())
         {
             // tangent
             //CurMesh->vertices.Tangents.push_back(glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z));
-            CurMesh->vertices.Tangents[CardCoordsPerPoint * i] = mesh->mTangents[i].x;
-            CurMesh->vertices.Tangents[CardCoordsPerPoint * i + 1] = mesh->mTangents[i].y;
-            CurMesh->vertices.Tangents[CardCoordsPerPoint * i + 2] = mesh->mTangents[i].z;
+            CurMesh->vertices.Tangents[Mesh::CardCoordsPerPoint * i] = mesh->mTangents[i].x;
+            CurMesh->vertices.Tangents[Mesh::CardCoordsPerPoint * i + 1] = mesh->mTangents[i].y;
+            CurMesh->vertices.Tangents[Mesh::CardCoordsPerPoint * i + 2] = mesh->mTangents[i].z;
             // bitangent
-            CurMesh->vertices.Bitangents[CardCoordsPerPoint * i] = mesh->mBitangents[i].x;
-            CurMesh->vertices.Bitangents[CardCoordsPerPoint * i + 1] = mesh->mBitangents[i].y;
-            CurMesh->vertices.Bitangents[CardCoordsPerPoint * i + 2] = mesh->mBitangents[i].z;
+            CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i] = mesh->mBitangents[i].x;
+            CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i + 1] = mesh->mBitangents[i].y;
+            CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i + 2] = mesh->mBitangents[i].z;
             //CurMesh->vertices.Bitangents.push_back(glm::vec3(mesh->mBitangents[i].x, mesh->mBitangents[i].y, mesh->mBitangents[i].z));
         }
         else
@@ -232,13 +230,13 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
             //CurMesh->vertices.Bitangents.push_back(glm::vec3(0, 0, 0));
                         // tangent
             //CurMesh->vertices.Tangents.push_back(glm::vec3(mesh->mTangents[i].x, mesh->mTangents[i].y, mesh->mTangents[i].z));
-            CurMesh->vertices.Tangents[CardCoordsPerPoint * i] = 0.0f;
-            CurMesh->vertices.Tangents[CardCoordsPerPoint * i + 1] = 0.0f;
-            CurMesh->vertices.Tangents[CardCoordsPerPoint * i + 2] = 0.0f;
+            CurMesh->vertices.Tangents[Mesh::CardCoordsPerPoint * i] = 0.0f;
+            CurMesh->vertices.Tangents[Mesh::CardCoordsPerPoint * i + 1] = 0.0f;
+            CurMesh->vertices.Tangents[Mesh::CardCoordsPerPoint * i + 2] = 0.0f;
             // bitangent
-            CurMesh->vertices.Bitangents[CardCoordsPerPoint * i] = 0.0f;
-            CurMesh->vertices.Bitangents[CardCoordsPerPoint * i + 1] = 0.0f;
-            CurMesh->vertices.Bitangents[CardCoordsPerPoint * i + 2] = 0.0f;
+            CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i] = 0.0f;
+            CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i + 1] = 0.0f;
+            CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i + 2] = 0.0f;
         }
     }
     // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
@@ -279,7 +277,7 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
 
     //load materials
-    CurMesh->material = loadMaterial(mat, mesh->mMaterialIndex);
+    CurMesh->material.emplace_back(loadMaterial(mat, mesh->mMaterialIndex));
 
     CurMesh->setupMesh();
     // return a mesh object created from the extracted mesh data
@@ -421,6 +419,120 @@ GLuint Loader::TextureFromFile(const void* path, std::size_t width, std::size_t 
 
     return textureID;
 }
+
+
+GLuint Loader::CubeTextureFromFile(std::vector<std::string_view> paths)
+{
+    GLuint textureID = 0;
+
+    int width, height, nrComponents;
+    unsigned char* data;
+
+    glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &textureID);
+
+
+    data = stbi_load(paths[0].data(), &width, &height, &nrComponents, 0);
+    glTextureStorage3D(textureID, 1, GL_RGB32F, width, height, 6);
+    glTextureSubImage3D(textureID, 0, 0, 0, 0, width, height, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
+
+    for (std::size_t i = 1; i < paths.size(); ++i)
+    {
+        data = stbi_load(paths[i].data(), &width, &height, &nrComponents, 0);
+
+        if (data)
+        {
+            GLenum format = GL_RGB32F, mipfor = GL_RGB;
+            if (nrComponents == 1)
+            {
+                mipfor = GL_RED;
+                format = GL_R16F;
+            }
+            else if (nrComponents == 3)
+            {
+                format = GL_RGB32F;
+                mipfor = GL_RGB;
+            }
+            else if (nrComponents == 4)
+            {
+                format = GL_RGBA32F;
+                mipfor = GL_RGBA;
+            }
+
+            glTextureSubImage3D(textureID, 0, 0, 0, i, width, height, 1, mipfor, GL_UNSIGNED_BYTE, data);
+
+            stbi_image_free(data);
+        }
+        else
+        {
+            std::cerr << "Texture failed to load at path " << std::endl;
+        }
+
+    }
+    glTextureParameteri(textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(textureID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    
+    return textureID;
+}
+
+std::unique_ptr<Node> Loader::LoadSkyBox(std::vector<std::string_view> paths)
+{
+    std::unique_ptr<Node> curNode = std::make_unique<Node>();
+    curNode->SetName("SkyBox");
+    std::shared_ptr<Mesh> curMesh = std::make_shared<Mesh>();
+    //Cube's vertices
+    curMesh->vertices.Positions = std::vector
+    (   
+        { 
+            -1.0f,  1.0f, -1.0f,
+             1.0f,  1.0f, -1.0f,
+             1.0f, -1.0f, -1.0f,
+            -1.0f, -1.0f, -1.0f,
+            -1.0f,  1.0f,  1.0f,
+             1.0f,  1.0f,  1.0f,
+             1.0f, -1.0f,  1.0f,
+            -1.0f, -1.0f,  1.0f
+        }
+    );
+    curMesh->indices = std::vector<GLuint>
+    (
+        {
+            0, 1, 2,
+            0, 2, 3,
+            2, 1, 5,
+            2, 5, 6,
+            3, 2, 6,
+            3, 6, 7,
+            0, 3, 7,
+            0, 7, 4,
+            1, 0, 4,
+            1, 4, 5,
+            6, 5, 4,
+            6, 4, 7
+        }
+    );
+    curMesh->vertices.Normals.resize(0);
+    curMesh->vertices.TexCoords.resize(0);
+    curMesh->vertices.Tangents.resize(0);
+    curMesh->vertices.Bitangents.resize(0);
+
+    std::shared_ptr <Texture> texture = std::make_shared<Texture>();
+    texture->id = CubeTextureFromFile(paths);
+    texture->name = "SkyBox";
+    texture->path = paths[0].data();
+    texture->type = "SkyBox";
+
+    curMesh->textures.push_back(texture);
+    Mesh::GlobalTextures[std::hash<std::string>{}(texture->path.C_Str())] = texture;
+
+    curMesh->setupMesh();
+    curNode->addMesh(curMesh);
+
+    return std::move(curNode);
+}
+
 
 Loader::~Loader() 
 {

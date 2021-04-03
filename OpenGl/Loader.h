@@ -4,6 +4,12 @@
 #include "Ñamera.h"
 #include "Node.h"
 #include "Model.h"
+//scence's loader
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+//Texture's loader
+#include "STB/stb_image.h"
 
 class Loader
 {
@@ -19,10 +25,11 @@ class Loader
 	std::shared_ptr<Mesh> processMesh(aiMesh* mesh);
 	std::vector< std::shared_ptr<Texture>> loadTexture(aiMaterial* mat, aiTextureType type, std::string typeName);
 	Material loadMaterial(aiMaterial* mat, uint16_t indx);
+	static GLuint TextureFromFile(const void* path, std::size_t width, std::size_t height, bool FromProc);
+	static GLuint CubeTextureFromFile(std::vector<std::string_view> paths);
 	
 public:
-
-	static GLuint TextureFromFile(const void* path, std::size_t width, std::size_t height, bool FromProc);
+	static std::unique_ptr<Node> LoadSkyBox(std::vector<std::string_view> paths);
 	std::unique_ptr<Model> GetModel();
 	std::unique_ptr<Light> GetLight();
 	std::unique_ptr<Camera> GetCamera();

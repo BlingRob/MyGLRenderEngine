@@ -33,7 +33,6 @@ void Node::Draw(std::shared_ptr <Shader> sh)
 				NormalMat = glm::mat3(transpose(inverse(ModelMatrix)));
 				sh->setMat("NormalMatrix", NormalMat);
 
-				sh->Use();
 				mesh->Draw(sh.get());
 			}
 		}
@@ -43,4 +42,9 @@ void Node::Draw(std::shared_ptr <Shader> sh)
 		}
 		for (const auto& chld : Children)
 			chld->Draw(sh);
+}
+
+Node::Node() 
+{
+	ModelMatrix = glm::mat4(1.0f);
 }

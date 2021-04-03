@@ -9,6 +9,7 @@ class Node
 	std::list<std::shared_ptr<Node>> Children;
 	std::list < std::shared_ptr <Mesh>> Meshes;
 public:
+	Node();
 
 	glm::mat4 ModelMatrix;
 

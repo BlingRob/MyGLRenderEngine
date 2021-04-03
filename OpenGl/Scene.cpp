@@ -2,30 +2,46 @@
 
 void Scene::Draw()
 {
+	std::shared_ptr<Shader> sh;
+	static glm::mat4 VP;
 	glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	std::shared_ptr<Shader> sh = GetShader("Default");
 
-		static glm::mat4 VP;
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	sh = GetShader("Default");
+	sh->Use();
+
 		//something
 		VP = (*ProjectMatrix) * (*ViewMatrix);
 
 		sh->setMat("transform.view", *ViewMatrix);
 		sh->setMat("transform.projection", *ProjectMatrix);
 		sh->setMat("transform.VP", VP);
+		sh->setVec("viewPos", GetCam()->Position);
 
 		//glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 		const auto lights = GetLights();
 		for (const auto& el : *lights)
 			el.second->SendToShader(*(sh.get()));
 
-		sh->setVec("viewPos", GetCam()->Position);
-
 	for (auto& mod : Models)
 	{
 		mod.second->SetShader(GetShader("Default"));
 		mod.second->Draw();
 	}
+
+	if (SkyBoxSetted)
+	{
+		glFrontFace(GL_CW);
+		glDepthFunc(GL_LEQUAL);
+		sh = GetShader("SkyBox");
+		sh->Use();
+		VP = (*ProjectMatrix) * glm::mat4(glm::mat3(*ViewMatrix));
+		sh->setMat("transform.VP", VP);
+		SkyBox->Draw(sh);
+		glDepthFunc(GL_LESS);
+		glFrontFace(GL_CCW);
+	}
+
 }
 void Scene::AddModel(std::shared_ptr<Model> mod) 
 {
@@ -156,4 +172,13 @@ bool Scene::LoadLights(const std::string& path)
 	while ((light = std::shared_ptr<Light>(loader.GetLight().release())))
 		AddLight(light);
 	return true;//No finished!
+}
+
+void Scene::SetBackGround(std::vector<std::string_view> paths) 
+{
+	SkyBox = Loader::LoadSkyBox(paths);
+	std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\SkyBox.vert", "..\\Shaders\\SkyBox.frag");
+	shaders->SetName("SkyBox");
+	AddShader(shaders);
+	SkyBoxSetted = true;
 }

@@ -71,6 +71,12 @@ void rend()
 		std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
 		shaders->SetName("Default");
 		scen->SetBackGround(glm::vec4(0.117f, 0.187f, 0.253f, 1.0f));
+		scen->SetBackGround({"..\\Textures\\lightblue\\right.png",
+							 "..\\Textures\\lightblue\\left.png",
+							 "..\\Textures\\lightblue\\top.png",
+							 "..\\Textures\\lightblue\\bottom.png",
+							 "..\\Textures\\lightblue\\front.png",
+							 "..\\Textures\\lightblue\\back.png" });
 		scen->AddShader(shaders);
 		
 		eng.SetScen(std::move(scen));
