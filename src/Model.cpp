@@ -24,6 +24,11 @@ void Model::SetShader(std::shared_ptr <Shader> sh)
     shader = sh;
 }
 
+const std::shared_ptr <Shader> Model::GetShader() 
+{
+    return shader;
+}
+
 Model::Model() 
 {
     ModelMatrix = glm::mat4(1.0f);

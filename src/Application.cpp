@@ -50,15 +50,17 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 
 	RenderEngine::RenderEngine() 
 	{
+		//Mouse setup
 		lastX = SDL_WINDOWPOS_CENTERED, lastY = SDL_WINDOWPOS_CENTERED;
 		clicked = false;
 		firstMouse = true;
+		//Delta time setup
 		dt = 0.0f;
 
 		//SDL init
-		//SDL_SetMainReady();
 		if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
 			throw(std::string("Failed SDL init ") + SDL_GetError());
+		//SDL_GL context setup
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -70,7 +72,7 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
 		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-		//glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
+		//Creating SDL window
 		window = SDL_CreateWindow("GL Render engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCR_WIDTH, SCR_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);// | SDL_WINDOW_FULLSCREEN_DESKTOP
 		if (!window)
 			throw(std::string("Failed to create SDL window ") + SDL_GetError());
@@ -93,6 +95,36 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		glFrontFace(GL_CCW);
 		//texture load option
 		//stbi_set_flip_vertically_on_load(true);
+
+		//GUI Initialization
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO();
+		(void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+		io.Fonts->AddFontDefault();
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+
+		// Setup Dear ImGui style
+		ImGui::StyleColorsDark();
+		//ImGui::StyleColorsClassic();
+
+		// Setup Platform/Renderer backends for imgui
+		ImGui_ImplSDL2_InitForOpenGL(window, context);
+		ImGui_ImplOpenGL3_Init("#version 450");
+		// Setup file dialog 
+		fileDialog.SetTitle("Choosing scene");
+		fileDialog.SetTypeFilters({ ".glb", ".fbx", ".obj"});
+		//init cursors
+		DefaultCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+		LoadingCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
+		//Setup defaul scene
+		scene = std::make_unique<Scene>();
+		//Logging
+		FILE* stdinStream,*stderrStream;
+		freopen_s(&stdinStream,"Log.txt", "w", stdout);
+		freopen_s(&stderrStream,"ErrLog.txt", "w", stderr);
+
 	}
 
 	double RenderEngine::GetTime() 
@@ -112,13 +144,14 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		{
 			switch (e.type)
 			{
+				ImGui_ImplSDL2_ProcessEvent(&e);
 				case SDL_QUIT:
 				{
 					return false;
 				}
 				case SDL_MOUSEBUTTONDOWN:
 				{
-					if (e.button.button == SDL_BUTTON_LEFT)
+					if (e.button.button == SDL_BUTTON_LEFT && keys[SDL_SCANCODE_LCTRL])
 					{
 						clicked = true;
 						lastX = static_cast<GLfloat>(e.button.x);
@@ -148,6 +181,7 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 
 						scene->GetCam()->ProcessMouseMovement(xoffset, yoffset);
 						ChangedView = true;
+						ChangedProj = true;
 					}
 					break;
 				}
@@ -194,27 +228,32 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		return true;
 	}
 
-
 	bool RenderEngine::MainLoop()
 	{
 		dt = static_cast<float>(chron());
-		SDL_GL_SwapWindow(window);
 		if(!ProcEvents())
 			return false;
 		do_movement();
-
-		//if (ChangedProj)
+		GUIproc();
+		if (ChangedProj)
 		{
-			*scene->GetProj() = glm::perspective(glm::radians(scene->GetCam()->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f);
+			scene->matrs.Projection = std::make_shared<glm::mat4>(std::move(glm::perspective(glm::radians(scene->GetCam()->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f)));
 			ChangedProj = false;
 		}
-		//if (ChangedView)
+		if (ChangedView)
 		{
-			*scene->GetView() = scene->GetCam()->GetViewMatrix();
+			scene->matrs.View = std::make_shared<glm::mat4>(std::move(scene->GetCam()->GetViewMatrix()));
 			ChangedView = false;
 		}
 
+		std::shared_ptr<Light> lig = scene->GetLight("Point_Orientation");
+		if(lig)
+			lig->SetPos(glm::vec3(sin(GetTime()) * 5.0f, lig->GetPos().y, sin(GetTime()) * 5.0f));
+
 		scene->Draw();
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		SDL_GL_SwapWindow(window);
 		return true;
 	}
 
@@ -229,10 +268,55 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::LEFT, dt);
 		if (keys[SDL_SCANCODE_D])
 			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::RIGHT, dt);
-
+		ChangedView = true;
 	}
 
 	const Scene* RenderEngine::GetScen() const
 	{
 		return scene.get();
+	}
+
+	void RenderEngine::GUIproc() 
+	{
+		// Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplSDL2_NewFrame(window);
+		
+		ImGui::NewFrame();
+		{
+			if (ImGui::BeginMainMenuBar())
+			{
+				if (ImGui::BeginMenu("File"))
+				{
+					if (ImGui::MenuItem("Open..", "Ctrl+O"))
+					{
+						fileDialog.Open();
+					}
+					if (ImGui::MenuItem("Save", "Ctrl+S")) {  }
+					if (ImGui::MenuItem("Close", "Ctrl+W")) {}
+					ImGui::EndMenu();
+				}
+				ImGui::EndMainMenuBar();
+
+				fileDialog.Display();
+
+				if (fileDialog.HasSelected())
+				{
+					std::unique_ptr<Scene> OldScene = std::move(scene);
+					Loader loader;
+					SDL_SetCursor(LoadingCursor);
+					scene = std::move(loader.GetScene(fileDialog.GetSelected().string()));
+					scene->SetBackGround(OldScene->RetSkyBoxGround());
+					//std::cout << "Selected filename" << fileDialog.GetSelected().string() << std::endl;
+					fileDialog.ClearSelected();
+					SDL_SetCursor(DefaultCursor);
+				}
+			}
+			
+			ImGui::SetNextWindowPos(ImVec2(0, 15));
+			ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH / 3.0f, SCR_HEIGHT / 3.0f));
+			ImGui::Begin("Tools menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+		}
 	}

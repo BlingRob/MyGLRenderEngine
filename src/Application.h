@@ -5,6 +5,14 @@
 //interface libs
 #define SDL_MAIN_HANDLED
 #include <sdl/SDL.h>
+//GUI
+#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM "gl/gl.h"
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
+#include "imfilebrowser.h"
+//Loader
+#include "Loader.h"
 
 	class RenderEngine 
 	{
@@ -16,7 +24,7 @@
 		//time:difference, current, last
 		float dt;
 		//queue of pressed keys
-		bool keys[1024];
+		bool keys[1024] = {false};
 
 		//mouse controll
 		GLfloat lastX, lastY;
@@ -26,7 +34,12 @@
 		//callbacks
 		void do_movement();
 		bool ProcEvents();
-		//
+		//GUI 
+		void GUIproc();
+		ImGui::FileBrowser fileDialog;
+		SDL_Cursor  *DefaultCursor,
+					*LoadingCursor;
+		//check changing of matrixes
 		bool ChangedProj = false;
 		bool ChangedView = false;
 
@@ -34,12 +47,16 @@
 			RenderEngine();
 			~RenderEngine()
 			{
+				ImGui_ImplOpenGL3_Shutdown();
+				ImGui_ImplSDL2_Shutdown();
+				ImGui::DestroyContext();
+
+				SDL_FreeCursor(DefaultCursor);
+				SDL_FreeCursor(LoadingCursor);
 				// Close and destroy the window
 				SDL_DestroyWindow(window);
-
 				// Clean up
 				SDL_Quit();
-
 			}
 			bool MainLoop();
 			double GetTime();

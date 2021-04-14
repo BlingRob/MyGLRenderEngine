@@ -1,7 +1,4 @@
 #include "Headers.h"
-#include "Shader.h"
-#include "Model.h"
-#include "Light.h"
 #include "Scene.h"
 #include "Application.h"
 
@@ -67,17 +64,14 @@ void rend()
 
 		light->SetPos(glm::vec3(sin(eng.GetTime()) * 5.0f, light->GetPos().y, cos(eng.GetTime()) * 5.0f));*/
 		RenderEngine eng;
-		std::unique_ptr<Scene> scen = std::make_unique<Scene>(std::string("..\\Models\\Models.glb"));
-		std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\Base.vert", "..\\Shaders\\Base.frag");
-		shaders->SetName("Default");
+		std::unique_ptr<Scene> scen = std::make_unique<Scene>();//std::string("..\\Models\\Models.glb")
 		scen->SetBackGround(glm::vec4(0.117f, 0.187f, 0.253f, 1.0f));
-		scen->SetBackGround({"..\\Textures\\lightblue\\right.png",
+		scen->SetBackGround(Loader::LoadSkyBox({"..\\Textures\\lightblue\\right.png",
 							 "..\\Textures\\lightblue\\left.png",
 							 "..\\Textures\\lightblue\\top.png",
 							 "..\\Textures\\lightblue\\bottom.png",
 							 "..\\Textures\\lightblue\\front.png",
-							 "..\\Textures\\lightblue\\back.png" });
-		scen->AddShader(shaders);
+							 "..\\Textures\\lightblue\\back.png" }));
 		
 		eng.SetScen(std::move(scen));
 

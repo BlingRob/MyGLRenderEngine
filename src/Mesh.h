@@ -50,10 +50,10 @@ public:
     void setupMesh();
     void Draw(Shader* shader);
     /* Mesh's constants */
-    static const uint16_t CardCoordsPerPoint = 3;
-    static const uint16_t CardCoordsPerTextPoint = 2;
+    static const std::size_t CardCoordsPerPoint = 3;
+    static const std::size_t CardCoordsPerTextPoint = 2;
 private:
     /*  Render data  */
-    GLuint VAO, VBO[5], EBO;
+    GLuint VAO, VBO, EBO;
 };
 

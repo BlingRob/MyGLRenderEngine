@@ -1,6 +1,7 @@
 #pragma once
 #include "Headers.h"
 #include "Shader.h"
+#include "Transformation.h"
 
 class BLight
 {
@@ -57,12 +58,12 @@ class PointLight : public virtual BLight
 	public:
 	PointLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f), glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f), glm::vec3 p = glm::vec3(0.0f)):
 		BLight(c,l,q,a,d,s),position(p){}
-	/*Return old pos, set new pos*/
+	Transformation tr;
+	/*Set new pos*/
 	void SetPos(const glm::vec3& p);
 	/*Return current pos*/
 	glm::vec3 GetPos() const;
 	virtual void SendToShader(const Shader& shader);
-
 };
 
 class SpotLight: public PointLight,public DirectionalLight
@@ -91,7 +92,7 @@ enum class LightTypes
 
 class Light:public SpotLight
 {
-	LightTypes Type = LightTypes::Directional;
+	LightTypes Type = LightTypes::Point;
 	public:
 		/*c,l,q - attenuation*/
 		Light(float constant = 0.0f, float linear = 0.0f, float quadric = 0.0f, glm::vec3 ambient = glm::vec3(0.0f),

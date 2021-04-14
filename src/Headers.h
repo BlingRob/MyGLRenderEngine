@@ -12,6 +12,11 @@
 #include <list>
 #include <functional>
 #include <type_traits>
+//Multi thread
+//#include <atomic>
+//#include <mutex>
+#include <thread>
+#include <future>
 
 
 //opengl

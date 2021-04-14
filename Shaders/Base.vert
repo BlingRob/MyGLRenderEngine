@@ -30,6 +30,7 @@ struct PointLight
 
 out VS_OUT {
     vec3 ViewDir;
+    vec3 WorldPos;
     //vec3 Normal;
     vec2 TexCoords;
     vec4 FragPosLightSpace;
@@ -53,11 +54,12 @@ void main()
 
     mat3 TBN = transpose(mat3(T,B,N));
 
-    vec3 Pos =  vec3(transform.model * vec4(position, 1.0));
+    vs_out.WorldPos =  vec3(transform.model * vec4(position, 1.0));
+    //vec3 Pos =  vec3(transform.model * vec4(position, 1.0));
 
-    vs_out.light.LightDir =  normalize(TBN * (light.position.xyz - Pos));
+    vs_out.light.LightDir =  normalize(TBN * (light.position.xyz - vs_out.WorldPos));
     //vs_out.ViewDir  = normalize(TBN * (viewPos - Pos));
-    vs_out.ViewDir  = normalize(TBN * (-Pos));
+    vs_out.ViewDir  = normalize(TBN * (viewPos - vs_out.WorldPos));
     //vs_out.FragPos =  TBN * vec3(transform.model * vec4(position, 1.0));
 
     //vs_out.Normal = NormalMatrix * VertexNormal;

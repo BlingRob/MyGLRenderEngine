@@ -24,14 +24,9 @@ void Node::Draw(std::shared_ptr <Shader> sh)
 		{
 			for (const auto& mesh : Meshes)
 			{
-				static glm::mat3 NormalMat;
-
-				sh->setMat("transform.model", ModelMatrix);
-
+				tr.SendToShader(*sh);
+				//sh->setMat("transform.model", ModelMatrix);
 				//glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
-
-				NormalMat = glm::mat3(transpose(inverse(ModelMatrix)));
-				sh->setMat("NormalMatrix", NormalMat);
 
 				mesh->Draw(sh.get());
 			}
@@ -46,5 +41,5 @@ void Node::Draw(std::shared_ptr <Shader> sh)
 
 Node::Node() 
 {
-	ModelMatrix = glm::mat4(1.0f);
+	tr.Set(std::make_shared<glm::mat4>(1.0f));
 }

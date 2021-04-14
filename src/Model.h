@@ -11,9 +11,10 @@ public:
     void Draw();
     void SetRoot(std::shared_ptr<Node> root);
 
-    std::string GetName() const;
     void SetName(std::string name);
+    std::string GetName() const;
     void SetShader(std::shared_ptr <Shader> sh);
+    const std::shared_ptr <Shader> GetShader();
 
     Model();
 private:
