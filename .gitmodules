@@ -1,5 +1,5 @@
 [submodule "glm"]
-	path = cmake/glm
+	path = cmake
 	url = https://github.com/g-truc/glm.git
 	branch = master
 [submodule "imgui"]
