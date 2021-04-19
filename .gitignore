@@ -6,3 +6,6 @@ OpenGl/Debug
 OpenGl/x64
 *.pdb
 *.exp
+/subprojects
+/build
+/cmake/*
