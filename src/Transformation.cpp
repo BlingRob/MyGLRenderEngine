@@ -7,11 +7,12 @@ void Matrices::SendToShader(const Shader& shader)
 	shader.setMat("transform.VP", (*Projection) * (*View));
 }
 
-void Transformation::Set(std::shared_ptr <glm::mat4> matr)
+void Transformation::Set(const std::shared_ptr <glm::mat4> matr)
 {
-	Model = matr;
+	Model.reset();
+	Model = std::shared_ptr <glm::mat4>(matr);
 }
-const std::shared_ptr <glm::mat4> Transformation::Get() const 
+std::shared_ptr <glm::mat4> Transformation::Get() const
 {
 	return Model;
 }

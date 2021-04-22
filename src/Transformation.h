@@ -15,8 +15,8 @@ class Transformation
 		Transformation(std::shared_ptr<glm::mat4> mod = std::make_shared<glm::mat4>(1.0f)):Model(mod) {}
 		void SendToShader(const Shader& shader);
 
-		void Set(std::shared_ptr <glm::mat4>);
-		const std::shared_ptr <glm::mat4> Get() const;
+		void Set(const std::shared_ptr <glm::mat4>);
+		std::shared_ptr <glm::mat4> Get() const;
 
 		void Translate(const glm::vec3& trans);
 		void Rotate(float alph, const glm::vec3& axes);

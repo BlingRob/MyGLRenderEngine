@@ -62,12 +62,15 @@ std::unique_ptr<Light> Loader::GetLight()
     if (!Has_Light() || IndexLight == -1)
         return std::unique_ptr<Light>(nullptr);
     aiNode* LightNode = scene->mRootNode->FindNode(scene->mLights[IndexLight]->mName);
-    if (LightNode != nullptr) 
+    /*if (LightNode != nullptr) 
     {
         scene->mLights[IndexLight]->mPosition.x = LightNode->mParent->mTransformation[0][3];
         scene->mLights[IndexLight]->mPosition.y = LightNode->mParent->mTransformation[1][3];
         scene->mLights[IndexLight]->mPosition.z = LightNode->mParent->mTransformation[2][3];
-    }
+    }*/
+    if(LightNode == nullptr)
+        return std::unique_ptr<Light>(nullptr);
+
     std::unique_ptr<Light> light = std::make_unique<Light>
         (   scene->mLights[IndexLight]->mAttenuationConstant,
             scene->mLights[IndexLight]->mAttenuationLinear,
@@ -81,9 +84,9 @@ std::unique_ptr<Light> Loader::GetLight()
             glm::vec3(scene->mLights[IndexLight]->mColorSpecular.r,
                       scene->mLights[IndexLight]->mColorSpecular.g,
                       scene->mLights[IndexLight]->mColorSpecular.b),
-            glm::vec3(scene->mLights[IndexLight]->mPosition.x,
-                      scene->mLights[IndexLight]->mPosition.y,
-                      scene->mLights[IndexLight]->mPosition.z),
+            glm::vec3(LightNode->mParent->mTransformation[0][3],
+                      LightNode->mParent->mTransformation[1][3],
+                      LightNode->mParent->mTransformation[2][3]),
             glm::vec3(scene->mLights[IndexLight]->mDirection.x,
                       scene->mLights[IndexLight]->mDirection.y,
                       scene->mLights[IndexLight]->mDirection.z),
@@ -161,7 +164,6 @@ std::shared_ptr<Node> Loader::processNode(aiNode* node)
     for (uint16_t i = 0; i < MatSize * MatSize; ++i)//copy node's transform matr
         (*ModelMatr)[static_cast<uint16_t>(i / MatSize)][i % MatSize] = node->mTransformation[i % MatSize][i / MatSize];
     curNode->tr.Set(ModelMatr);
-    //    curNode->ModelMatrix[static_cast<uint16_t>(i / MatSize)][i % MatSize] = node->mTransformation[i % MatSize][i / MatSize];
     //meshes.reserve(node->mNumMeshes);
     for (std::size_t i = 0; i < node->mNumMeshes; ++i)
     {
@@ -305,27 +307,28 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
         Height = 0;
         mat->Get(AI_MATKEY_NAME(type, i), name);
         mat->Get(AI_MATKEY_TEXTURE(type, static_cast<unsigned int>(i)), path);
+
+        if (scene->HasTextures())// textures are embedded in scene file
+        {
+             str = std::string(path.C_Str());//assimp docs, if tex embedded: path's string has format *TextureIndex
+             tex = scene->mTextures[std::stoul(str.substr(1))];
+             Width = tex->mWidth;
+             Height = tex->mHeight;
+             TexturePtr = tex->pcData;
+        }
+        else // textures place in external files 
+        {
+           //str = this->directory + '\\' + path.C_Str();
+           TexturePtr = static_cast<const void*>(path.C_Str());
+        }
+
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         // if texture hasn't been loaded already, load it
-        auto node = Mesh::GlobalTextures.find(std::hash<std::string>{}(path.C_Str()));
-        if(node != Mesh::GlobalTextures.end())
-            textures.push_back(Mesh::GlobalTextures.find(std::hash<std::string>{}(path.C_Str()))->second.lock());
+        auto node = Mesh::GlobalTextures.find(std::hash<std::string>{}(static_cast<const char*>(TexturePtr)));
+        if (node != Mesh::GlobalTextures.end())
+             textures.push_back(Mesh::GlobalTextures.find(std::hash<std::string>{}(path.C_Str()))->second.lock());
         else
-        { 
-            if (scene->HasTextures())// textures are embedded in scene file
-            {
-                str = std::string(path.C_Str());//assimp docs, if tex embedded: path's string has format *TextureIndex
-                tex = scene->mTextures[std::stoul(str.substr(1))];
-                Width = tex->mWidth;
-                Height = tex->mHeight;
-                TexturePtr = tex->pcData;
-            }
-            else // textures place in external files 
-            {
-                //str = this->directory + '\\' + path.C_Str();
-                TexturePtr = static_cast<const void*>(path.C_Str());
-            }
-  
+        {
             std::shared_ptr <Texture> texture = std::make_shared<Texture>();
             texture->id = TextureFromFile(TexturePtr, Width, Height, scene->HasTextures());
             texture->name = std::move(name);
@@ -334,7 +337,7 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
 
             textures.push_back(texture);
             Mesh::GlobalTextures[std::hash<std::string>{}(texture->path.C_Str())] = texture;// store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
-        }        
+        }     
     }
     return std::move(textures);
 }
@@ -405,7 +408,7 @@ GLuint Loader::TextureFromFile(const void* path, std::size_t width, std::size_t 
 
         glTextureParameteri(textureID, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTextureParameteri(textureID, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
         glTextureStorage2D(textureID, 1, format, w, h);
@@ -557,10 +560,17 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
         light->SetType(LightTypes::Point);
         light->SetName("Default light");
         scen->AddLight(light);
+
+        Scene::DefaultPointLightModel->GetRoot()->tr.Set(light->tr.Get());
+        scen->AddModel(Scene::DefaultPointLightModel);
     }
     else
         while ((light = std::shared_ptr<Light>(GetLight().release())))
+        {
             scen->AddLight(light);
+            Scene::DefaultPointLightModel->GetRoot()->tr.Set(light->tr.Get());
+            scen->AddModel(Scene::DefaultPointLightModel);
+        }
 
         //std::list<std::thread> threads;// (new std::thread[IndexModel + 1]);
         //std::unique_ptr<std::future<std::unique_ptr<Model>>[]> results(new std::future <std::unique_ptr<Model>>[IndexModel + 1]);

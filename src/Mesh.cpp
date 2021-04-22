@@ -10,6 +10,18 @@
 
     setupMesh();
 }*/
+Mesh::~Mesh()
+{
+    glDeleteBuffers(1, &EBO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteVertexArrays(1, &VAO);
+    for (auto& tex : textures) 
+    {
+        if (auto it = GlobalTextures.find(std::hash<std::string>{}(tex->path.C_Str()));tex.use_count() == 1 && it != GlobalTextures.end())
+            GlobalTextures.erase(it);
+        tex.reset();
+    }
+}
 
 void Mesh::setupMesh()
 {

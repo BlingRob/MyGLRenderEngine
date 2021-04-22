@@ -65,8 +65,9 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0);
 
 void main()
 { 
-    //FragColor =  vec4(PhongLight(fs_in.light, mat[0], tex[0]),1.0f);// + vec4(texture(tex[0].emissive, fs_in.TexCoords).rgb,0.0f);//texture(tex[0].diffuse,fs_in.TexCoords);//
-    FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f);
+    FragColor =  vec4(PhongLight(fs_in.light, mat[0], tex[0]),1.0f);// + vec4(texture(tex[0].emissive, fs_in.TexCoords).rgb,0.0f);//texture(tex[0].diffuse,fs_in.TexCoords);//
+    //FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f);
+    //FragColor = vec4(texture(tex[0].normal, fs_in.TexCoords).rgb,0.0f);
 }
 
 /*float ShadowCalculation(vec4 fragPosLightSpace)
@@ -172,7 +173,7 @@ vec3 ImproveLight(PointLight light,Material mat,Texture tex)
 
 vec3 PhongLight(PointLight light,Material mat,Texture tex)
 {
-    // затухание
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     //float distance    = length(light.position - fs_in.FragPos);
     //float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance); 
 
@@ -186,16 +187,16 @@ vec3 PhongLight(PointLight light,Material mat,Texture tex)
     vec3 normal = normalize((2.0f * texture(tex.normal,fs_in.TexCoords).rgb) - 1.0f);  
     vec3 halfwayDir = normalize(light.LightDir + fs_in.ViewDir);
 
-    // диффузное освещение
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     vec3 diffuse = light.diffuse * mat.diffuse * max(dot(normal.xyz, light.LightDir), 0.0) * texColor.rgb;
-    //фоновое освещение
+    //пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     vec3 ambient =  light.ambient  * mat.ambient * texColor.rgb;
     //ambAndDiff *= attenuation;
-    // освещение зеркальных бликов
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     vec3 reflectDir = reflect(-light.LightDir, normal.xyz);
     vec3 specular = light.specular * mat.specular * pow(max(dot(fs_in.ViewDir, reflectDir), 0.0), mat.shininess);
     //spec *= attenuation;
-    // комбинируем результаты
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     //vec3 Tex = vec3(texture(texture_diffuse1, fs_in.TexCoords));
     //vec3 ambient  = light.ambient  * texColor.rgb;
     //vec3 diffuse  = light.diffuse  * mat.ambient * pow(texColor.rgb,vec3(2.2));

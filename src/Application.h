@@ -4,7 +4,7 @@
 #include "Scene.h"
 //interface libs
 #define SDL_MAIN_HANDLED
-#include <sdl/SDL.h>
+#include <SDL.h>
 //GUI
 #define IMGUI_IMPL_OPENGL_LOADER_CUSTOM "gl/gl.h"
 #include "imgui.h"
@@ -13,6 +13,8 @@
 #include "imfilebrowser.h"
 //Loader
 #include "Loader.h"
+//Frame buffer
+#include "FrameBuffer.h"
 
 	class RenderEngine 
 	{
@@ -42,11 +44,14 @@
 		//check changing of matrixes
 		bool ChangedProj = false;
 		bool ChangedView = false;
+		//Frame Buffer
+		std::unique_ptr<FrameBuffer> frame;
 
 		public:
 			RenderEngine();
 			~RenderEngine()
 			{
+				frame.release();
 				ImGui_ImplOpenGL3_Shutdown();
 				ImGui_ImplSDL2_Shutdown();
 				ImGui::DestroyContext();

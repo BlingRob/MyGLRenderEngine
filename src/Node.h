@@ -12,7 +12,6 @@ class Node
 public:
 	Node();
 
-	//glm::mat4 ModelMatrix;
 	Transformation tr;
 	std::string GetName() const;
 	void SetName(const std::string& name);

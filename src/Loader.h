@@ -8,7 +8,7 @@
 //Texture's loader
 #include "STB/stb_image.h"
 //Load OGLfuns
-#include <sdl/SDL.h>
+#include <SDL.h>
 
 class Loader
 {

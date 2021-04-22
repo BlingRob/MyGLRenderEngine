@@ -66,16 +66,16 @@ void DirectionalLight::ChangeDirection(const glm::vec3& NewDir)
 void PointLight::SendToShader(const Shader& shader)
 {
 	BLight::SendToShader(shader);
-	shader.setVec("light.position", *tr.Get() * glm::vec4(position, 1.0f));
+	shader.setVec("light.position", glm::vec3((*tr.Get())[3]));
 }
 void PointLight::SetPos(const glm::vec3& p)
 {
-	position = p;
+	(*tr.Get())[3] = glm::vec4(p,1.0f);
 }
 
 glm::vec3 PointLight::GetPos() const
 {
-	return position;
+	return (*tr.Get())[3];
 }
 
 void SpotLight::SendToShader(const Shader& shader)

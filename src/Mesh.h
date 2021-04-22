@@ -23,6 +23,10 @@ struct Texture
     std::string type;
     aiString name;
     aiString path;
+    ~Texture()
+    {
+        glDeleteTextures(1, &id);
+    }
 };
 
 struct Material 
@@ -46,6 +50,7 @@ public:
     std::vector <Material> material;
     /*  Functions  */
     //Mesh(Vertexes&& vertices, std::vector<GLuint>&& indices, std::vector < Texture>&& textures, Material&& material);
+    ~Mesh();
     /*  Functions    */
     void setupMesh();
     void Draw(Shader* shader);

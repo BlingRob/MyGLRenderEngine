@@ -77,7 +77,6 @@ add_library(STB STATIC ${CMAKE_SOURCE_DIR}/deps/stb/stb_image.h ${CMAKE_SOURCE_D
 ############################SDL############################
 add_subdirectory(${CMAKE_SOURCE_DIR}/cmake/sdl ${CMAKE_SOURCE_DIR}/subprojects/sdl)
 ###########################################################
-
 # Put all libraries into a variable
 set(LIBS IMGUI assimp SDL2 SDL2main OpenGL STB)
 
@@ -91,3 +90,7 @@ target_link_libraries(${PROJECT_NAME} ${LIBS})
 # Include target directories
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/cmake/sdl/include/)
 target_include_directories(IMGUI PUBLIC ${CMAKE_SOURCE_DIR}/cmake/sdl/include/)
+############################Set resource###################
+file(GLOB RESOURCE_FILES ${CMAKE_SOURCE_DIR}/Shaders/*)
+set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${RESOURCE_FILES}")
+###########################################################

@@ -3,6 +3,7 @@
 #include "Headers.h"
 #include "Node.h"
 #include "Shader.h"
+#include "Transformation.h"
 
 class Model
 {
@@ -10,6 +11,7 @@ public:
     /*  Ìועמהû   */
     void Draw();
     void SetRoot(std::shared_ptr<Node> root);
+    std::shared_ptr<Node> GetRoot();
 
     void SetName(std::string name);
     std::string GetName() const;
@@ -23,5 +25,5 @@ private:
     std::shared_ptr<Node> mRootNode;
     std::string name;
     std::shared_ptr <Shader> shader;
-    glm::mat4 ModelMatrix;
+    Transformation tr;
 };

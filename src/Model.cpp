@@ -31,8 +31,9 @@ const std::shared_ptr <Shader> Model::GetShader()
 
 Model::Model() 
 {
-    ModelMatrix = glm::mat4(1.0f);
 }
 
-
-
+std::shared_ptr<Node> Model::GetRoot() 
+{
+    return mRootNode;
+}

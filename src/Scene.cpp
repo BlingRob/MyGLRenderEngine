@@ -7,17 +7,10 @@ void Scene::Draw()
 		glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//sh = GetShader("Default");
-	//sh->Use();
 
 	//something
-	//matrs.SendToShader(*sh);
-	//sh->setVec("viewPos", GetCam()->Position);
-
 	//glUniformMatrix4fv(glGetUniformLocation(shaders->Program, "lightSpaceMatrix"), 1, GL_FALSE, glm::value_ptr(lightSpaceMatrix));
 	const auto lights = GetLights();
-	//for (const auto& el : *lights)
-	//	el.second->SendToShader(*sh);
 
 	for (auto& mod : Models)
 	{
@@ -109,7 +102,15 @@ Scene::Scene()
 	shader = std::make_shared<Shader>("..\\Shaders\\Light.vert", "..\\Shaders\\Light.frag");
 	shader->SetName("PointLight");
 	AddShader(shader);
+	if (DefaultPointLightModel)
+		DefaultPointLightModel->SetShader(shader);
+	shader = std::make_shared<Shader>("..\\Shaders\\SkyBox.vert", "..\\Shaders\\SkyBox.frag");
+	shader->SetName("SkyBox");
+	AddShader(shader);
 	SetCam(std::make_unique<Camera>(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+	SkyBox = DefaultSkyBox;
+	SkyBoxSetted = true;
+
 
 	//matrs.View =  std::make_shared<glm::mat4>(1.0f);
 	//matrs.Projection = std::make_shared<glm::mat4>(1.0f);
@@ -124,18 +125,17 @@ bool Scene::LoadModels(const std::string& path)
 	return true;///No finished!
 }*/
 
-void Scene::SetBackGround(std::unique_ptr<Node> box)
+void Scene::SetBackGround(std::shared_ptr<Node> box)
 {
-	SkyBox = std::move(box);
+	SkyBox = box;
 	if (GetShader("SkyBox") == nullptr)
 	{
-		std::shared_ptr<Shader> shaders = std::make_shared<Shader>("..\\Shaders\\SkyBox.vert", "..\\Shaders\\SkyBox.frag");
-		shaders->SetName("SkyBox");
-		AddShader(shaders);
+
 	}
 	SkyBoxSetted = true;
 }
-std::unique_ptr<Node> Scene::RetSkyBoxGround() 
+
+Scene_Information Scene::GetInfo()
 {
-	return std::move(SkyBox);
+	return std::move(Scene_Information({ Models.size(), Lights.size(), Shaders.size()}));
 }

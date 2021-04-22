@@ -66,13 +66,6 @@ void rend()
 		RenderEngine eng;
 		std::unique_ptr<Scene> scen = std::make_unique<Scene>();//std::string("..\\Models\\Models.glb")
 		scen->SetBackGround(glm::vec4(0.117f, 0.187f, 0.253f, 1.0f));
-		scen->SetBackGround(Loader::LoadSkyBox({"..\\Textures\\lightblue\\right.png",
-							 "..\\Textures\\lightblue\\left.png",
-							 "..\\Textures\\lightblue\\top.png",
-							 "..\\Textures\\lightblue\\bottom.png",
-							 "..\\Textures\\lightblue\\front.png",
-							 "..\\Textures\\lightblue\\back.png" }));
-		
 		eng.SetScen(std::move(scen));
 
 		while(eng.MainLoop())

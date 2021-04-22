@@ -57,7 +57,7 @@ class PointLight : public virtual BLight
 	glm::vec3 position;
 	public:
 	PointLight(float c = 0.0f, float l = 0.0f, float q = 0.0f, glm::vec3 a = glm::vec3(0.0f), glm::vec3 d = glm::vec3(0.0f), glm::vec3 s = glm::vec3(0.0f), glm::vec3 p = glm::vec3(0.0f)):
-		BLight(c,l,q,a,d,s),position(p){}
+		BLight(c, l, q, a, d, s) {SetPos(p);}
 	Transformation tr;
 	/*Set new pos*/
 	void SetPos(const glm::vec3& p);

@@ -1,53 +1,5 @@
 #include "Application.h"
 
-void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
-{
-	auto source_str = [source]() -> std::string {
-		switch (source)
-		{
-		case GL_DEBUG_SOURCE_API: return "API";
-		case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW SYSTEM";
-		case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER COMPILER";
-		case GL_DEBUG_SOURCE_THIRD_PARTY:  return "THIRD PARTY";
-		case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
-		case GL_DEBUG_SOURCE_OTHER: return "OTHER";
-		default: return "UNKNOWN";
-		}
-	}();
-
-	auto type_str = [type]() {
-		switch (type)
-		{
-		case GL_DEBUG_TYPE_ERROR: return "ERROR";
-		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
-		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
-		case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
-		case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
-		case GL_DEBUG_TYPE_MARKER:  return "MARKER";
-		case GL_DEBUG_TYPE_OTHER: return "OTHER";
-		default: return "UNKNOWN";
-		}
-	}();
-
-	auto severity_str = [severity]() {
-		switch (severity)
-		{
-		case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
-		case GL_DEBUG_SEVERITY_LOW: return "LOW";
-		case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
-		case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
-		default: return "UNKNOWN";
-		}
-	}();
-
-	std::cerr
-		<< source_str << ", "
-		<< type_str << ", "
-		<< severity_str << ", "
-		<< id << ": "
-		<< message << std::endl;
-}
-
 	RenderEngine::RenderEngine() 
 	{
 		//Mouse setup
@@ -118,13 +70,31 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		//init cursors
 		DefaultCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
 		LoadingCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
-		//Setup defaul scene
+		//Setup default scene and its settings
+		Scene::DefaultSkyBox = Loader::LoadSkyBox({
+					 "..\\Textures\\lightblue\\right.png",
+					 "..\\Textures\\lightblue\\left.png",
+					 "..\\Textures\\lightblue\\top.png",
+					 "..\\Textures\\lightblue\\bottom.png",
+					 "..\\Textures\\lightblue\\front.png",
+					 "..\\Textures\\lightblue\\back.png" });
+		Loader pointloader;
+		pointloader.LoadScene("..\\Models\\PointLight.obj");
+		Scene::DefaultPointLightModel = pointloader.GetModel(0);
+		Scene::DefaultPointLightModel->SetName("PointModel");
 		scene = std::make_unique<Scene>();
 		//Logging
 		FILE* stdinStream,*stderrStream;
 		freopen_s(&stdinStream,"Log.txt", "w", stdout);
 		freopen_s(&stderrStream,"ErrLog.txt", "w", stderr);
-
+		//Create addition frame buffer
+		frame = std::make_unique<FrameBuffer>();
+		SDL_DisplayMode DM;
+		SDL_GetCurrentDisplayMode(0, &DM);
+		frame->AddFrameBuffer(BufferType::Color, DM.w, DM.h);
+		frame->AddRanderBuffer(BufferType::Depth_Stencil, DM.w, DM.h);
+		if (!frame->IsCorrect())
+			std::cerr << "Creating addition buffer is failed";
 	}
 
 	double RenderEngine::GetTime() 
@@ -235,6 +205,7 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 			return false;
 		do_movement();
 		GUIproc();
+		frame->AttachBuffer();
 		if (ChangedProj)
 		{
 			scene->matrs.Projection = std::make_shared<glm::mat4>(std::move(glm::perspective(glm::radians(scene->GetCam()->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f)));
@@ -247,13 +218,19 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 		}
 
 		std::shared_ptr<Light> lig = scene->GetLight("Point_Orientation");
-		if(lig)
-			lig->SetPos(glm::vec3(sin(GetTime()) * 5.0f, lig->GetPos().y, sin(GetTime()) * 5.0f));
+		if (lig)
+			lig->SetPos(2.0f * glm::vec3(sin(GetTime()), 5.0f, cos(GetTime())));
 
 		scene->Draw();
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+		//glFrontFace(GL_CW);
+		frame->Draw();
+		//glFrontFace(GL_CCW);
 		SDL_GL_SwapWindow(window);
+
+		frame->DetachBuffer();
+		
 		return true;
 	}
 
@@ -306,17 +283,68 @@ void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum seve
 					Loader loader;
 					SDL_SetCursor(LoadingCursor);
 					scene = std::move(loader.GetScene(fileDialog.GetSelected().string()));
-					scene->SetBackGround(OldScene->RetSkyBoxGround());
-					//std::cout << "Selected filename" << fileDialog.GetSelected().string() << std::endl;
 					fileDialog.ClearSelected();
 					SDL_SetCursor(DefaultCursor);
 				}
 			}
-			
-			ImGui::SetNextWindowPos(ImVec2(0, 15));
-			ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH / 3.0f, SCR_HEIGHT / 3.0f));
-			ImGui::Begin("Tools menu", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::End();
+			{
+				Scene_Information info = scene->GetInfo();
+				ImGui::SetNextWindowPos(ImVec2(0, 20));
+				ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH / 3.0f, SCR_HEIGHT / 3.0f));
+				ImGui::Begin("Statistics", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+				ImGui::Text("Models in scene %d", info.Amount_models);
+				ImGui::Text("Lights in scene %d", info.Amount_lights);
+				ImGui::Text("Shaders in scene %d", info.Amount_shaders);
+				ImGui::End();
+			}
 		}
+	}
+
+	void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
+	{
+		auto source_str = [source]() -> std::string {
+			switch (source)
+			{
+			case GL_DEBUG_SOURCE_API: return "API";
+			case GL_DEBUG_SOURCE_WINDOW_SYSTEM: return "WINDOW SYSTEM";
+			case GL_DEBUG_SOURCE_SHADER_COMPILER: return "SHADER COMPILER";
+			case GL_DEBUG_SOURCE_THIRD_PARTY:  return "THIRD PARTY";
+			case GL_DEBUG_SOURCE_APPLICATION: return "APPLICATION";
+			case GL_DEBUG_SOURCE_OTHER: return "OTHER";
+			default: return "UNKNOWN";
+			}
+		}();
+
+		auto type_str = [type]() {
+			switch (type)
+			{
+			case GL_DEBUG_TYPE_ERROR: return "ERROR";
+			case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: return "DEPRECATED_BEHAVIOR";
+			case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: return "UNDEFINED_BEHAVIOR";
+			case GL_DEBUG_TYPE_PORTABILITY: return "PORTABILITY";
+			case GL_DEBUG_TYPE_PERFORMANCE: return "PERFORMANCE";
+			case GL_DEBUG_TYPE_MARKER:  return "MARKER";
+			case GL_DEBUG_TYPE_OTHER: return "OTHER";
+			default: return "UNKNOWN";
+			}
+		}();
+
+		auto severity_str = [severity]() {
+			switch (severity)
+			{
+			case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
+			case GL_DEBUG_SEVERITY_LOW: return "LOW";
+			case GL_DEBUG_SEVERITY_MEDIUM: return "MEDIUM";
+			case GL_DEBUG_SEVERITY_HIGH: return "HIGH";
+			default: return "UNKNOWN";
+			}
+		}();
+
+		std::cerr
+			<< source_str << ", "
+			<< type_str << ", "
+			<< severity_str << ", "
+			<< id << ": "
+			<< message << std::endl;
 	}
