@@ -1,20 +1,24 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.17)
+project(GraphicsEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
-project(GraphicsEngine)	
-
-###########################OpenGL##########################
-if(LINUX)
-	find_package(OpenGL REQUIRED)
-	include_directories(${OpenGL_INCLUDE_DIRS})
-	link_directories(${OpenGL_LIBRARY_DIRS})
-	add_definitions(${OpenGL_DEFINITIONS})
-	if(NOT OpenGL_FOUND)
-		message(Error "OpenGL not found")
-	endif(NOT OpenGL_FOUND)	
-elseif(WIN32)
-	add_library(OpenGL STATIC ${CMAKE_SOURCE_DIR}/deps/gl/gl.h ${CMAKE_SOURCE_DIR}/deps/gl/gl.c)
+if(NOT WIN32)
+	list(APPEND CMAKE_CXX_FLAGS "-pthread -lGL -std=c++11 ${CMAKE_CXX_FLAGS}")
+	set(CMAKE_Cxx_CREATE_STATIC_LIBRARY OFF)
 endif()
+###########################OpenGL##########################
+#if(NOT WIN32)
+#	find_package(OpenGL REQUIRED)
+#	message(GL ${OpenGL_LIBRARY_DIRS})
+#	include_directories(${OpenGL_INCLUDE_DIRS})
+#	link_directories(${OpenGL_LIBRARY_DIRS})
+#	add_definitions(${OpenGL_DEFINITIONS})
+#	if(NOT OpenGL_FOUND)
+#		message(Error "OpenGL not found")
+#	endif(NOT OpenGL_FOUND)	
+#elseif(WIN32)
+	add_library(OpenGL STATIC ${CMAKE_SOURCE_DIR}/deps/gl/gl.h ${CMAKE_SOURCE_DIR}/deps/gl/gl.c)
+#Sendif()
 ###########################################################
 ###################Build my files##########################
 file(GLOB_RECURSE SOURCE_FILES
@@ -33,7 +37,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/deps/libs CACHE P
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/exe CACHE PATH " " FORCE)
 ######################Build imgui##########################
 include_directories(${CMAKE_SOURCE_DIR}/cmake/imgui/)
-#copy my configuration
+#copy configuration
 file(COPY ${CMAKE_SOURCE_DIR}/config/imconfig.h
      DESTINATION ${CMAKE_SOURCE_DIR}/cmake/imgui)
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/imgui/backends/imgui_impl_opengl3.h
@@ -50,7 +54,9 @@ file(GLOB IMGUI_SOURCE ${CMAKE_SOURCE_DIR}/cmake/imgui/*.cpp)
 
 #create library
 add_library(IMGUI STATIC ${IMGUI_HEADERS} ${IMGUI_SOURCE})
-set_target_properties(IMGUI PROPERTIES LINKER_LANGUAGE Cxx) 
+if(WIN32)
+	set_target_properties(IMGUI PROPERTIES LINKER_LANGUAGE Cxx) 
+endif()
 ###########################################################
 ##########################Assimp build#####################
 include_directories(${CMAKE_SOURCE_DIR}/cmake/assimp/include/)

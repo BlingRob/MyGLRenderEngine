@@ -1,6 +1,6 @@
 #include "Application.h"
 
-	RenderEngine::RenderEngine() 
+	RenderEngine::RenderEngine()
 	{
 		//Mouse setup
 		lastX = SDL_WINDOWPOS_CENTERED, lastY = SDL_WINDOWPOS_CENTERED;
@@ -64,7 +64,7 @@
 		// Setup Platform/Renderer backends for imgui
 		ImGui_ImplSDL2_InitForOpenGL(window, context);
 		ImGui_ImplOpenGL3_Init("#version 450");
-		// Setup file dialog 
+		// Setup file dialog
 		fileDialog.SetTitle("Choosing scene");
 		fileDialog.SetTypeFilters({ ".glb", ".fbx", ".obj"});
 		//init cursors
@@ -85,8 +85,8 @@
 		scene = std::make_unique<Scene>();
 		//Logging
 		FILE* stdinStream,*stderrStream;
-		freopen_s(&stdinStream,"Log.txt", "w", stdout);
-		freopen_s(&stderrStream,"ErrLog.txt", "w", stderr);
+		//freopen_s(&stdinStream,"Log.txt", "w", stdout);
+		//freopen_s(&stderrStream,"ErrLog.txt", "w", stderr);
 		//Create addition frame buffer
 		frame = std::make_unique<FrameBuffer>();
 		SDL_DisplayMode DM;
@@ -97,7 +97,7 @@
 			std::cerr << "Creating addition buffer is failed";
 	}
 
-	double RenderEngine::GetTime() 
+	double RenderEngine::GetTime()
 	{
 		return chron.GetTime();
 	}
@@ -107,14 +107,14 @@
 		scene = std::move(s);
 	}
 
-	bool RenderEngine::ProcEvents() 
+	bool RenderEngine::ProcEvents()
 	{
 		SDL_Event e;
 		while (SDL_PollEvent(&e))
 		{
+            ImGui_ImplSDL2_ProcessEvent(&e);
 			switch (e.type)
 			{
-				ImGui_ImplSDL2_ProcessEvent(&e);
 				case SDL_QUIT:
 				{
 					return false;
@@ -130,7 +130,7 @@
 					}
 					break;
 				}
-				case SDL_MOUSEBUTTONUP: 
+				case SDL_MOUSEBUTTONUP:
 				{
 					if (e.button.button == SDL_BUTTON_LEFT)
 					{
@@ -139,12 +139,12 @@
 					}
 					break;
 				}
-				case SDL_MOUSEMOTION: 
+				case SDL_MOUSEMOTION:
 				{
 					if (clicked)
 					{
 						float xoffset = e.button.x - lastX;
-						float yoffset = lastY - e.button.y; // перевернуто, так как Y-координаты идут снизу вверх
+						float yoffset = lastY - e.button.y; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅ пїЅпїЅпїЅ Y-пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
 
 						lastX = static_cast<GLfloat>(e.button.x);
 						lastY = static_cast<GLfloat>(e.button.y);
@@ -155,7 +155,7 @@
 					}
 					break;
 				}
-				case SDL_MOUSEWHEEL: 
+				case SDL_MOUSEWHEEL:
 				{
 					if (clicked)
 						scene->GetCam()->ProcessMouseScroll(static_cast<float>(e.wheel.y));
@@ -163,7 +163,7 @@
 					break;
 				}
 
-				case SDL_KEYDOWN: 
+				case SDL_KEYDOWN:
 				{
 					if (e.key.keysym.scancode == SDL_SCANCODE_ESCAPE)
 						return false;
@@ -176,9 +176,9 @@
 					break;
 				}
 
-				case SDL_WINDOWEVENT: 
+				case SDL_WINDOWEVENT:
 				{
-				
+
 					switch (e.window.event)
 					{
 						case SDL_WINDOWEVENT_SIZE_CHANGED:
@@ -230,7 +230,7 @@
 		SDL_GL_SwapWindow(window);
 
 		frame->DetachBuffer();
-		
+
 		return true;
 	}
 
@@ -253,12 +253,12 @@
 		return scene.get();
 	}
 
-	void RenderEngine::GUIproc() 
+	void RenderEngine::GUIproc()
 	{
 		// Start the Dear ImGui frame
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame(window);
-		
+
 		ImGui::NewFrame();
 		{
 			if (ImGui::BeginMainMenuBar())
@@ -301,7 +301,7 @@
 		}
 	}
 
-	void APIENTRY MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
+	void MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)
 	{
 		auto source_str = [source]() -> std::string {
 			switch (source)

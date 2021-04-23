@@ -301,12 +301,12 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
     uint32_t Width, Height;
 
     textures.reserve(mat->GetTextureCount(type));
-    for (std::size_t i = 0; i < mat->GetTextureCount(type); ++i)
+    //for (std::size_t i = 0; i < mat->GetTextureCount(type); ++i)
     {
         Width = 0;
         Height = 0;
-        mat->Get(AI_MATKEY_NAME(type, i), name);
-        mat->Get(AI_MATKEY_TEXTURE(type, static_cast<unsigned int>(i)), path);
+        mat->Get(AI_MATKEY_NAME, name);
+        mat->Get(AI_MATKEY_TEXTURE(type, static_cast<unsigned int>(0)), path);
 
         if (scene->HasTextures())// textures are embedded in scene file
         {
@@ -348,10 +348,10 @@ Material Loader::loadMaterial(aiMaterial* mat, uint16_t indx)
 
     MeshMaterial.id = indx;
     //mat->Get(AI_MATKEY_COLOR_AMBIENT, MeshMaterial.ambient);
-    mat->Get(AI_MATKEY_COLOR_AMBIENT(indx), MeshMaterial.ambient);
-    mat->Get(AI_MATKEY_COLOR_DIFFUSE(indx), MeshMaterial.diffuse);
-    mat->Get(AI_MATKEY_COLOR_SPECULAR(indx), MeshMaterial.specular);
-    mat->Get(AI_MATKEY_SHININESS(indx), MeshMaterial.shininess);
+    mat->Get(AI_MATKEY_COLOR_AMBIENT, MeshMaterial.ambient);
+    mat->Get(AI_MATKEY_COLOR_DIFFUSE, MeshMaterial.diffuse);
+    mat->Get(AI_MATKEY_COLOR_SPECULAR, MeshMaterial.specular);
+    mat->Get(AI_MATKEY_SHININESS, MeshMaterial.shininess);
 
     return std::move(MeshMaterial);
 }

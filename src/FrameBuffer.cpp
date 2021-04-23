@@ -15,8 +15,8 @@ FrameBuffer::FrameBuffer()
     glCreateVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
     glVertexArrayAttribBinding(VAO, 0, 0);
-    glVertexArrayVertexBuffer(VAO, 0, VBO, NULL, sizeof(GLfloat) * 3);
-    glVertexArrayAttribFormat(VAO, 0, 3, GL_FLOAT, GL_FALSE, NULL);
+    glVertexArrayVertexBuffer(VAO, 0, VBO, 0, sizeof(GLfloat) * 3);
+    glVertexArrayAttribFormat(VAO, 0, 3, GL_FLOAT, GL_FALSE, 0);
     glBindVertexArray(GL_NONE);
 }
 

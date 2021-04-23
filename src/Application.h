@@ -3,10 +3,10 @@
 #include "Time.h"
 #include "Scene.h"
 //interface libs
-#define SDL_MAIN_HANDLED
+//#define SDL_MAIN_HANDLED
 #include <SDL.h>
 //GUI
-#define IMGUI_IMPL_OPENGL_LOADER_CUSTOM "gl/gl.h"
+#define IMGUI_INCLUDE_IMCONFIG_H
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
@@ -16,7 +16,7 @@
 //Frame buffer
 #include "FrameBuffer.h"
 
-	class RenderEngine 
+	class RenderEngine
 	{
 		//windows
 		SDL_Window* window;
@@ -36,7 +36,7 @@
 		//callbacks
 		void do_movement();
 		bool ProcEvents();
-		//GUI 
+		//GUI
 		void GUIproc();
 		ImGui::FileBrowser fileDialog;
 		SDL_Cursor  *DefaultCursor,
@@ -71,10 +71,10 @@
 		//Size of window
 		GLuint SCR_WIDTH = 800,
 			SCR_HEIGHT = 800;
-			
+
 	};
 
-	void APIENTRY MessageCallback(GLenum source,
+	void MessageCallback(GLenum source,
 		GLenum type,
 		GLuint id,
 		GLenum severity,

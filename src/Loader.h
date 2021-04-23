@@ -6,7 +6,7 @@
 #include <assimp/postprocess.h>
 #include <assimp/pbrmaterial.h>
 //Texture's loader
-#include "STB/stb_image.h"
+#include "stb/stb_image.h"
 //Load OGLfuns
 #include <SDL.h>
 

@@ -58,28 +58,28 @@ void Mesh::setupMesh()
 
     // vertex Positions
     glVertexArrayAttribBinding(VAO, 0, 0);
-    glVertexArrayVertexBuffer(VAO, 0, VBO, NULL, sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 0, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, NULL);
+    glVertexArrayVertexBuffer(VAO, 0, VBO, 0, sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
+    glVertexArrayAttribFormat(VAO, 0, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
     
     // vertex normals
     glVertexArrayAttribBinding(VAO, 1, 1);
     glVertexArrayVertexBuffer(VAO, 1, VBO, sizeof(GLfloat) * vertices.Positions.size(), sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 1, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, NULL);//vertices.Positions.size() * sizeof(GLfloat)
+    glVertexArrayAttribFormat(VAO, 1, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);//vertices.Positions.size() * sizeof(GLfloat)
     
     // vertex texture coords
     glVertexArrayAttribBinding(VAO, 2, 2);
     glVertexArrayVertexBuffer(VAO, 2, VBO, sizeof(GLfloat) * (vertices.Normals.size() + vertices.Positions.size()), sizeof(GLfloat) * Mesh::CardCoordsPerTextPoint);
-    glVertexArrayAttribFormat(VAO, 2, Mesh::CardCoordsPerTextPoint, GL_FLOAT, GL_FALSE, NULL);
+    glVertexArrayAttribFormat(VAO, 2, Mesh::CardCoordsPerTextPoint, GL_FLOAT, GL_FALSE, 0);
     
     // vertex tangent
     glVertexArrayAttribBinding(VAO, 3, 3);
     glVertexArrayVertexBuffer(VAO, 3, VBO, sizeof(GLfloat) * (vertices.Normals.size() + vertices.Positions.size() + vertices.TexCoords.size()), sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 3, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, NULL);
+    glVertexArrayAttribFormat(VAO, 3, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
     
     // vertex bitangent
     glVertexArrayAttribBinding(VAO, 4, 4);
     glVertexArrayVertexBuffer(VAO, 4, VBO, sizeof(GLfloat) * (vertices.Normals.size() + vertices.Positions.size() + vertices.TexCoords.size() + vertices.Tangents.size()), sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 4, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, NULL);
+    glVertexArrayAttribFormat(VAO, 4, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
     
     glBindVertexArray(0);
 }
@@ -107,25 +107,25 @@ void Mesh::Draw(Shader* shader)
 
         name = textures[i]->type;
         if (name == "texture_diffuse")
-            sprintf_s(Address, BufferSize,"tex[%d].diffuse", diffuseNr++);// transfer unsigned int to stream
+            snprintf(Address, BufferSize,"tex[%d].diffuse", diffuseNr++);// transfer unsigned int to stream
         else if (name == "texture_specular")
-            sprintf_s(Address, BufferSize, "tex[%d].specular", specularNr++);
+            snprintf(Address, BufferSize, "tex[%d].specular", specularNr++);
         else if (name == "texture_normal")
-            sprintf_s(Address, BufferSize, "tex[%d].normal", normalNr++);
+            snprintf(Address, BufferSize, "tex[%d].normal", normalNr++);
         else if (name == "texture_height")
-            sprintf_s(Address, BufferSize, "tex[%d].height", heightNr++);
+            snprintf(Address, BufferSize, "tex[%d].height", heightNr++);
         else if (name == "texture_emissive")
-            sprintf_s(Address, BufferSize, "tex[%d].emissive", emissiveNr++);
+            snprintf(Address, BufferSize, "tex[%d].emissive", emissiveNr++);
         else if (name == "texture_metallic_rougness")
-            sprintf_s(Address, BufferSize, "tex[%d].metallic_roughness", matallic++);
+            snprintf(Address, BufferSize, "tex[%d].metallic_roughness", matallic++);
         /*else if (name == "texture_metallic")
             sprintf_s(Address, BufferSize, "tex[%d].metallic", matallic++);
         else if (name == "texture_roughness")
             sprintf_s(Address, BufferSize, "tex[%d].roughness", roughness++);*/
         else if (name == "texture_ambient_occlusion")
-            sprintf_s(Address, BufferSize, "tex[%d].ao", ao++);
+            snprintf(Address, BufferSize, "tex[%d].ao", ao++);
         else if(name == "SkyBox")
-            sprintf_s(Address, BufferSize, "skybox");
+            snprintf(Address, BufferSize, "skybox");
 
         // now set the sampler to the correct texture unit
         glUniform1i(glGetUniformLocation(shader->Program, Address), i);

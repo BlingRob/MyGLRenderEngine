@@ -1,7 +1,7 @@
 #pragma once
 #include "Headers.h"
 #include "Light.h"
-#include "Ñamera.h"
+#include "Camera.h"
 #include "Node.h"
 #include "Model.h"
 #include "Transformation.h"
