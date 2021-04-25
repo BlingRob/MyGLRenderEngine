@@ -35,7 +35,6 @@ void Mesh::setupMesh()
     // again translates to 3/2 floats which translates to a byte array.
     glCreateBuffers(1,&EBO);
     glNamedBufferStorage(EBO, sizeof(GLuint) * indices.size(), indices.data(), 0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
     //pos - 3,nor - 3, tex - 2, tan - 3, btan - 3 = 14 
 
@@ -47,12 +46,11 @@ void Mesh::setupMesh()
     glNamedBufferSubData(VBO, sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size()), sizeof(GLfloat) * vertices.TexCoords.size(), vertices.TexCoords.data());
     glNamedBufferSubData(VBO, sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size() + vertices.TexCoords.size()), sizeof(GLfloat) * vertices.Tangents.size(), vertices.Tangents.data());
     glNamedBufferSubData(VBO, sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size() + vertices.TexCoords.size() + vertices.Tangents.size()), sizeof(GLfloat) * vertices.Bitangents.size(), vertices.Bitangents.data());
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
     // set the vertex attribute pointers
 
     glCreateVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-    //glVertexArrayElementBuffer(VAO, EBO);
+    //glBindVertexArray(VAO);
+    glVertexArrayElementBuffer(VAO, EBO);
     for (uint16_t i = 0; i < 5; ++i)
         glEnableVertexArrayAttrib(VAO, i);
 
@@ -80,8 +78,6 @@ void Mesh::setupMesh()
     glVertexArrayAttribBinding(VAO, 4, 4);
     glVertexArrayVertexBuffer(VAO, 4, VBO, sizeof(GLfloat) * (vertices.Normals.size() + vertices.Positions.size() + vertices.TexCoords.size() + vertices.Tangents.size()), sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
     glVertexArrayAttribFormat(VAO, 4, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
-    
-    glBindVertexArray(0);
 }
 
 void Mesh::Draw(Shader* shader)
@@ -143,6 +139,7 @@ void Mesh::Draw(Shader* shader)
 
     // draw mesh
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, indices.data());
+    glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 1, 0, 0);
+    //glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, indices.data());
     glBindVertexArray(0);
 }

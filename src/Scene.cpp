@@ -64,6 +64,10 @@ const std::shared_ptr<Shader> Scene::GetShader(std::string_view name) const
 		return iter->second;
 	return nullptr;
 }
+const glm::vec4 Scene::GetBackGround() const 
+{
+	return BackGroundColour;
+}
 
 const std::map<std::size_t, std::shared_ptr<Light>>* Scene::GetLights() const
 {

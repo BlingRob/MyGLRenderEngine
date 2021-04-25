@@ -6,6 +6,7 @@
 //#define SDL_MAIN_HANDLED
 #include <SDL.h>
 //GUI
+#include "GUI.h"
 #define IMGUI_INCLUDE_IMCONFIG_H
 #include "imgui.h"
 #include "imgui_impl_sdl.h"
@@ -22,7 +23,8 @@
 		SDL_Window* window;
 		SDL_GLContext context;
 		//Scene
-		std::unique_ptr<Scene> scene;
+		//std::unique_ptr<Scene> scene;
+		std::shared_ptr<std::unique_ptr<Scene>> scene;
 		//time:difference, current, last
 		float dt;
 		//queue of pressed keys
@@ -37,36 +39,26 @@
 		void do_movement();
 		bool ProcEvents();
 		//GUI
-		void GUIproc();
-		ImGui::FileBrowser fileDialog;
-		SDL_Cursor  *DefaultCursor,
-					*LoadingCursor;
+		std::unique_ptr<GUI> gui;
 		//check changing of matrixes
 		bool ChangedProj = false;
 		bool ChangedView = false;
 		//Frame Buffer
 		std::unique_ptr<FrameBuffer> frame;
-
 		public:
 			RenderEngine();
 			~RenderEngine()
 			{
-				frame.release();
-				ImGui_ImplOpenGL3_Shutdown();
-				ImGui_ImplSDL2_Shutdown();
-				ImGui::DestroyContext();
-
-				SDL_FreeCursor(DefaultCursor);
-				SDL_FreeCursor(LoadingCursor);
-				// Close and destroy the window
-				SDL_DestroyWindow(window);
+				//While all smart pointers won't clean gl objects, mustn't delete gl context
+				//Close and destroy the window
+				//SDL_DestroyWindow(window);
 				// Clean up
-				SDL_Quit();
+				//SDL_Quit();
 			}
 			bool MainLoop();
 			double GetTime();
 			void SetScen(std::unique_ptr<Scene>);
-			const Scene* GetScen() const;
+			const std::shared_ptr<std::unique_ptr<Scene>> GetScen() const;
 
 		//Size of window
 		GLuint SCR_WIDTH = 800,

@@ -48,28 +48,6 @@
 		//texture load option
 		//stbi_set_flip_vertically_on_load(true);
 
-		//GUI Initialization
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO();
-		(void)io;
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-		io.Fonts->AddFontDefault();
-		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-		// Setup Dear ImGui style
-		ImGui::StyleColorsDark();
-		//ImGui::StyleColorsClassic();
-
-		// Setup Platform/Renderer backends for imgui
-		ImGui_ImplSDL2_InitForOpenGL(window, context);
-		ImGui_ImplOpenGL3_Init("#version 450");
-		// Setup file dialog
-		fileDialog.SetTitle("Choosing scene");
-		fileDialog.SetTypeFilters({ ".glb", ".fbx", ".obj"});
-		//init cursors
-		DefaultCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-		LoadingCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
 		//Setup default scene and its settings
 		Scene::DefaultSkyBox = Loader::LoadSkyBox({
 					 "..\\Textures\\lightblue\\right.png",
@@ -80,19 +58,25 @@
 					 "..\\Textures\\lightblue\\back.png" });
 		Loader pointloader;
 		pointloader.LoadScene("..\\Models\\PointLight.obj");
-		Scene::DefaultPointLightModel = pointloader.GetModel(0);
-		Scene::DefaultPointLightModel->SetName("PointModel");
-		scene = std::make_unique<Scene>();
+		if (pointloader.Is_Load())
+		{
+			Scene::DefaultPointLightModel = pointloader.GetModel(0);
+			Scene::DefaultPointLightModel->SetName("PointModel");
+		}
+		scene = std::make_shared<std::unique_ptr<Scene>>(std::move(std::make_unique<Scene>()));
+		//GUI Initialization
+		gui = std::make_unique<GUI>(window, &context, scene);
 		//Logging
 		FILE* stdinStream,*stderrStream;
-		//freopen_s(&stdinStream,"Log.txt", "w", stdout);
-		//freopen_s(&stderrStream,"ErrLog.txt", "w", stderr);
+		freopen_s(&stdinStream,"Log.txt", "w", stdout);
+		freopen_s(&stderrStream,"ErrLog.txt", "w", stderr);
 		//Create addition frame buffer
-		frame = std::make_unique<FrameBuffer>();
+		
 		SDL_DisplayMode DM;
 		SDL_GetCurrentDisplayMode(0, &DM);
-		frame->AddFrameBuffer(BufferType::Color, DM.w, DM.h);
-		frame->AddRanderBuffer(BufferType::Depth_Stencil, DM.w, DM.h);
+		frame = std::make_unique<FrameBuffer>(DM.w, DM.h);
+		frame->AddFrameBuffer(BufferType::Color);
+		frame->AddRenderBuffer(BufferType::Depth_Stencil);
 		if (!frame->IsCorrect())
 			std::cerr << "Creating addition buffer is failed";
 	}
@@ -104,7 +88,11 @@
 
 	void RenderEngine::SetScen(std::unique_ptr<Scene> s)
 	{
-		scene = std::move(s);
+		*scene = std::move(s);
+	}
+	const std::shared_ptr<std::unique_ptr<Scene>> RenderEngine::GetScen() const
+	{
+		return scene;
 	}
 
 	bool RenderEngine::ProcEvents()
@@ -149,7 +137,7 @@
 						lastX = static_cast<GLfloat>(e.button.x);
 						lastY = static_cast<GLfloat>(e.button.y);
 
-						scene->GetCam()->ProcessMouseMovement(xoffset, yoffset);
+						(*scene)->GetCam()->ProcessMouseMovement(xoffset, yoffset);
 						ChangedView = true;
 						ChangedProj = true;
 					}
@@ -158,7 +146,7 @@
 				case SDL_MOUSEWHEEL:
 				{
 					if (clicked)
-						scene->GetCam()->ProcessMouseScroll(static_cast<float>(e.wheel.y));
+						(*scene)->GetCam()->ProcessMouseScroll(static_cast<float>(e.wheel.y));
 						ChangedProj = true;
 					break;
 				}
@@ -204,32 +192,31 @@
 		if(!ProcEvents())
 			return false;
 		do_movement();
-		GUIproc();
-		frame->AttachBuffer();
+		
+		if(gui->FrameClicked)
+			frame->AttachBuffer();
 		if (ChangedProj)
 		{
-			scene->matrs.Projection = std::make_shared<glm::mat4>(std::move(glm::perspective(glm::radians(scene->GetCam()->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f)));
+			(*scene)->matrs.Projection = std::make_shared<glm::mat4>(std::move(glm::perspective(glm::radians((*scene)->GetCam()->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f)));
 			ChangedProj = false;
 		}
 		if (ChangedView)
 		{
-			scene->matrs.View = std::make_shared<glm::mat4>(std::move(scene->GetCam()->GetViewMatrix()));
+			(*scene)->matrs.View = std::make_shared<glm::mat4>(std::move((*scene)->GetCam()->GetViewMatrix()));
 			ChangedView = false;
 		}
 
-		std::shared_ptr<Light> lig = scene->GetLight("Point_Orientation");
+		std::shared_ptr<Light> lig = (*scene)->GetLight("Point_Orientation");
 		if (lig)
 			lig->SetPos(2.0f * glm::vec3(sin(GetTime()), 5.0f, cos(GetTime())));
-
-		scene->Draw();
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-		//glFrontFace(GL_CW);
-		frame->Draw();
-		//glFrontFace(GL_CCW);
+		(*scene)->Draw();
+		if (gui->FrameClicked)
+		{
+			frame->DetachBuffer();
+			frame->Draw(SCR_WIDTH, SCR_HEIGHT);
+		}
+		gui->Draw();
 		SDL_GL_SwapWindow(window);
-
-		frame->DetachBuffer();
 
 		return true;
 	}
@@ -238,67 +225,14 @@
 	{
 			// Camera controls
 		if (keys[SDL_SCANCODE_W])
-			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::FORWARD, dt);
+			(*scene)->GetCam()->ProcessKeyboard(Camera::Camera_Movement::FORWARD, dt);
 		if (keys[SDL_SCANCODE_S])
-			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::BACKWARD, dt);
+			(*scene)->GetCam()->ProcessKeyboard(Camera::Camera_Movement::BACKWARD, dt);
 		if (keys[SDL_SCANCODE_A])
-			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::LEFT, dt);
+			(*scene)->GetCam()->ProcessKeyboard(Camera::Camera_Movement::LEFT, dt);
 		if (keys[SDL_SCANCODE_D])
-			scene->GetCam()->ProcessKeyboard(Camera::Camera_Movement::RIGHT, dt);
+			(*scene)->GetCam()->ProcessKeyboard(Camera::Camera_Movement::RIGHT, dt);
 		ChangedView = true;
-	}
-
-	const Scene* RenderEngine::GetScen() const
-	{
-		return scene.get();
-	}
-
-	void RenderEngine::GUIproc()
-	{
-		// Start the Dear ImGui frame
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplSDL2_NewFrame(window);
-
-		ImGui::NewFrame();
-		{
-			if (ImGui::BeginMainMenuBar())
-			{
-				if (ImGui::BeginMenu("File"))
-				{
-					if (ImGui::MenuItem("Open..", "Ctrl+O"))
-					{
-						fileDialog.Open();
-					}
-					if (ImGui::MenuItem("Save", "Ctrl+S")) {  }
-					if (ImGui::MenuItem("Close", "Ctrl+W")) {}
-					ImGui::EndMenu();
-				}
-				ImGui::EndMainMenuBar();
-
-				fileDialog.Display();
-
-				if (fileDialog.HasSelected())
-				{
-					std::unique_ptr<Scene> OldScene = std::move(scene);
-					Loader loader;
-					SDL_SetCursor(LoadingCursor);
-					scene = std::move(loader.GetScene(fileDialog.GetSelected().string()));
-					fileDialog.ClearSelected();
-					SDL_SetCursor(DefaultCursor);
-				}
-			}
-			{
-				Scene_Information info = scene->GetInfo();
-				ImGui::SetNextWindowPos(ImVec2(0, 20));
-				ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH / 3.0f, SCR_HEIGHT / 3.0f));
-				ImGui::Begin("Statistics", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-				ImGui::Text("Models in scene %d", info.Amount_models);
-				ImGui::Text("Lights in scene %d", info.Amount_lights);
-				ImGui::Text("Shaders in scene %d", info.Amount_shaders);
-				ImGui::End();
-			}
-		}
 	}
 
 	void MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)

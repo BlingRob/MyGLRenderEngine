@@ -1,28 +1,30 @@
 #include "FrameBuffer.h"
-FrameBuffer::FrameBuffer()
+FrameBuffer::FrameBuffer(GLuint weight, GLuint height)
 {
+    _mWeight = weight;
+    _mHeight = height;
     textureID = Render = GL_NONE;
-    glCreateFramebuffers(1, &buff);
+    glCreateFramebuffers(1, &FBO);
     shader = std::make_unique<Shader>("..\\Shaders\\PostEffects.vert", "..\\Shaders\\PostEffects.frag");
 
     glCreateBuffers(1, &EBO);
-    glNamedBufferStorage(EBO, sizeof(GLuint) * 6, Indices, GL_MAP_READ_BIT);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+    glNamedBufferStorage(EBO, sizeof(Indices), Indices, 0);
+
     glCreateBuffers(1, &VBO);
-    glNamedBufferStorage(VBO, sizeof(GLfloat) * 12, VerticesOfQuad, GL_MAP_READ_BIT);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glNamedBufferStorage(VBO, sizeof(VerticesOfQuad), VerticesOfQuad, 0);
 
     glCreateVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    glVertexArrayElementBuffer(VAO, EBO);
+
+    glEnableVertexArrayAttrib(VAO, 0);
     glVertexArrayAttribBinding(VAO, 0, 0);
-    glVertexArrayVertexBuffer(VAO, 0, VBO, 0, sizeof(GLfloat) * 3);
-    glVertexArrayAttribFormat(VAO, 0, 3, GL_FLOAT, GL_FALSE, 0);
-    glBindVertexArray(GL_NONE);
+    glVertexArrayAttribFormat(VAO, 0, 2, GL_FLOAT, GL_FALSE, 0);
+    glVertexArrayVertexBuffer(VAO, 0, VBO, 0, 2 * sizeof(GLfloat));
 }
 
 FrameBuffer::~FrameBuffer()
 {
-    glDeleteFramebuffers(1, &buff);
+    glDeleteFramebuffers(1, &FBO);
     glDeleteRenderbuffers(1, &Render);
     glDeleteTextures(1, &textureID);
     glDeleteBuffers(1, &EBO);
@@ -60,7 +62,7 @@ std::tuple<GLenum, GLenum, GLenum> FrameBuffer::GetGlBufferType(BufferType BuffT
     return attach;
 }
 
-void FrameBuffer::AddFrameBuffer(BufferType BuffType, GLuint weight, GLuint height)
+void FrameBuffer::AddFrameBuffer(BufferType BuffType)
 {
     glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
 
@@ -69,42 +71,46 @@ void FrameBuffer::AddFrameBuffer(BufferType BuffType, GLuint weight, GLuint heig
 
     glBindTexture(GL_TEXTURE_2D, textureID);
     auto [Attachment, Format, Type] = GetGlBufferType(BuffType);
-
-    glTexImage2D(GL_TEXTURE_2D, 0, Type, weight, height, 0, Type, Format, NULL);
+    //glTextureStorage2D(textureID, 1, Format, weight, height);
+    glTexImage2D(GL_TEXTURE_2D, 0, Type, _mWeight, _mHeight, 0, Type, Format, NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    glNamedFramebufferTexture(buff, Attachment, textureID, 0);
+    glNamedFramebufferTexture(FBO, Attachment, textureID, 0);
 }
 
-void FrameBuffer::AddRanderBuffer(BufferType BuffType, GLuint weight, GLuint height)
+void FrameBuffer::AddRenderBuffer(BufferType BuffType)
 {
     glCreateRenderbuffers(1, &Render);
     auto [Attachment, Format, Type] = GetGlBufferType(BuffType);
-    glNamedRenderbufferStorage(Render, Format, weight, height);
-    glNamedFramebufferRenderbuffer(buff, Attachment, GL_RENDERBUFFER, Render);
+    glNamedRenderbufferStorage(Render, Format, _mWeight, _mHeight);
+    glNamedFramebufferRenderbuffer(FBO, Attachment, GL_RENDERBUFFER, Render);
 }
 
 bool FrameBuffer::IsCorrect() 
 {
-    return glCheckNamedFramebufferStatus(buff, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    return glCheckNamedFramebufferStatus(FBO, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 }
 
 void FrameBuffer::AttachBuffer() 
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, buff);
+    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 }
 void FrameBuffer::DetachBuffer() 
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void FrameBuffer::Draw() 
+void FrameBuffer::Draw(uint64_t weight, uint64_t height)
 {
+    glDisable(GL_DEPTH_TEST);
     shader->Use();
     glBindTextureUnit(0, textureID);
     glUniform1i(glGetUniformLocation(shader->Program, "scene"), 0);
+    shader->setScal("wAspect", static_cast<float>(weight) / _mWeight);
+    shader->setScal("hAspect", static_cast<float>(height) / _mHeight);
 
     glBindVertexArray(VAO);
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, Indices);
+    glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, 1, 0, 0);
     glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
 }

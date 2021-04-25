@@ -26,6 +26,7 @@ class Scene
 	public:
 	
 	void SetBackGround(glm::vec4 col);
+	const glm::vec4 GetBackGround() const;
 	void SetBackGround(std::shared_ptr<Node> box);
 
 	void AddModel(std::shared_ptr<Model> obj);

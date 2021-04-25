@@ -145,7 +145,7 @@ std::unique_ptr<Camera> Loader::GetCamera()
 
 std::unique_ptr<Model> Loader::GetModel(uint32_t Indx) 
 {
-    if (!scene->mRootNode || Indx == -1 || scene->mRootNode->mChildren[Indx]->mNumMeshes == 0)
+    if (!scene && !scene->mRootNode && Indx == -1 && scene->mRootNode->mChildren[Indx]->mNumMeshes == 0)
         return nullptr;
     
     std::unique_ptr<Model> model = std::make_unique<Model>();
@@ -301,7 +301,7 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
     uint32_t Width, Height;
 
     textures.reserve(mat->GetTextureCount(type));
-    //for (std::size_t i = 0; i < mat->GetTextureCount(type); ++i)
+    for (std::size_t i = 0; i < mat->GetTextureCount(type); ++i)
     {
         Width = 0;
         Height = 0;
