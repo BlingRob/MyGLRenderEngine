@@ -77,6 +77,7 @@
 		frame = std::make_unique<FrameBuffer>(DM.w, DM.h);
 		frame->AddFrameBuffer(BufferType::Color);
 		frame->AddRenderBuffer(BufferType::Depth_Stencil);
+		frame->Core = gui->Core;
 		if (!frame->IsCorrect())
 			std::cerr << "Creating addition buffer is failed";
 	}
@@ -212,6 +213,8 @@
 		(*scene)->Draw();
 		if (gui->FrameClicked)
 		{
+			frame->invertion = gui->invertion;
+			frame->convolution = gui->convolution;
 			frame->DetachBuffer();
 			frame->Draw(SCR_WIDTH, SCR_HEIGHT);
 		}

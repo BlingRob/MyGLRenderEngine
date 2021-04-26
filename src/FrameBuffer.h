@@ -41,4 +41,8 @@ class FrameBuffer
 		void DetachBuffer();
 
 		void Draw(uint64_t weight, uint64_t height);
+		//states
+		bool invertion = false;
+		bool convolution = false;
+		std::shared_ptr<glm::mat3> Core;
 };

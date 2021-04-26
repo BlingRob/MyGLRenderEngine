@@ -26,6 +26,9 @@ GUI::GUI(SDL_Window* window, SDL_GLContext* context, std::shared_ptr<std::unique
 	//init cursors
 	DefaultCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
 	LoadingCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
+	//Post process matrix
+	Core = std::make_shared<glm::mat3>(0.0f);
+	(*Core)[1][1] = 1.0f;
 }
 GUI::~GUI() 
 {
@@ -67,19 +70,22 @@ void GUI::Interface()
 				{
 				}
 				ImGui::Separator();
-				if (ImGui::MenuItem("Inverse", NULL, nullptr, FrameClicked))
+				if (ImGui::MenuItem("Inversion", NULL, &invertion, FrameClicked))
 				{
+					convolution = false;
+				}
+				if (ImGui::MenuItem("Convolution", NULL, &convolution, FrameClicked))
+				{
+					invertion = false;
+					AddWindowActive = true;
 				}
 				ImGui::EndMenu();
 			}
 			if (ImGui::BeginMenu("Background"))
 			{
-				if (ImGui::MenuItem("Turn on havens", NULL,&(*_mScene)->SkyBoxSetted))
-				{
-				}
+				if (ImGui::MenuItem("Turn on havens", NULL,&(*_mScene)->SkyBoxSetted)){}
 				{
 					glm::vec4 col = (*_mScene)->GetBackGround();
-					//static float col[3]; (*_mScene)
 					ImGui::ColorEdit4("Choose color", &col[0]);
 					(*_mScene)->SetBackGround(col);
 				}
@@ -109,10 +115,33 @@ void GUI::Interface()
 				ImGui::SetNextWindowPos(ImVec2(0, 20));
 				ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH / 3.0f, SCR_HEIGHT / 3.0f));
 				ImGui::Begin("Statistics", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
-				ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-				ImGui::Text("Models in scene %d", info.Amount_models);
-				ImGui::Text("Lights in scene %d", info.Amount_lights);
-				ImGui::Text("Shaders in scene %d", info.Amount_shaders);
+					ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+					ImGui::Text("Models in scene %d", info.Amount_models);
+					ImGui::Text("Lights in scene %d", info.Amount_lights);
+					ImGui::Text("Shaders in scene %d", info.Amount_shaders);
+				ImGui::End();
+			}
+
+			if (convolution & AddWindowActive)
+			{
+				static char* buff[] = {"1","2","3","4","5","6","7","8","9"};
+				ImGui::Begin("Matrix of convolution",&AddWindowActive,ImGuiWindowFlags_NoDecoration);
+				{
+					if (ImGui::BeginTable("", 3, ImGuiTableFlags_Borders))
+					{
+						for (uint16_t i = 0; i < 9; ++i)
+						{
+							if(!(i % 3))
+								ImGui::TableNextRow(0, 20.0f);
+							ImGui::TableSetColumnIndex(i % 3);
+							ImGui::InputFloat(buff[i], &(*Core)[i / 3][i % 3]);
+						}
+					}
+					ImGui::EndTable();
+					if (ImGui::Button("Ok")) { AddWindowActive = false; };
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel")) { AddWindowActive = false; convolution = false; };
+				}
 				ImGui::End();
 			}
 		}

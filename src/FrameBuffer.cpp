@@ -108,6 +108,10 @@ void FrameBuffer::Draw(uint64_t weight, uint64_t height)
     glUniform1i(glGetUniformLocation(shader->Program, "scene"), 0);
     shader->setScal("wAspect", static_cast<float>(weight) / _mWeight);
     shader->setScal("hAspect", static_cast<float>(height) / _mHeight);
+    shader->setScal("conv", convolution);
+    shader->setScal("invert", invertion);
+    if (Core)
+        shader->setMat("kernel", *Core);
 
     glBindVertexArray(VAO);
     glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, 1, 0, 0);

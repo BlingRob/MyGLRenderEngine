@@ -16,6 +16,9 @@ public:
 	void Draw();
 
 	bool FrameClicked = false;
+	bool invertion = false;
+	bool convolution = false;
+	std::shared_ptr<glm::mat3> Core;
 private:
 	std::shared_ptr<std::unique_ptr<Scene>> _mScene;
 	SDL_Window* _mWindow;
@@ -23,6 +26,7 @@ private:
 	SDL_Cursor *DefaultCursor,
 			   *LoadingCursor;
 
+	bool AddWindowActive = false;
 	void Interface();
 };
 
