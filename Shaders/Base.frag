@@ -1,6 +1,5 @@
 #version 450 core
 
-
 const float PI = 3.14159265359;
 struct Material
 {
@@ -21,9 +20,6 @@ struct PointLight
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-
-    //Calc in shader
-    vec3 LightDir;
 }; 
 
 struct Texture
@@ -45,10 +41,10 @@ uniform Texture tex[1];
 out vec4 FragColor;
 
 in VS_OUT {
-    vec3 ViewDir;
-    vec3 WorldPos;
+    vec3 FragPos;
+    vec3 ViewPos;
     vec2 TexCoords;
-    vec4 FragPosLightSpace;
+    vec3 TangentFragPos;
     PointLight light;
 } fs_in;
 
@@ -130,29 +126,28 @@ vec3 ImproveLight(PointLight light,Material mat,Texture tex)
     vec3 N = normalize((2.0f * texture(tex.normal,fs_in.TexCoords).rgb) - 1.0f);  
     vec3 Lo = vec3(0.0);
 
-    vec3 L = normalize(light.position - fs_in.WorldPos);
-    vec3 H = normalize(fs_in.ViewDir + L);
+    vec3 L = normalize(light.position - fs_in.TangentFragPos);
+    vec3 V = normalize(fs_in.ViewPos - fs_in.TangentFragPos);
+    vec3 H = normalize(V + L);
 
     vec3 albedo = pow(texture(tex.diffuse, fs_in.TexCoords).rgb, vec3(2.2));
     float metallic = texture(tex.metallic_roughness, fs_in.TexCoords).b;
     float roughness = texture(tex.metallic_roughness, fs_in.TexCoords).g;
     float ao        = texture(tex.ao, fs_in.TexCoords).r;
   
-    float distance    = length(light.position - fs_in.WorldPos);
-    //float attenuation = 1.0 / (distance * distance);
-    //float distance    = length(light.position - fs_in.FragPos);
-    float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance);
+    float distance    = length(light.position - fs_in.TangentFragPos);
+    float attenuation = 1.0f / (light.constant + (light.linear + light.quadratic) * distance);
     vec3 radiance     = light.ambient * attenuation;
 
     vec3 F0 = vec3(0.04); 
     F0      = mix(F0, albedo, metallic);
-    vec3 F  = fresnelSchlick(max(dot(H, fs_in.ViewDir), 0.0), F0);
+    vec3 F  = fresnelSchlick(max(dot(H, V), 0.0), F0);
 
     float NDF = DistributionGGX(N, H, roughness);       
-    float G   = GeometrySmith(N, fs_in.ViewDir, L, roughness); 
+    float G   = GeometrySmith(N, V, L, roughness); 
 
     vec3 numerator    = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, fs_in.ViewDir), 0.0) * max(dot(N, L), 0.0) + 0.001;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
     vec3 specular     = numerator / denominator; 
 
     vec3 kS = F;
@@ -174,27 +169,24 @@ vec3 ImproveLight(PointLight light,Material mat,Texture tex)
 vec3 PhongLight(PointLight light,Material mat,Texture tex)
 {
     // ���������
-    //float distance    = length(light.position - fs_in.FragPos);
-    //float attenuation = 1.0 / (light.constant + light.linear * distance + light.quadratic * distance); 
-
-    //vec3 viewDir = fs_in.TBN * normalize(viewPos - fs_in.FragPos);
-    //vec3 lightDir = normalize(fs_in.TBN * (light.position - fs_in.FragPos));
-    //vec3 viewDir = normalize(fs_in.viewPos - fs_in.FragPos);
-    //vec3 lightDir = normalize(light.position - fs_in.FragPos);
+    float distance    = length(light.position - fs_in.TangentFragPos);
+    float attenuation = 1.0f / (light.constant + (light.linear + light.quadratic) * distance); 
 
     vec4 texColor = texture(tex.diffuse,fs_in.TexCoords);
+    vec3 normal = normalize((2.0f * texture(tex.normal,fs_in.TexCoords).rgb) - 1.0f); 
 
-    vec3 normal = normalize((2.0f * texture(tex.normal,fs_in.TexCoords).rgb) - 1.0f);  
-    vec3 halfwayDir = normalize(light.LightDir + fs_in.ViewDir);
+    vec3 L = normalize(light.position - fs_in.TangentFragPos);
+    vec3 V = normalize(fs_in.ViewPos - fs_in.TangentFragPos);
+    vec3 H = normalize(V + L);
 
     // ��������� ���������
-    vec3 diffuse = light.diffuse * mat.diffuse * max(dot(normal.xyz, light.LightDir), 0.0) * texColor.rgb;
+    vec3 diffuse = light.diffuse * mat.diffuse * max(dot(normal.xyz, L), 0.0) * texColor.rgb;
     //������� ���������
     vec3 ambient =  light.ambient  * mat.ambient * texColor.rgb;
     //ambAndDiff *= attenuation;
     // ��������� ���������� ������
-    vec3 reflectDir = reflect(-light.LightDir, normal.xyz);
-    vec3 specular = light.specular * mat.specular * pow(max(dot(fs_in.ViewDir, reflectDir), 0.0), mat.shininess);
+    vec3 reflectDir = reflect(-L, normal.xyz);
+    vec3 specular = light.specular * mat.specular * pow(max(dot(V, H), 0.0), mat.shininess);
     //spec *= attenuation;
     // ����������� ����������
     //vec3 Tex = vec3(texture(texture_diffuse1, fs_in.TexCoords));
@@ -204,5 +196,5 @@ vec3 PhongLight(PointLight light,Material mat,Texture tex)
 
     //float shadow = ShadowCalculation(fs_in.FragPosLightSpace);
     //return vec4((ambient  + (1.0 - shadow) * (diffuse + specular)) * Tex, 1.0f);
-    return vec3(ambient  + diffuse + specular);
+    return vec3(ambient  + diffuse + specular) * attenuation;
 }

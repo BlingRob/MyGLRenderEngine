@@ -23,17 +23,13 @@ struct PointLight
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-
-    //Calc in shader
-    vec3 LightDir;
 }; 
 
 out VS_OUT {
-    vec3 ViewDir;
-    vec3 WorldPos;
-    //vec3 Normal;
+    vec3 FragPos;
+    vec3 ViewPos;
     vec2 TexCoords;
-    vec4 FragPosLightSpace;
+    vec3 TangentFragPos;
     PointLight light;
 } vs_out;
 
@@ -46,26 +42,30 @@ uniform PointLight light;
 void main()
 {
     vs_out.light = light;
+    vs_out.FragPos = vec3(transform.model * vec4(position,1.0f));
 
     vec3 N = normalize(NormalMatrix * VertexNormal);
     vec3 T = normalize(NormalMatrix * aTangent);
     vec3 B = normalize(NormalMatrix * aBitangent);
-    T = normalize(T - dot(T, N) * N);
+    //T = normalize(T - dot(T, N) * N);
 
     mat3 TBN = transpose(mat3(T,B,N));
+    //translate coordinats in tangent space
+    vs_out.light.position = TBN * light.position; 
+    vs_out.ViewPos        = TBN * viewPos;
+    vs_out.TangentFragPos = TBN * vs_out.FragPos;
 
-    vs_out.WorldPos =  vec3(transform.model * vec4(position, 1.0));
-    //vec3 Pos =  vec3(transform.model * vec4(position, 1.0));
+    //vs_out.WorldPos =  vec3(transform.model * vec4(position, 1.0));
 
-    vs_out.light.LightDir =  normalize(TBN * (light.position.xyz - vs_out.WorldPos));
+    //vs_out.light.LightDir =  normalize(TBN * (light.position.xyz - vs_out.WorldPos));
     //vs_out.ViewDir  = normalize(TBN * (viewPos - Pos));
-    vs_out.ViewDir  = normalize(TBN * (viewPos - vs_out.WorldPos));
+    //vs_out.ViewDir  = normalize(TBN * (viewPos - vs_out.WorldPos));
     //vs_out.FragPos =  TBN * vec3(transform.model * vec4(position, 1.0));
 
     //vs_out.Normal = NormalMatrix * VertexNormal;
-    vs_out.TexCoords = texCoord;
+    
     //vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
-
+    vs_out.TexCoords = texCoord;
 	gl_Position = (transform.VP * transform.model) * vec4(position,1.0f);
 
 };
