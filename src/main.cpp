@@ -76,7 +76,7 @@ void rend()
 	}
 
 
-int SDL_main(int argc, char* args[])
+int main(int argc, char* args[])
 {
 	rend();
 

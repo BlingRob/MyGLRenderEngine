@@ -10,6 +10,7 @@
 		dt = 0.0f;
 
 		//SDL init
+		SDL_SetMainReady();
 		if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
 			throw(std::string("Failed SDL init ") + SDL_GetError());
 		//SDL_GL context setup
@@ -53,14 +54,14 @@
 
 		//Setup default scene and its settings
 		Scene::DefaultSkyBox = Loader::LoadSkyBox({
-					 "..\\Textures\\lightblue\\right.png",
-					 "..\\Textures\\lightblue\\left.png",
-					 "..\\Textures\\lightblue\\top.png",
-					 "..\\Textures\\lightblue\\bottom.png",
-					 "..\\Textures\\lightblue\\front.png",
-					 "..\\Textures\\lightblue\\back.png" });
+					 "../Textures/lightblue/right.png",
+					 "../Textures/lightblue/left.png",
+					 "../Textures/lightblue/top.png",
+					 "../Textures/lightblue/bottom.png",
+					 "../Textures/lightblue/front.png",
+					 "../Textures/lightblue/back.png" });
 		Loader pointloader;
-		pointloader.LoadScene("..\\Models\\PointLight.obj");
+		pointloader.LoadScene("../Models/PointLight.obj");
 		if (pointloader.Is_Load())
 		{
 			Scene::DefaultPointLightModel = pointloader.GetModel(0);

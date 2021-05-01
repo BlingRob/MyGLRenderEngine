@@ -20,7 +20,11 @@ bool Loader::LoadScene(std::string_view path)
         return false;
     }
     // retrieve the directory path of the filepath
-    directory = path.substr(0, path.find_last_of('\\'));
+    #if defined(__WIN32__)
+        directory = path.substr(0, path.find_last_of('\\'));
+    #else
+        directory = path.substr(0, (path.find_last_of('/'));
+    #endif
     IndexModel = scene->mRootNode->mNumChildren - 1;
     IndexLight = scene->mNumLights - 1;
 

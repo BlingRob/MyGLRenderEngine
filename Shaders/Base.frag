@@ -1,6 +1,7 @@
 #version 450 core
 
 const float PI = 3.14159265359;
+const float gamma = 2.2;
 struct Material
 {
     vec3 ambient;
@@ -61,9 +62,10 @@ vec3 fresnelSchlick(float cosTheta, vec3 F0);
 
 void main()
 { 
-    FragColor =  vec4(PhongLight(fs_in.light, mat[0], tex[0]),1.0f);// + vec4(texture(tex[0].emissive, fs_in.TexCoords).rgb,0.0f);//texture(tex[0].diffuse,fs_in.TexCoords);//
-    //FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f);
+    //FragColor =  vec4(PhongLight(fs_in.light, mat[0], tex[0]),1.0f);// + vec4(texture(tex[0].emissive, fs_in.TexCoords).rgb,0.0f);//texture(tex[0].diffuse,fs_in.TexCoords);//
+    FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f);
     //FragColor = vec4(texture(tex[0].normal, fs_in.TexCoords).rgb,0.0f);
+    //FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 }
 
 /*float ShadowCalculation(vec4 fragPosLightSpace)
@@ -130,7 +132,7 @@ vec3 ImproveLight(PointLight light,Material mat,Texture tex)
     vec3 V = normalize(fs_in.ViewPos - fs_in.TangentFragPos);
     vec3 H = normalize(V + L);
 
-    vec3 albedo = pow(texture(tex.diffuse, fs_in.TexCoords).rgb, vec3(2.2));
+    vec3 albedo = pow(texture(tex.diffuse, fs_in.TexCoords).rgb, vec3(gamma));
     float metallic = texture(tex.metallic_roughness, fs_in.TexCoords).b;
     float roughness = texture(tex.metallic_roughness, fs_in.TexCoords).g;
     float ao        = texture(tex.ao, fs_in.TexCoords).r;

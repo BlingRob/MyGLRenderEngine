@@ -2,23 +2,8 @@ cmake_minimum_required(VERSION 3.17)
 project(GraphicsEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
-if(NOT WIN32)
-	list(APPEND CMAKE_CXX_FLAGS "-pthread -lGL -std=c++11 ${CMAKE_CXX_FLAGS}")
-	set(CMAKE_Cxx_CREATE_STATIC_LIBRARY OFF)
-endif()
 ###########################OpenGL##########################
-#if(NOT WIN32)
-#	find_package(OpenGL REQUIRED)
-#	message(GL ${OpenGL_LIBRARY_DIRS})
-#	include_directories(${OpenGL_INCLUDE_DIRS})
-#	link_directories(${OpenGL_LIBRARY_DIRS})
-#	add_definitions(${OpenGL_DEFINITIONS})
-#	if(NOT OpenGL_FOUND)
-#		message(Error "OpenGL not found")
-#	endif(NOT OpenGL_FOUND)	
-#elseif(WIN32)
-	add_library(OpenGL STATIC ${CMAKE_SOURCE_DIR}/deps/gl/gl.h ${CMAKE_SOURCE_DIR}/deps/gl/gl.c)
-#Sendif()
+add_library(OpenGL STATIC ${CMAKE_SOURCE_DIR}/deps/gl/gl.h ${CMAKE_SOURCE_DIR}/deps/gl/gl.c)
 ###########################################################
 ###################Build my files##########################
 file(GLOB_RECURSE SOURCE_FILES
@@ -100,3 +85,8 @@ target_include_directories(IMGUI PUBLIC ${CMAKE_SOURCE_DIR}/cmake/sdl/include/)
 file(GLOB RESOURCE_FILES ${CMAKE_SOURCE_DIR}/Shaders/*)
 set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${RESOURCE_FILES}")
 ###########################################################
+############################Special unix###################
+if(NOT WIN32)
+	list(APPEND CMAKE_CXX_FLAGS "-pthread -lGL -std=c++11 ${CMAKE_CXX_FLAGS}")
+	#set(CMAKE_Cxx_CREATE_STATIC_LIBRARY OFF)
+endif()

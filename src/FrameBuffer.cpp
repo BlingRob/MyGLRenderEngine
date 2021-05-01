@@ -5,7 +5,7 @@ FrameBuffer::FrameBuffer(GLuint weight, GLuint height)
     _mHeight = height;
     textureID = Render = GL_NONE;
     glCreateFramebuffers(1, &FBO);
-    shader = std::make_unique<Shader>("..\\Shaders\\PostEffects.vert", "..\\Shaders\\PostEffects.frag");
+    shader = std::make_unique<Shader>("../Shaders/PostEffects.vert", "../Shaders/PostEffects.frag");
 
     glCreateBuffers(1, &EBO);
     glNamedBufferStorage(EBO, sizeof(Indices), Indices, 0);
