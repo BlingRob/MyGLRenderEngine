@@ -1,22 +1,16 @@
 #include "Model.h"
 
-void Model::Draw()
+void Model::Draw(std::shared_ptr <Shader> sh)
 {
-    mRootNode->Draw(shader);
+    if(!sh)
+        mRootNode->Draw(shader);
+    else
+        mRootNode->Draw(sh);
 }
 
 void Model::SetRoot(std::shared_ptr<Node> root)
 {
     mRootNode = root;
-}
-
-std::string Model::GetName() const
-{
-    return name;
-}
-void Model::SetName(std::string name)
-{
-    this->name = name;
 }
 
 void Model::SetShader(std::shared_ptr <Shader> sh) 

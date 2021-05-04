@@ -8,13 +8,13 @@ struct Transform
 	mat4 model;
 	mat4 view;
 	mat4 projection;
-    mat4 VP;
+    mat4 PV;
 };
 uniform Transform transform;
 
 void main()
 {
 	TexCoords = position;
-	vec4 pos = transform.VP * vec4(position,1.0f);
+	vec4 pos = transform.PV * vec4(position,1.0f);
 	gl_Position = pos.xyww;
 };

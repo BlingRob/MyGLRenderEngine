@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include "Headers.h"
+#include "Entity.h"
 
 // Параметры камеры по умолчанию
 const float YAW = -90.0f;
@@ -11,7 +12,7 @@ const float SENSITIVITY = 0.1f;
 const float ZOOM = 45.0f;
 
 // Абстрактный класс камеры, который обрабатывает входные данные и вычисляет соответствующие Эйлеровы углы, векторы и матрицы для использования в OpenGL
-class Camera
+class Camera:public Entity
 {
 public:
     enum class Camera_Movement
@@ -54,14 +55,14 @@ public:
         return glm::lookAt(Position, Position + Front, Up);
     }
 
-    std::string GetName() const
+    /*std::string GetName() const
     {
         return name;
     }
     void SetName(std::string name)
     {
         this->name = name;
-    }
+    }*/
 
     //Обрабатываем входные данные, полученные от любой клавиатуроподобной системы ввода. Принимаем входной параметр в виде определенного камерой перечисления (для абстрагирования его от оконных систем)
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)

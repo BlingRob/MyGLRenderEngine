@@ -23,7 +23,7 @@ bool Loader::LoadScene(std::string_view path)
     #if defined(__WIN32__)
         directory = path.substr(0, path.find_last_of('\\'));
     #else
-        directory = path.substr(0, (path.find_last_of('/'));
+        directory = path.substr(0, path.find_last_of('/'));
     #endif
     IndexModel = scene->mRootNode->mNumChildren - 1;
     IndexLight = scene->mNumLights - 1;
@@ -572,8 +572,11 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
         while ((light = std::shared_ptr<Light>(GetLight().release())))
         {
             scen->AddLight(light);
-            Scene::DefaultPointLightModel->GetRoot()->tr.Set(light->tr.Get());
-            scen->AddModel(Scene::DefaultPointLightModel);
+            if (Scene::DefaultPointLightModel)
+            {
+                Scene::DefaultPointLightModel->GetRoot()->tr.Set(light->tr.Get());
+                scen->AddModel(Scene::DefaultPointLightModel);
+            }
         }
 
         //std::list<std::thread> threads;// (new std::thread[IndexModel + 1]);

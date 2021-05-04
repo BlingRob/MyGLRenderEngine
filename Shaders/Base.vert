@@ -10,7 +10,7 @@ struct Transform
 	mat4 model;
 	mat4 view;
 	mat4 projection;
-    mat4 VP;
+    mat4 PV;
 };
 struct PointLight
  {    
@@ -30,6 +30,7 @@ out VS_OUT {
     vec3 ViewPos;
     vec2 TexCoords;
     vec3 TangentFragPos;
+    vec4 ShadowCoord;
     PointLight light;
 } vs_out;
 
@@ -37,7 +38,7 @@ uniform Transform transform;
 uniform mat3 NormalMatrix;
 uniform vec3 viewPos;
 uniform PointLight light;
-//uniform mat4 lightSpaceMatrix;
+uniform mat4 ShadowMatrix;
 
 void main()
 {
@@ -55,17 +56,8 @@ void main()
     vs_out.ViewPos        = TBN * viewPos;
     vs_out.TangentFragPos = TBN * vs_out.FragPos;
 
-    //vs_out.WorldPos =  vec3(transform.model * vec4(position, 1.0));
-
-    //vs_out.light.LightDir =  normalize(TBN * (light.position.xyz - vs_out.WorldPos));
-    //vs_out.ViewDir  = normalize(TBN * (viewPos - Pos));
-    //vs_out.ViewDir  = normalize(TBN * (viewPos - vs_out.WorldPos));
-    //vs_out.FragPos =  TBN * vec3(transform.model * vec4(position, 1.0));
-
-    //vs_out.Normal = NormalMatrix * VertexNormal;
-    
-    //vs_out.FragPosLightSpace = lightSpaceMatrix * vec4(vs_out.FragPos, 1.0);
+    vs_out.ShadowCoord = ShadowMatrix * vec4(vs_out.FragPos, 1.0);
     vs_out.TexCoords = texCoord;
-	gl_Position = (transform.VP * transform.model) * vec4(position,1.0f);
+	gl_Position = transform.PV * vec4(vs_out.FragPos,1.0f);
 
 };

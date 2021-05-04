@@ -124,7 +124,7 @@ void GUI::Interface()
 
 			if (convolution & AddWindowActive)
 			{
-				static char* buff[] = {"1","2","3","4","5","6","7","8","9"};
+				const char* buff[] = {"1","2","3","4","5","6","7","8","9"};
 				ImGui::Begin("Matrix of convolution",&AddWindowActive,ImGuiWindowFlags_NoDecoration);
 				{
 					if (ImGui::BeginTable("", 3, ImGuiTableFlags_Borders))

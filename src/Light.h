@@ -2,10 +2,10 @@
 #include "Headers.h"
 #include "Shader.h"
 #include "Transformation.h"
+#include "Entity.h"
 
-class BLight
+class BLight:public Entity
 {
-	std::string name;
 	float constant;
 	float linear;
 	float quadratic;
@@ -28,16 +28,13 @@ class BLight
 	glm::vec3 GetAmbient() const;
 	glm::vec3 GetDiffuse() const;
 	glm::vec3 GetSpecular() const;
-	std::string GetName() const;
 
 	void SetAttenuation(const glm::vec3&);
 	void SetAmbient(const glm::vec3&);
 	void SetDiffuse(const glm::vec3&);
 	void SetSpecular(const glm::vec3&);
-	void SetName(const std::string&);
 	
 	virtual void SendToShader(const Shader& shader);
-
 };
 
 class DirectionalLight:public virtual BLight

@@ -70,15 +70,11 @@
 		scene = std::make_shared<std::unique_ptr<Scene>>(std::move(std::make_unique<Scene>()));
 		//GUI Initialization
 		gui = std::make_unique<GUI>(window, &context, scene);
-		//Logging
-		FILE* stdinStream,*stderrStream;
-		freopen_s(&stdinStream,"Log.txt", "w", stdout);
-		freopen_s(&stderrStream,"ErrLog.txt", "w", stderr);
 		//Create addition frame buffer
 		
 		SDL_DisplayMode DM;
 		SDL_GetCurrentDisplayMode(0, &DM);
-		frame = std::make_unique<FrameBuffer>(DM.w, DM.h);
+		frame = std::make_unique<PostProcessBuffer>(DM.w, DM.h);
 		frame->AddFrameBuffer(BufferType::Color);
 		frame->AddRenderBuffer(BufferType::Depth_Stencil);
 		frame->Core = gui->Core;
@@ -180,7 +176,6 @@
 							SCR_HEIGHT = static_cast<uint32_t>(e.window.data2);
 							glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 							ChangedProj = true;
-
 						break;
 						default:
 							break;
@@ -188,6 +183,10 @@
 				}
 			}
 		}
+		//Apply keys
+		do_movement();
+		change_matrixes();
+
 		return true;
 	}
 
@@ -196,24 +195,8 @@
 		dt = static_cast<float>(chron());
 		if(!ProcEvents())
 			return false;
-		do_movement();
-		
 		if(gui->FrameClicked)
 			frame->AttachBuffer();
-		if (ChangedProj)
-		{
-			(*scene)->matrs.Projection = std::make_shared<glm::mat4>(std::move(glm::perspective(glm::radians((*scene)->GetCam()->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f)));
-			ChangedProj = false;
-		}
-		if (ChangedView)
-		{
-			(*scene)->matrs.View = std::make_shared<glm::mat4>(std::move((*scene)->GetCam()->GetViewMatrix()));
-			ChangedView = false;
-		}
-
-		std::shared_ptr<Light> lig = (*scene)->GetLight("Point_Orientation");
-		if (lig)
-			lig->SetPos(2.0f * glm::vec3(sin(GetTime()), 5.0f, cos(GetTime())));
 		(*scene)->Draw();
 		if (gui->FrameClicked)
 		{
@@ -240,6 +223,19 @@
 		if (keys[SDL_SCANCODE_D])
 			(*scene)->GetCam()->ProcessKeyboard(Camera::Camera_Movement::RIGHT, dt);
 		ChangedView = true;
+	}
+	void RenderEngine::change_matrixes()
+	{
+		if (ChangedProj)
+		{
+			(*scene)->matrs.Projection = std::make_shared<glm::mat4>(std::move(glm::perspective(glm::radians((*scene)->GetCam()->Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 150.0f)));
+			ChangedProj = false;
+		}
+		if (ChangedView)
+		{
+			(*scene)->matrs.View = std::make_shared<glm::mat4>(std::move((*scene)->GetCam()->GetViewMatrix()));
+			ChangedView = false;
+		}
 	}
 
 	void MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, GLchar const* message, void const* user_param)

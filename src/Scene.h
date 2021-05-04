@@ -5,6 +5,7 @@
 #include "Node.h"
 #include "Model.h"
 #include "Transformation.h"
+#include "FrameBuffer.h"
 
 struct Scene_Information
 {
@@ -22,6 +23,12 @@ class Scene
 
 	glm::vec4 BackGroundColour;
 	std::shared_ptr<Node> SkyBox;
+	
+	GLuint ShadowMapSize = 2048;
+	std::unique_ptr<ShadowMapBuffer> ShadowMap;
+	Matrices LightMat;//Translation-projection Shadow matrices
+	glm::mat4 scale_bias_matrix; 
+	void ShadowDraw();
 
 	public:
 	

@@ -62,50 +62,47 @@ GLuint Shader::CreateShader(const GLchar* Path, GLenum types)
 	return Shader;
 }
 
-void Shader::setScal(const std::string& name, const float num) const
+void Shader::setScal(std::string_view name, const float num) const
 {
-	glUniform1f(glGetUniformLocation(Program, name.c_str()), num);
+	glUniform1f(glGetUniformLocation(Program, name.data()), num);
 }
-void Shader::setScal(const std::string& name, const int num) const
+void Shader::setScal(std::string_view name, const int num) const
 {
-	glUniform1i(glGetUniformLocation(Program, name.c_str()), num);
+	glUniform1i(glGetUniformLocation(Program, name.data()), num);
 }
-void Shader::setScal(const std::string& name, const bool num) const
+void Shader::setScal(std::string_view name, const bool num) const
 {
-	glUniform1i(glGetUniformLocation(Program, name.c_str()), num);
-}
-
-void Shader::setVec(const std::string& name,const glm::vec2& vec) const 
-{
-	glUniform2fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(vec));
-}
-void Shader::setVec(const std::string& name, const glm::vec3& vec) const
-{
-	glUniform3fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(vec));
-}
-void Shader::setVec(const std::string& name, const glm::vec4& vec) const
-{
-	glUniform4fv(glGetUniformLocation(Program, name.c_str()), 1, glm::value_ptr(vec));
+	glUniform1i(glGetUniformLocation(Program, name.data()), num);
 }
 
-void Shader::setMat(const std::string& name, const glm::mat2& mat) const
+void Shader::setVec(std::string_view name,const glm::vec2& vec) const
 {
-	glUniformMatrix2fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
+	glUniform2fv(glGetUniformLocation(Program, name.data()), 1, glm::value_ptr(vec));
 }
-void Shader::setMat(const std::string& name, const glm::mat3& mat) const
+void Shader::setVec(std::string_view name, const glm::vec3& vec) const
 {
-	glUniformMatrix3fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
+	glUniform3fv(glGetUniformLocation(Program, name.data()), 1, glm::value_ptr(vec));
 }
-void Shader::setMat(const std::string& name, const glm::mat4& mat) const
+void Shader::setVec(std::string_view name, const glm::vec4& vec) const
 {
-	glUniformMatrix4fv(glGetUniformLocation(Program, name.c_str()), 1, GL_FALSE, glm::value_ptr(mat));
+	glUniform4fv(glGetUniformLocation(Program, name.data()), 1, glm::value_ptr(vec));
 }
 
-std::string Shader::GetName() const
+void Shader::setMat(std::string_view name, const glm::mat2& mat) const
 {
-	return name;
+	glUniformMatrix2fv(glGetUniformLocation(Program, name.data()), 1, GL_FALSE, glm::value_ptr(mat));
 }
-void Shader::SetName(std::string name)
+void Shader::setMat(std::string_view name, const glm::mat3& mat) const
 {
-	this->name = name;
+	glUniformMatrix3fv(glGetUniformLocation(Program, name.data()), 1, GL_FALSE, glm::value_ptr(mat));
+}
+void Shader::setMat(std::string_view name, const glm::mat4& mat) const
+{
+	glUniformMatrix4fv(glGetUniformLocation(Program, name.data()), 1, GL_FALSE, glm::value_ptr(mat));
+}
+
+void Shader::setSubroutine(GLenum ShaderType, std::string_view name)
+{
+	GLuint Index = glGetSubroutineIndex(Program, ShaderType, name.data());
+	glUniformSubroutinesuiv(ShaderType, 1, &Index);
 }

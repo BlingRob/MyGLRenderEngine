@@ -36,7 +36,8 @@
 		//Time
 		Chronometr chron;
 		//callbacks
-		void do_movement();
+		inline void do_movement();
+		inline void change_matrixes();
 		bool ProcEvents();
 		//GUI
 		std::unique_ptr<GUI> gui;
@@ -44,7 +45,7 @@
 		bool ChangedProj = false;
 		bool ChangedView = false;
 		//Frame Buffer
-		std::unique_ptr<FrameBuffer> frame;
+		std::unique_ptr<PostProcessBuffer> frame;
 		public:
 			RenderEngine();
 			~RenderEngine()

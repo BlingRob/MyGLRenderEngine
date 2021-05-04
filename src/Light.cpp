@@ -9,14 +9,6 @@ void BLight::SendToShader(const Shader& shader)
 	shader.setScal("light.linear", linear);
 	shader.setScal("light.quadratic", quadratic);
 }
-std::string BLight::GetName() const
-{
-	return name;
-}
-void BLight::SetName(const std::string& name) 
-{
-	this->name = name;
-}
 glm::vec3 BLight::GetAttenuation() const 
 {
 	return glm::vec3(constant, linear, quadratic);

@@ -38,6 +38,8 @@ struct Texture
 
 uniform Material mat[1];
 uniform Texture tex[1];
+layout (binding = 10) uniform sampler2DShadow shadowMap;
+
 
 out vec4 FragColor;
 
@@ -46,43 +48,73 @@ in VS_OUT {
     vec3 ViewPos;
     vec2 TexCoords;
     vec3 TangentFragPos;
+    vec4 ShadowCoord;
     PointLight light;
 } fs_in;
 
-//layout (binding = 10) uniform sampler2D shadowMap;
+void GetLVH(in PointLight,out vec3,out vec3,out vec3);
+float GetAttenuation(PointLight);
 
 vec3 PhongLight(PointLight,Material,Texture);
+vec3 ImproveLight(PointLight,Material,Texture,float);
 
 float DistributionGGX(vec3, vec3, float);
 float GeometrySchlickGGX(float, float);
 float GeometrySmith(vec3, vec3, vec3, float);
-vec3 ImproveLight(PointLight,Material,Texture);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
-//float ShadowCalculation(vec4);
+float ShadowCalculation(vec4);
 
 void main()
 { 
     //FragColor =  vec4(PhongLight(fs_in.light, mat[0], tex[0]),1.0f);// + vec4(texture(tex[0].emissive, fs_in.TexCoords).rgb,0.0f);//texture(tex[0].diffuse,fs_in.TexCoords);//
-    FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f);
+    //FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f) * (1 - ShadowCalculation(fs_in.ShadowCoord));
+    //FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f) * ShadowCalculation(fs_in.ShadowCoord);
+    //FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f) * textureProj(shadowMap,fs_in.ShadowCoord);
+    //FragColor = vec4(textureProj(shadowMap,fs_in.ShadowCoord/fs_in.ShadowCoord.w));
     //FragColor = vec4(texture(tex[0].normal, fs_in.TexCoords).rgb,0.0f);
+    //FragColor = vec4(vec3(textureProj(shadowMap,fs_in.FragPosLightSpace)),0.0f);
+    //FragColor = vec4(vec3(ShadowCalculation(fs_in.ShadowCoord)),0.0f);
+    FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0],ShadowCalculation(fs_in.ShadowCoord)),1.0f);
     //FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 }
 
-/*float ShadowCalculation(vec4 fragPosLightSpace)
+
+float ShadowCalculation(vec4 fragPosLightSpace)
 {
     // perform perspective divide
-    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    fragPosLightSpace /= fragPosLightSpace.w;
+    //vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
-    projCoords = projCoords * 0.5 + 0.5;
+    //projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = texture(shadowMap, projCoords.xy).r; 
+    float closestDepth = textureProj(shadowMap,fragPosLightSpace);//texture(shadowMap, projCoords.xy).r; 
     // get depth of current fragment from light's perspective
-    float currentDepth = projCoords.z;
+    //float currentDepth = projCoords.z;
     // check whether current frag pos is in shadow
-    float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+    //float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
 
-    return shadow;
-}*/
+    closestDepth += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(-1,-1));
+    closestDepth += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(-1,1));
+    closestDepth += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(1,-1));
+    closestDepth += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(1,1));
+
+
+    return closestDepth * 0.2;
+}
+void GetLVH(in PointLight light,out vec3 L,out vec3 V,out vec3 H)
+{
+   //fall vector
+   L = normalize(light.position - fs_in.TangentFragPos);
+   //view vector
+   V = normalize(fs_in.ViewPos - fs_in.TangentFragPos);
+   //half-way vector
+   H = normalize(V + L);
+}
+float GetAttenuation(PointLight light)
+{
+    float distance    = length(light.position - fs_in.TangentFragPos);
+    return 1.0f / (light.constant + (light.linear + light.quadratic) * distance);
+}
 
 vec3 fresnelSchlick(float cosTheta, vec3 F0)
 {
@@ -123,35 +155,33 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 ImproveLight(PointLight light,Material mat,Texture tex)
+vec3 ImproveLight(PointLight light,Material mat,Texture tex,float shadow)
 {
     vec3 N = normalize((2.0f * texture(tex.normal,fs_in.TexCoords).rgb) - 1.0f);  
     vec3 Lo = vec3(0.0);
 
-    vec3 L = normalize(light.position - fs_in.TangentFragPos);
-    vec3 V = normalize(fs_in.ViewPos - fs_in.TangentFragPos);
-    vec3 H = normalize(V + L);
+    vec3 L,V,H;
+    GetLVH(light,L,V,H);
 
     vec3 albedo = pow(texture(tex.diffuse, fs_in.TexCoords).rgb, vec3(gamma));
     float metallic = texture(tex.metallic_roughness, fs_in.TexCoords).b;
     float roughness = texture(tex.metallic_roughness, fs_in.TexCoords).g;
     float ao        = texture(tex.ao, fs_in.TexCoords).r;
-  
-    float distance    = length(light.position - fs_in.TangentFragPos);
-    float attenuation = 1.0f / (light.constant + (light.linear + light.quadratic) * distance);
-    vec3 radiance     = light.ambient * attenuation;
-
     vec3 F0 = vec3(0.04); 
     F0      = mix(F0, albedo, metallic);
-    vec3 F  = fresnelSchlick(max(dot(H, V), 0.0), F0);
+  
+    float attenuation = GetAttenuation(light);
+    vec3 radiance     = light.ambient * attenuation;
 
+    // Cook-Torrance BRDF
     float NDF = DistributionGGX(N, H, roughness);       
-    float G   = GeometrySmith(N, V, L, roughness); 
+    float G   = GeometrySmith(N, V, L, roughness);
+    vec3 F  = fresnelSchlick(max(dot(H, V), 0.0), F0); 
 
     vec3 numerator    = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
     vec3 specular     = numerator / denominator; 
-
+    //Fresnel coefficient
     vec3 kS = F;
     vec3 kD = vec3(1.0) - kS;
   
@@ -160,10 +190,10 @@ vec3 ImproveLight(PointLight light,Material mat,Texture tex)
     Lo = (kD * mat.ambient / PI + specular) * radiance * NdotL;
 
     vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 color = ambient + Lo;
+    vec3 color = ambient + Lo * shadow;
 
     color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0/2.2));
+    color = pow(color, vec3(1.0/gamma));
      
      return color;
 }
@@ -171,15 +201,13 @@ vec3 ImproveLight(PointLight light,Material mat,Texture tex)
 vec3 PhongLight(PointLight light,Material mat,Texture tex)
 {
     // ���������
-    float distance    = length(light.position - fs_in.TangentFragPos);
-    float attenuation = 1.0f / (light.constant + (light.linear + light.quadratic) * distance); 
+    float attenuation = GetAttenuation(light);
 
     vec4 texColor = texture(tex.diffuse,fs_in.TexCoords);
     vec3 normal = normalize((2.0f * texture(tex.normal,fs_in.TexCoords).rgb) - 1.0f); 
 
-    vec3 L = normalize(light.position - fs_in.TangentFragPos);
-    vec3 V = normalize(fs_in.ViewPos - fs_in.TangentFragPos);
-    vec3 H = normalize(V + L);
+    vec3 L,V,H;
+    GetLVH(light,L,V,H);
 
     // ��������� ���������
     vec3 diffuse = light.diffuse * mat.diffuse * max(dot(normal.xyz, L), 0.0) * texColor.rgb;
