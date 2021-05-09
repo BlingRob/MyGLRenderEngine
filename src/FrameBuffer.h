@@ -2,14 +2,15 @@
 #include "Headers.h"
 #include "Shader.h"
 #include "Transformation.h"
+#include <random>
 
 enum class BufferType{Color, Depth, Stencil, Depth_Stencil};
 
 class FrameBuffer
 {
 	private:
-		
 		std::tuple<GLenum, GLenum, GLenum> GetGlBufferType(BufferType BuffType);
+		bool RenderInclude, TextureInclude;
 	protected:
 		GLuint _mWeight, _mHeight;
 		GLuint textureID;
@@ -27,17 +28,10 @@ class FrameBuffer
 		void AttachBuffer();
 		void DetachBuffer();
 
-		void SendToShader(std::shared_ptr<Shader> sh, std::string_view NameUniform);
+		virtual void SendToShader(const Shader& sh, std::string_view NameUniform);
 		std::shared_ptr<Shader> GetShader();
 };
 
-class ShadowMapBuffer:public FrameBuffer
-{
-	public:
-		ShadowMapBuffer(GLuint weight, GLuint height);
-		void AddFrameBuffer(BufferType BuffType);
-
-};
 class PostProcessBuffer:public FrameBuffer 
 {
 	public:

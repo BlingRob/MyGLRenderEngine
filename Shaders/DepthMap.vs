@@ -13,5 +13,6 @@ uniform Transform transform;
 
 void main()
 {
-	gl_Position = transform.PV * transform.model * vec4(position,1.0f);
+	//gl_Position = transform.PV * transform.model * vec4(position,1.0f);
+	gl_Position = transform.model * vec4(position,1.0f);
 };

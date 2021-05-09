@@ -17,6 +17,8 @@
 //#include <mutex>
 #include <thread>
 #include <future>
+#include <algorithm>
+#include <numeric>
 
 //opengl
 #include "gl/gl.h"

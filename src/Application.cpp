@@ -80,6 +80,8 @@
 		frame->Core = gui->Core;
 		if (!frame->IsCorrect())
 			std::cerr << "Creating addition buffer is failed";
+
+		Light::Init();
 	}
 
 	double RenderEngine::GetTime()
@@ -253,7 +255,7 @@
 			}
 		}();
 
-		auto type_str = [type]() {
+		auto type_str = [type]() -> std::string {
 			switch (type)
 			{
 			case GL_DEBUG_TYPE_ERROR: return "ERROR";
@@ -267,7 +269,7 @@
 			}
 		}();
 
-		auto severity_str = [severity]() {
+		auto severity_str = [severity]() -> std::string {
 			switch (severity)
 			{
 			case GL_DEBUG_SEVERITY_NOTIFICATION: return "NOTIFICATION";
@@ -278,10 +280,18 @@
 			}
 		}();
 
-		std::cerr
-			<< source_str << ", "
-			<< type_str << ", "
-			<< severity_str << ", "
-			<< id << ": "
-			<< message << std::endl;
+		if(severity_str != "NOTIFICATION")
+			std::cerr
+				<< source_str << ", "
+				<< type_str << ", "
+				<< severity_str << ", "
+				<< id << ": "
+				<< message << std::endl;
+		else
+			std::cout
+				<< source_str << ", "
+				<< type_str << ", "
+				<< severity_str << ", "
+				<< id << ": "
+				<< message << std::endl;
 	}

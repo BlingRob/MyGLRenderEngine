@@ -2,7 +2,7 @@
 
 out vec4 color;
 
-struct PointLight
+struct Light
  {    
     vec3 position;
     
@@ -15,9 +15,9 @@ struct PointLight
     vec3 specular;
 };  
 
-uniform PointLight light;
+uniform Light light[1];
 
 void main()
 {
-	color = vec4(light.diffuse,1.0f);
+	color = vec4(light[0].diffuse,1.0f);
 }

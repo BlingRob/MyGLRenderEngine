@@ -2,6 +2,8 @@
 
 const float PI = 3.14159265359;
 const float gamma = 2.2;
+const uint MAX_LIGHTS = 16;
+
 struct Material
 {
     vec3 ambient;
@@ -10,9 +12,10 @@ struct Material
     float shininess;
 
 };
-struct PointLight
+
+struct Light
  {    
-    vec3 position;
+    int index;
     
     float constant;
     float linear;
@@ -21,7 +24,10 @@ struct PointLight
     vec3 ambient;
     vec3 diffuse;
     vec3 specular;
-}; 
+
+    //mat4 ShadowMatrix;
+    //vec4 ShadowCoords;
+};  
 
 struct Texture
 {
@@ -30,7 +36,6 @@ struct Texture
     sampler2D specular;
     sampler2D emissive;
     sampler2D height;
-
     sampler2D metallic_roughness;
     //sampler2D roughness;
     sampler2D ao;
@@ -38,8 +43,18 @@ struct Texture
 
 uniform Material mat[1];
 uniform Texture tex[1];
-layout (binding = 10) uniform sampler2DShadow shadowMap;
+uniform uint NumLights;
+uniform Light light[MAX_LIGHTS];
+uniform vec4 LightPositions[MAX_LIGHTS];
+layout (binding = 10) uniform samplerCubeArray shadowMaps;
+//////////////////////////////
+layout (binding = 11 ) uniform sampler3D OffsetTex;
 
+uniform float Radius;
+uniform vec3 OffsetTexSize; // (width, height, depth)
+////////////////////////////////
+
+uniform float far_plane;
 
 out vec4 FragColor;
 
@@ -48,21 +63,35 @@ in VS_OUT {
     vec3 ViewPos;
     vec2 TexCoords;
     vec3 TangentFragPos;
-    vec4 ShadowCoord;
-    PointLight light;
+
+    vec4 LightPositions[MAX_LIGHTS];
 } fs_in;
 
-void GetLVH(in PointLight,out vec3,out vec3,out vec3);
-float GetAttenuation(PointLight);
+void GetLVH(in vec4 LightPosition,out vec3 L,out vec3 V,out vec3 H);
+float GetAttenuation(in vec4 LightPosition,in Light light);
 
-vec3 PhongLight(PointLight,Material,Texture);
-vec3 ImproveLight(PointLight,Material,Texture,float);
+vec3 PhongLight(Light,Material,Texture);
+vec3 ImproveLight(Material,Texture);
 
 float DistributionGGX(vec3, vec3, float);
 float GeometrySchlickGGX(float, float);
 float GeometrySmith(vec3, vec3, vec3, float);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
-float ShadowCalculation(vec4);
+float ShadowCalculation(uint);
+
+float VectorToDepth (vec3 Vec)
+{
+    vec3 AbsVec = abs(Vec);
+    float LocalZcomp = max(AbsVec.x, max(AbsVec.y, AbsVec.z));
+
+    // Replace f and n with the far and near plane values you used when
+    //   you drew your cube map.
+    const float f = far_plane;
+    const float n = 0.1;
+
+    float NormZComp = (f+n) / (f-n) - (2*f*n)/(f-n)/LocalZcomp;
+    return (NormZComp + 1.0) * 0.5;
+}
 
 void main()
 { 
@@ -70,49 +99,98 @@ void main()
     //FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f) * (1 - ShadowCalculation(fs_in.ShadowCoord));
     //FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f) * ShadowCalculation(fs_in.ShadowCoord);
     //FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0]),1.0f) * textureProj(shadowMap,fs_in.ShadowCoord);
+
     //FragColor = vec4(textureProj(shadowMap,fs_in.ShadowCoord/fs_in.ShadowCoord.w));
     //FragColor = vec4(texture(tex[0].normal, fs_in.TexCoords).rgb,0.0f);
     //FragColor = vec4(vec3(textureProj(shadowMap,fs_in.FragPosLightSpace)),0.0f);
-    //FragColor = vec4(vec3(ShadowCalculation(fs_in.ShadowCoord)),0.0f);
-    FragColor = vec4(ImproveLight(fs_in.light,mat[0], tex[0],ShadowCalculation(fs_in.ShadowCoord)),1.0f);
+    //FragColor = vec4(vec3(ShadowCalculation(0)),1.0f);
+    FragColor = vec4(ImproveLight(mat[0], tex[0]),1.0f);
     //FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
+
+    //FragColor = vec4(vec3(ShadowCalculation(0)),1.0f);
+    //FragColor += vec4(vec3(ShadowCalculation(1)),1.0f);
+    //vec3 fragToLight0 = fs_in.FragPos - vec3(LightPositions[0]); 
+    //vec3 fragToLight1 = fs_in.FragPos - vec3(LightPositions[1]); 
+    //FragColor = texture(shadowMaps, vec4(fragToLight0, 0.0f));
+    //FragColor += texture(shadowMaps, vec4(fragToLight1, 1.0f));
 }
 
 
-float ShadowCalculation(vec4 fragPosLightSpace)
+float ShadowCalculation(uint index)
 {
     // perform perspective divide
-    fragPosLightSpace /= fragPosLightSpace.w;
+    //fragPosLightSpace /= fragPosLightSpace.w;
     //vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
     // transform to [0,1] range
     //projCoords = projCoords * 0.5 + 0.5;
     // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    float closestDepth = textureProj(shadowMap,fragPosLightSpace);//texture(shadowMap, projCoords.xy).r; 
-    // get depth of current fragment from light's perspective
-    //float currentDepth = projCoords.z;
-    // check whether current frag pos is in shadow
-    //float shadow = currentDepth > closestDepth  ? 1.0 : 0.0;
+    //float shadow = textureProj(shadowMap,fragPosLightSpace);//texture(shadowMap, projCoords.xy).r; 
 
-    closestDepth += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(-1,-1));
-    closestDepth += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(-1,1));
-    closestDepth += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(1,-1));
-    closestDepth += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(1,1));
+    vec3 fragToLight = fs_in.FragPos - vec3(LightPositions[index]); 
+    float closestDepth = texture(shadowMaps, vec4(fragToLight, index)).r;
+    closestDepth *= far_plane; 
+    float currentDepth = length(fragToLight);
+    float bias = 0.05; 
+    float shadow = currentDepth - bias  > closestDepth ? 0.0 : 1.0;
+    return shadow;  
 
+    /*ivec3 offsetCoord;
+    offsetCoord.xy = ivec2( mod( gl_FragCoord.xy, OffsetTexSize.xy ) );
 
-    return closestDepth * 0.2;
+    float sum = 0.0;
+    int samplesDiv2 = int(OffsetTexSize.z);
+    vec4 sc = fragPosLightSpace;
+    vec2 CurPixel = fragPosLightSpace.xy;
+
+    for( int i = 0 ; i < 4; ++i )
+    {
+        offsetCoord.z = i;
+        vec4 offsets = texelFetch(OffsetTex,offsetCoord,0) * Radius * fragPosLightSpace.w;
+
+        sc.xy = CurPixel + offsets.xy;
+        sum += textureProj(shadowMap, sc);
+        sc.xy = CurPixel + offsets.zw;
+        sum += textureProj(shadowMap, sc);
+    }
+    float shadow = sum / 8.0;
+    
+    if( shadow != 1.0 && shadow != 0.0 ) 
+    {
+        for( int i = 4; i < samplesDiv2; ++i )
+         {
+            offsetCoord.z = i;
+            vec4 offsets = texelFetch(OffsetTex, offsetCoord,0) * Radius * fragPosLightSpace.w;
+
+            sc.xy = CurPixel + offsets.xy;
+            sum += textureProj(shadowMap, sc);
+            sc.xy = CurPixel + offsets.zw;
+            sum += textureProj(shadowMap, sc);
+        }
+        shadow = sum / float(samplesDiv2 * 2.0f);
+    }
+
+    //shadow += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(-1,-1));
+    //shadow += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(-1,1));
+    //shadow += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(1,-1));
+    //shadow += textureProjOffset(shadowMap,fragPosLightSpace,ivec2(1,1));
+
+    return shadow;
+
+    //return closestDepth * 0.2;*/
 }
-void GetLVH(in PointLight light,out vec3 L,out vec3 V,out vec3 H)
+void GetLVH(in vec4 LightPosition,out vec3 L,out vec3 V,out vec3 H)
 {
    //fall vector
-   L = normalize(light.position - fs_in.TangentFragPos);
+   L = normalize(LightPosition.xyz - fs_in.TangentFragPos * LightPosition.w);
    //view vector
    V = normalize(fs_in.ViewPos - fs_in.TangentFragPos);
    //half-way vector
    H = normalize(V + L);
 }
-float GetAttenuation(PointLight light)
+
+float GetAttenuation(in vec4 LightPosition,in Light light)
 {
-    float distance    = length(light.position - fs_in.TangentFragPos);
+    float distance    = length(LightPosition.xyz - fs_in.TangentFragPos) * LightPosition.w;
     return 1.0f / (light.constant + (light.linear + light.quadratic) * distance);
 }
 
@@ -155,13 +233,11 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
     return ggx1 * ggx2;
 }
 
-vec3 ImproveLight(PointLight light,Material mat,Texture tex,float shadow)
+vec3 ImproveLight(Material mat,Texture tex)
 {
+    float shadow;
     vec3 N = normalize((2.0f * texture(tex.normal,fs_in.TexCoords).rgb) - 1.0f);  
     vec3 Lo = vec3(0.0);
-
-    vec3 L,V,H;
-    GetLVH(light,L,V,H);
 
     vec3 albedo = pow(texture(tex.diffuse, fs_in.TexCoords).rgb, vec3(gamma));
     float metallic = texture(tex.metallic_roughness, fs_in.TexCoords).b;
@@ -169,35 +245,42 @@ vec3 ImproveLight(PointLight light,Material mat,Texture tex,float shadow)
     float ao        = texture(tex.ao, fs_in.TexCoords).r;
     vec3 F0 = vec3(0.04); 
     F0      = mix(F0, albedo, metallic);
-  
-    float attenuation = GetAttenuation(light);
-    vec3 radiance     = light.ambient * attenuation;
 
-    // Cook-Torrance BRDF
-    float NDF = DistributionGGX(N, H, roughness);       
-    float G   = GeometrySmith(N, V, L, roughness);
-    vec3 F  = fresnelSchlick(max(dot(H, V), 0.0), F0); 
+    vec3 L,V,H;
 
-    vec3 numerator    = NDF * G * F;
-    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
-    vec3 specular     = numerator / denominator; 
-    //Fresnel coefficient
-    vec3 kS = F;
-    vec3 kD = vec3(1.0) - kS;
+    for(uint i = 0;i < NumLights;++i)
+    {
+        GetLVH(fs_in.LightPositions[i],L,V,H);
   
-    kD *= 1.0 - metallic;
-    float NdotL = max(dot(N, L), 0.0);        
-    Lo = (kD * mat.ambient / PI + specular) * radiance * NdotL;
+        float attenuation = GetAttenuation(fs_in.LightPositions[i], light[i]);
+        vec3 radiance     = light[i].ambient * attenuation;
+
+        // Cook-Torrance BRDF
+        float NDF = DistributionGGX(N, H, roughness);       
+        float G   = GeometrySmith(N, V, L, roughness);
+        vec3 F  = fresnelSchlick(max(dot(H, V), 0.0), F0); 
+
+        vec3 numerator    = NDF * G * F;
+        float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.001;
+        vec3 specular     = numerator / denominator; 
+         //Fresnel coefficient
+        vec3 kS = F;
+        vec3 kD = vec3(1.0) - kS;
+  
+        kD *= 1.0 - metallic;
+        float NdotL = max(dot(N, L), 0.0);        
+        Lo += (kD * mat.ambient / PI + specular) * radiance * NdotL * ShadowCalculation(light[i].index);
+    }
 
     vec3 ambient = vec3(0.03) * albedo * ao;
-    vec3 color = ambient + Lo * shadow;
+    vec3 color = ambient + Lo;
 
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/gamma));
      
      return color;
 }
-
+/*
 vec3 PhongLight(PointLight light,Material mat,Texture tex)
 {
     // ���������
@@ -227,4 +310,4 @@ vec3 PhongLight(PointLight light,Material mat,Texture tex)
     //float shadow = ShadowCalculation(fs_in.FragPosLightSpace);
     //return vec4((ambient  + (1.0 - shadow) * (diffuse + specular)) * Tex, 1.0f);
     return vec3(ambient  + diffuse + specular) * attenuation;
-}
+}*/

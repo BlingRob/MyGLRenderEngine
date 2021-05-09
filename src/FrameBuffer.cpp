@@ -4,14 +4,17 @@ FrameBuffer::FrameBuffer(GLuint weight, GLuint height)
     _mWeight = weight;
     _mHeight = height;
     textureID = Render = GL_NONE;
+    RenderInclude = TextureInclude = false;
     glCreateFramebuffers(1, &FBO);
 }
 
 FrameBuffer::~FrameBuffer()
 {
     glDeleteFramebuffers(1, &FBO);
-    glDeleteRenderbuffers(1, &Render);
-    glDeleteTextures(1, &textureID);
+    if(RenderInclude)
+       glDeleteRenderbuffers(1, &Render);
+    if(TextureInclude)
+       glDeleteTextures(1, &textureID);
 }
 
 std::tuple<GLenum, GLenum, GLenum> FrameBuffer::GetGlBufferType(BufferType BuffType)
@@ -58,6 +61,7 @@ void FrameBuffer::AddFrameBuffer(BufferType BuffType)
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glNamedFramebufferTexture(FBO, Attachment, textureID, 0);
+    TextureInclude = true;
 }
 
 void FrameBuffer::AddRenderBuffer(BufferType BuffType)
@@ -66,6 +70,7 @@ void FrameBuffer::AddRenderBuffer(BufferType BuffType)
     auto [Attachment, Format, Type] = GetGlBufferType(BuffType);
     glNamedRenderbufferStorage(Render, Format, _mWeight, _mHeight);
     glNamedFramebufferRenderbuffer(FBO, Attachment, GL_RENDERBUFFER, Render);
+    RenderInclude = true;
 }
 
 bool FrameBuffer::IsCorrect() 
@@ -81,11 +86,11 @@ void FrameBuffer::DetachBuffer()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-void FrameBuffer::SendToShader(std::shared_ptr<Shader> sh,std::string_view NameUniform)
+void FrameBuffer::SendToShader(const Shader& sh,std::string_view NameUniform)
 {
     //GLint ind = glGetUniformLocation(sh->Program, "shadowMap");
     glBindTextureUnit(10, FrameBuffer::textureID);
-    glUniform1i(glGetUniformLocation(sh->Program, NameUniform.data()), 10);
+    glUniform1i(glGetUniformLocation(sh.Program, NameUniform.data()), 10);
 }
 
 std::shared_ptr<Shader> FrameBuffer::GetShader()
@@ -95,7 +100,7 @@ std::shared_ptr<Shader> FrameBuffer::GetShader()
 
 PostProcessBuffer::PostProcessBuffer(GLuint weight, GLuint height):FrameBuffer(weight, height)
 {
-    shader = std::make_shared<Shader>("../Shaders/PostEffects.vert", "../Shaders/PostEffects.frag");
+    shader = std::make_shared<Shader>("../Shaders/PostEffects.vert", "../Shaders/PostEffects.frag", nullptr);
 
     glCreateBuffers(1, &EBO);
     glNamedBufferStorage(EBO, sizeof(Indices), Indices, 0);
@@ -122,18 +127,18 @@ void PostProcessBuffer::Draw(uint64_t weight, uint64_t height)
 {
     glDisable(GL_DEPTH_TEST);
     shader->Use();
-    SendToShader(shader, "scene");
+    SendToShader(*shader, "scene");
     shader->setScal("wAspect", static_cast<float>(weight) / FrameBuffer::_mWeight);
     shader->setScal("hAspect", static_cast<float>(height) / FrameBuffer::_mHeight);
     if(invertion)
-        shader->setSubroutine(GL_FRAGMENT_SHADER, "Invertion");
+        shader->setSubroutine("Invertion", GL_FRAGMENT_SHADER);
     else if (convolution && Core)
     {
-        shader->setSubroutine(GL_FRAGMENT_SHADER, "Convolution");
+        shader->setSubroutine("Convolution", GL_FRAGMENT_SHADER);
         shader->setMat("kernel", *Core);
     }
     else
-        shader->setSubroutine(GL_FRAGMENT_SHADER, "Default");
+        shader->setSubroutine("Default", GL_FRAGMENT_SHADER);
 
     glBindVertexArray(VAO);
     glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr, 1, 0, 0);
@@ -141,20 +146,4 @@ void PostProcessBuffer::Draw(uint64_t weight, uint64_t height)
     glEnable(GL_DEPTH_TEST);
 }
 
-ShadowMapBuffer::ShadowMapBuffer(GLuint weight, GLuint height):FrameBuffer(weight, height)
-{
-    shader = std::make_shared<Shader>("../Shaders/DepthMap.vs", "../Shaders/DepthMap.frag");
-    glNamedFramebufferReadBuffer(FBO, GL_NONE);
-    glNamedFramebufferDrawBuffer(FBO, GL_NONE);
-}
-void ShadowMapBuffer::AddFrameBuffer(BufferType BuffType) 
-{
-    GLfloat borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-    FrameBuffer::AddFrameBuffer(BuffType);
-    glTextureParameteri(textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-    glTextureParameteri(textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-    glTextureParameterfv(textureID, GL_TEXTURE_BORDER_COLOR, borderColor);
 
-    glTextureParameteri(textureID, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-    glTextureParameteri(textureID, GL_TEXTURE_COMPARE_FUNC, GL_LESS);
-}

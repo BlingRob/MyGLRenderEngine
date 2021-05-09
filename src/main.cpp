@@ -28,8 +28,21 @@ int main(int argc, char* args[])
 		freopen("Log.txt", "w", stdout);
 		freopen("ErrLog.txt", "w", stderr);
 	#endif
-
-	rend();
-
+	try
+	{
+		rend();
+	}
+	catch(std::exception e)
+	{
+		std::cerr << e.what() << "\n";
+	}
+	catch (const char* err) 
+	{
+		std::cerr << err << "\n";
+	}
+	catch(std::string err) 
+	{
+		std::cerr << err << "\n";
+	}
 	return 0;
 }

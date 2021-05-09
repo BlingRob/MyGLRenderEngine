@@ -76,10 +76,7 @@ std::unique_ptr<Light> Loader::GetLight()
         return std::unique_ptr<Light>(nullptr);
 
     std::unique_ptr<Light> light = std::make_unique<Light>
-        (   scene->mLights[IndexLight]->mAttenuationConstant,
-            scene->mLights[IndexLight]->mAttenuationLinear,
-            scene->mLights[IndexLight]->mAttenuationQuadratic,
-            glm::vec3(scene->mLights[IndexLight]->mColorAmbient.r,
+        (   glm::vec3(scene->mLights[IndexLight]->mColorAmbient.r,
                       scene->mLights[IndexLight]->mColorAmbient.g, 
                       scene->mLights[IndexLight]->mColorAmbient.b),
             glm::vec3(scene->mLights[IndexLight]->mColorDiffuse.r,
@@ -88,6 +85,9 @@ std::unique_ptr<Light> Loader::GetLight()
             glm::vec3(scene->mLights[IndexLight]->mColorSpecular.r,
                       scene->mLights[IndexLight]->mColorSpecular.g,
                       scene->mLights[IndexLight]->mColorSpecular.b),
+            scene->mLights[IndexLight]->mAttenuationConstant,
+            scene->mLights[IndexLight]->mAttenuationLinear,
+            scene->mLights[IndexLight]->mAttenuationQuadratic,
             glm::vec3(LightNode->mParent->mTransformation[0][3],
                       LightNode->mParent->mTransformation[1][3],
                       LightNode->mParent->mTransformation[2][3]),
@@ -390,20 +390,20 @@ GLuint Loader::TextureFromFile(const void* path, std::size_t width, std::size_t 
 
     if (data)
     {
-        GLenum format = GL_RGB32F, mipfor = GL_RGB;
+        GLenum format = GL_RGB8, mipfor = GL_RGB;
         if (nrComponents == 1)
         {
+            format = GL_R8;
             mipfor = GL_RED;
-            format = GL_R16F;
         }
         else if (nrComponents == 3)
         {
-            format = GL_RGB32F;
+            format = GL_RGB8;
             mipfor = GL_RGB;
         }
         else if (nrComponents == 4)
         {
-            format = GL_RGBA32F;
+            format = GL_RGBA8;
             mipfor = GL_RGBA;
         }
 
@@ -438,7 +438,7 @@ GLuint Loader::CubeTextureFromFile(std::vector<std::string_view> paths)
     glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &textureID);
 
     data = stbi_load(paths[0].data(), &width, &height, &nrComponents, 0);
-    glTextureStorage3D(textureID, 1, GL_RGB32F, width, height, 6);
+    glTextureStorage3D(textureID, 1, GL_RGB8, width, height, 6);
     glTextureSubImage3D(textureID, 0, 0, 0, 0, width, height, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
 
     for (std::size_t i = 1; i < paths.size(); ++i)
@@ -451,16 +451,16 @@ GLuint Loader::CubeTextureFromFile(std::vector<std::string_view> paths)
             if (nrComponents == 1)
             {
                 mipfor = GL_RED;
-                format = GL_R16F;
+                format = GL_R8;
             }
             else if (nrComponents == 3)
             {
-                format = GL_RGB32F;
+                format = GL_RGB8;
                 mipfor = GL_RGB;
             }
             else if (nrComponents == 4)
             {
-                format = GL_RGBA32F;
+                format = GL_RGBA8;
                 mipfor = GL_RGBA;
             }
 
@@ -556,10 +556,11 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
     if (!Has_Light())
     {
         //default light
-        light = std::make_shared<Light>(0.6f, 0.09f, 0.032f,
+        light = std::make_shared<Light>(
             glm::vec3(0.1f, 0.1f, 0.1f),
             glm::vec3(0.8f, 0.8f, 0.8f),
             glm::vec3(1.0f, 1.0f, 1.0f),
+            0.6f, 0.09f, 0.032f,
             glm::vec3(-1.5f, 10.0f, 0.0f));
         light->SetType(LightTypes::Point);
         light->SetName("Default light");

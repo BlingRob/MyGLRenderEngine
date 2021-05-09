@@ -1,18 +1,22 @@
 #include "Shader.h"
 
-Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath)
+Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLchar* geometryPath)
 {
 		// Link shaders
 		GLint success;
 		GLchar infoLog[512];
-		GLuint fragmentShader, vertexShader;
+		GLuint fragmentShader, vertexShader,geometryShader;
 
 		fragmentShader = CreateShader(fragmentPath, GL_FRAGMENT_SHADER);
 		vertexShader = CreateShader(vertexPath, GL_VERTEX_SHADER);
+		if (geometryPath)
+			geometryShader = CreateShader(geometryPath,GL_GEOMETRY_SHADER);
 
 		Program = glCreateProgram();
 		glAttachShader(Program, vertexShader);
 		glAttachShader(Program, fragmentShader);
+		if (geometryPath)
+			glAttachShader(Program, geometryShader);
 		glLinkProgram(Program);
 		// Check for linking errors
 		glGetProgramiv(Program, GL_LINK_STATUS, &success);
@@ -23,6 +27,8 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath)
 		}
 		glDeleteShader(vertexShader);
 		glDeleteShader(fragmentShader);
+		if (geometryPath)
+			glDeleteShader(geometryShader);
 }
 
 void Shader::Use() { glUseProgram(Program); }
@@ -74,6 +80,10 @@ void Shader::setScal(std::string_view name, const bool num) const
 {
 	glUniform1i(glGetUniformLocation(Program, name.data()), num);
 }
+void Shader::setScal(std::string_view name, const uint64_t num) const
+{
+	glUniform1ui(glGetUniformLocation(Program, name.data()), num);
+}
 
 void Shader::setVec(std::string_view name,const glm::vec2& vec) const
 {
@@ -101,8 +111,13 @@ void Shader::setMat(std::string_view name, const glm::mat4& mat) const
 	glUniformMatrix4fv(glGetUniformLocation(Program, name.data()), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
-void Shader::setSubroutine(GLenum ShaderType, std::string_view name)
+void Shader::setSubroutine(std::string_view name, GLenum ShaderType)
 {
 	GLuint Index = glGetSubroutineIndex(Program, ShaderType, name.data());
 	glUniformSubroutinesuiv(ShaderType, 1, &Index);
+}
+
+void Shader::setMats(std::string_view name, const GLfloat* ArrayOfMatrices, GLsizei n) const
+{
+	glUniformMatrix4fv(glGetUniformLocation(Program, name.data()), n, GL_FALSE, ArrayOfMatrices);
 }
