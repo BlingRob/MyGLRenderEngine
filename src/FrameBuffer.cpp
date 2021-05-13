@@ -3,9 +3,38 @@ FrameBuffer::FrameBuffer(GLuint weight, GLuint height)
 {
     _mWeight = weight;
     _mHeight = height;
-    textureID = Render = GL_NONE;
+    textureID = Render = OldFBO = GL_NONE;
     RenderInclude = TextureInclude = false;
     glCreateFramebuffers(1, &FBO);
+}
+FrameBuffer::FrameBuffer(const FrameBuffer& fr) 
+{
+    _mWeight = fr._mWeight;
+    _mHeight = fr._mHeight;
+    textureID = fr.textureID;
+    Render = fr.Render;
+    OldFBO = fr.OldFBO;
+    RenderInclude = fr.RenderInclude;
+    TextureInclude = fr.TextureInclude;
+    FBO = fr.FBO;
+}
+FrameBuffer::FrameBuffer(FrameBuffer&& fr):FrameBuffer(static_cast<const FrameBuffer&>(fr))
+{
+    /*_mWeight = fr._mWeight;
+    _mHeight = fr._mHeight;
+    textureID = fr.textureID;
+    Render = fr.Render;
+    OldFBO = fr.OldFBO;
+    RenderInclude = fr.RenderInclude;
+    TextureInclude = fr.TextureInclude;
+    FBO = fr.FBO;*/
+
+    fr.textureID = GL_NONE;
+    fr.Render = GL_NONE;
+    fr.OldFBO = GL_NONE;
+    fr.RenderInclude = false; 
+    fr.TextureInclude = false;
+    fr.FBO = GL_NONE;
 }
 
 FrameBuffer::~FrameBuffer()
@@ -80,22 +109,17 @@ bool FrameBuffer::IsCorrect()
 
 void FrameBuffer::AttachBuffer() 
 {
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &OldFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 }
 void FrameBuffer::DetachBuffer() 
 {
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_FRAMEBUFFER, OldFBO);
 }
-void FrameBuffer::SendToShader(const Shader& sh,std::string_view NameUniform)
+void FrameBuffer::SendToShader(const Shader& sh,std::string_view NameUniform, std::uint16_t BindIndex)
 {
-    //GLint ind = glGetUniformLocation(sh->Program, "shadowMap");
-    glBindTextureUnit(10, FrameBuffer::textureID);
-    glUniform1i(glGetUniformLocation(sh.Program, NameUniform.data()), 10);
-}
-
-std::shared_ptr<Shader> FrameBuffer::GetShader()
-{
-    return shader;
+    glBindTextureUnit(BindIndex, FrameBuffer::textureID);
+    glUniform1i(glGetUniformLocation(sh.Program, NameUniform.data()), BindIndex);
 }
 
 PostProcessBuffer::PostProcessBuffer(GLuint weight, GLuint height):FrameBuffer(weight, height)
@@ -127,7 +151,7 @@ void PostProcessBuffer::Draw(uint64_t weight, uint64_t height)
 {
     glDisable(GL_DEPTH_TEST);
     shader->Use();
-    SendToShader(*shader, "scene");
+    SendToShader(*shader, "scene", PointBindTexture);
     shader->setScal("wAspect", static_cast<float>(weight) / FrameBuffer::_mWeight);
     shader->setScal("hAspect", static_cast<float>(height) / FrameBuffer::_mHeight);
     if(invertion)

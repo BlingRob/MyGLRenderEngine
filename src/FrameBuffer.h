@@ -15,8 +15,11 @@ class FrameBuffer
 		GLuint _mWeight, _mHeight;
 		GLuint textureID;
 		GLuint FBO, Render;
-		std::shared_ptr<Shader> shader;
+		GLint OldFBO;
 	public:
+		FrameBuffer() {};
+		FrameBuffer(const FrameBuffer& fr);
+		FrameBuffer(FrameBuffer&& fr);
 		FrameBuffer(GLuint weight, GLuint height);
 		~FrameBuffer();
 
@@ -28,8 +31,8 @@ class FrameBuffer
 		void AttachBuffer();
 		void DetachBuffer();
 
-		virtual void SendToShader(const Shader& sh, std::string_view NameUniform);
-		std::shared_ptr<Shader> GetShader();
+		virtual void SendToShader(const Shader& sh, std::string_view NameUniform, std::uint16_t BindIndex);
+		//std::shared_ptr<Shader> GetShader();
 };
 
 class PostProcessBuffer:public FrameBuffer 
@@ -44,7 +47,7 @@ class PostProcessBuffer:public FrameBuffer
 		std::shared_ptr<glm::mat3> Core;
 	private:
 		GLuint VAO, VBO, EBO;
-
+		std::shared_ptr<Shader> shader;
 		GLfloat VerticesOfQuad[8] =
 		{
 			-1.0f, 1.0f,
@@ -57,4 +60,5 @@ class PostProcessBuffer:public FrameBuffer
 			0, 1, 2,
 			0, 2, 3
 		};
+		const std::uint16_t PointBindTexture = 10;
 };

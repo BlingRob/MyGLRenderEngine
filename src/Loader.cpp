@@ -66,54 +66,47 @@ std::unique_ptr<Light> Loader::GetLight()
     if (!Has_Light() || IndexLight == -1)
         return std::unique_ptr<Light>(nullptr);
     aiNode* LightNode = scene->mRootNode->FindNode(scene->mLights[IndexLight]->mName);
-    /*if (LightNode != nullptr) 
-    {
-        scene->mLights[IndexLight]->mPosition.x = LightNode->mParent->mTransformation[0][3];
-        scene->mLights[IndexLight]->mPosition.y = LightNode->mParent->mTransformation[1][3];
-        scene->mLights[IndexLight]->mPosition.z = LightNode->mParent->mTransformation[2][3];
-    }*/
     if(LightNode == nullptr)
         return std::unique_ptr<Light>(nullptr);
 
-    std::unique_ptr<Light> light = std::make_unique<Light>
-        (   glm::vec3(scene->mLights[IndexLight]->mColorAmbient.r,
-                      scene->mLights[IndexLight]->mColorAmbient.g, 
-                      scene->mLights[IndexLight]->mColorAmbient.b),
-            glm::vec3(scene->mLights[IndexLight]->mColorDiffuse.r,
-                      scene->mLights[IndexLight]->mColorDiffuse.g,
-                      scene->mLights[IndexLight]->mColorDiffuse.b),
-            glm::vec3(scene->mLights[IndexLight]->mColorSpecular.r,
-                      scene->mLights[IndexLight]->mColorSpecular.g,
-                      scene->mLights[IndexLight]->mColorSpecular.b),
-            scene->mLights[IndexLight]->mAttenuationConstant,
-            scene->mLights[IndexLight]->mAttenuationLinear,
-            scene->mLights[IndexLight]->mAttenuationQuadratic,
-            glm::vec3(LightNode->mParent->mTransformation[0][3],
-                      LightNode->mParent->mTransformation[1][3],
-                      LightNode->mParent->mTransformation[2][3]),
-            glm::vec3(scene->mLights[IndexLight]->mDirection.x,
-                      scene->mLights[IndexLight]->mDirection.y,
-                      scene->mLights[IndexLight]->mDirection.z),
-            scene->mLights[IndexLight]->mAngleOuterCone,
-            scene->mLights[IndexLight]->mAngleInnerCone
-          );
-    light->SetName(scene->mLights[IndexLight]->mName.C_Str());
-    
-    LightTypes type;
+    glm::vec3 amb =  glm::vec3(scene->mLights[IndexLight]->mColorAmbient.r,
+                               scene->mLights[IndexLight]->mColorAmbient.g,
+                               scene->mLights[IndexLight]->mColorAmbient.b),
+              dif =  glm::vec3(scene->mLights[IndexLight]->mColorDiffuse.r,
+                               scene->mLights[IndexLight]->mColorDiffuse.g,
+                               scene->mLights[IndexLight]->mColorDiffuse.b), 
+              spec = glm::vec3(scene->mLights[IndexLight]->mColorSpecular.r,
+                               scene->mLights[IndexLight]->mColorSpecular.g,
+                               scene->mLights[IndexLight]->mColorSpecular.b),
+              pos =  glm::vec3(LightNode->mParent->mTransformation[0][3],
+                               LightNode->mParent->mTransformation[1][3],
+                               LightNode->mParent->mTransformation[2][3]),
+              dir = glm::vec3( scene->mLights[IndexLight]->mDirection.x,
+                               scene->mLights[IndexLight]->mDirection.y,
+                               scene->mLights[IndexLight]->mDirection.z),
+              clq = glm::vec3( scene->mLights[IndexLight]->mAttenuationConstant,
+                               scene->mLights[IndexLight]->mAttenuationLinear,
+                               scene->mLights[IndexLight]->mAttenuationQuadratic);
+
+
+    std::unique_ptr<Light> light;
     switch(scene->mLights[IndexLight]->mType)
     {
         case aiLightSource_POINT:
-            type = LightTypes::Point;
+            light = std::make_unique<Light>(std::move(PointLight(amb, dif, spec, pos, clq)));
+
         break;
         case aiLightSource_SPOT:
-            type = LightTypes::Spot;
+            light = std::make_unique<Light>(std::move(SpotLight(amb, dif, spec, pos, dir, clq,
+                scene->mLights[IndexLight]->mAngleOuterCone,
+                scene->mLights[IndexLight]->mAngleInnerCone)));
         break;
         default:
         case aiLightSource_DIRECTIONAL:
-            type = LightTypes::Directional;
+            light = std::make_unique<Light>(std::move(DirectionalLight(amb, dif, spec, dir)));
         break;
     }
-    light->SetType(type);
+    light->SetName(scene->mLights[IndexLight]->mName.C_Str());
     --IndexLight;
     return std::move(light);
 }
@@ -556,13 +549,13 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
     if (!Has_Light())
     {
         //default light
-        light = std::make_shared<Light>(
+        light = std::make_shared<Light>(std::move(PointLight(
             glm::vec3(0.1f, 0.1f, 0.1f),
             glm::vec3(0.8f, 0.8f, 0.8f),
             glm::vec3(1.0f, 1.0f, 1.0f),
-            0.6f, 0.09f, 0.032f,
-            glm::vec3(-1.5f, 10.0f, 0.0f));
-        light->SetType(LightTypes::Point);
+            glm::vec3(-1.5f, 10.0f, 0.0f),
+            glm::vec3(0.6f, 0.09f, 0.032f))));
+        //light->SetType(LightTypes::Point);
         light->SetName("Default light");
         scen->AddLight(light);
 

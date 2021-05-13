@@ -7,9 +7,10 @@ void Scene::Draw()
 		glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+	GLenum err = glGetError();
 	for (const auto& lig : Lights) 
 		lig.second->DrawShadows(std::make_pair(Models.cbegin(), Models.cend()));
+	
 	//set cube map array
 	for (auto& mod : Models)
 	{

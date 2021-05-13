@@ -80,8 +80,6 @@
 		frame->Core = gui->Core;
 		if (!frame->IsCorrect())
 			std::cerr << "Creating addition buffer is failed";
-
-		Light::Init();
 	}
 
 	double RenderEngine::GetTime()
