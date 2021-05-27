@@ -33,26 +33,17 @@ void BLight::SetDiffuse(const glm::vec3& dif)
 }
 
 DirectionalLight::DirectionalLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s, const glm::vec3& dir) :
-BLight(a, d, s), direction(dir), Shadow(true), DirectionShadow(true)
+BLight(a, d, s), direction(glm::vec3(dir)), Shadow(true), DirectionShadow(true)
 {
-	AddBuffer();
+	DirectionShadow::AddBuffer();
 }
 
 void DirectionalLight::SendToShader(const Shader& shader)
 {
-	BLight::SendToShader(StrNumLight, shader);
-	shader.setVec("DirLight.direction", direction);
 	DirectionShadow::SendToShader(shader);
 }
 void PointLight::SendToShader(const Shader& shader)
 {
-	BLight::SendToShader(StrNumLight, shader);
-	char buffer[32];
-	snprintf(buffer, 32, "LightPositions[%d]", Shadow::id);
-
-	shader.setVec(buffer, glm::vec4(GetPos(), 1.0f));
-	shader.setVec((StrNumLight + "clq"), clq);
-	shader.setScal((StrNumLight + "index"), Shadow::id);
 	PointShadow::SendToShader(shader);
 }
 
@@ -79,7 +70,8 @@ BLight(a, d, s), Shadow(true), PointShadow(true)
 {
 	this->clq = CLQ;
 	SetPos(p);
-	AddBuffer();
+
+	PointShadow::AddBuffer();
 }
 
 void PointLight::SetPos(const glm::vec3& p)
@@ -115,22 +107,16 @@ LightTypes Light::GetType() const
 	return Type;
 }
 
-
-//void Light::SendToShader(const Shader& shader)
-//{
-//	type::SendToShader(shader);
-//}
-
-//void Light::DrawShadows(std::pair<const_model_iterator, const_model_iterator> models)
-//{
-//	type::Draw(models, glm::vec4(PointLight::GetPos(), 1.0f));
-//}
-
 void Light::SendToShader(const Shader& shader)
 {
+	BLight::SendToShader(StrNumLight, shader);
+	shader.setScal((StrNumLight + "index"), Shadow::id);
 	switch (Type)
 	{
 		case LightTypes::Directional:
+			shader.setMat((StrNumLight + "ShadowMatrix"), scale_bias_matrix * (*LightMat.Projection) * (*LightMat.View));
+			shader.setVec((StrNumLight + "clq"), glm::vec3(1.0f, 0.0f, 0.0f));
+			shader.setVec((StrNumLight + "LightPositions"), glm::vec4(direction, 0.0f));
 			DirectionalLight::SendToShader(shader);
 		break;
 		case LightTypes::Spot:
@@ -138,6 +124,8 @@ void Light::SendToShader(const Shader& shader)
 		break;
 		case LightTypes::Point:
 		default:
+			shader.setVec((StrNumLight + "LightPositions"), glm::vec4(GetPos(), 1.0f));
+			shader.setVec((StrNumLight + "clq"), PointLight::GetAttenuation());
 			PointLight::SendToShader(shader);
 		break;
 	}
@@ -148,7 +136,7 @@ void Light::DrawShadows(std::pair<const_model_iterator, const_model_iterator> mo
 	switch (Type)
 	{
 	case LightTypes::Directional:
-		DirectionalLight::Draw(models, glm::vec4(DirectionalLight::GetDir(), 1.0f));
+		DirectionalLight::Draw(models, glm::vec4(DirectionalLight::GetDir(), 0.0f));
 		break;
 	case LightTypes::Spot:
 		//SpotLight::Draw(models, glm::vec4(PointLight::GetPos(), 1.0f));
@@ -158,4 +146,30 @@ void Light::DrawShadows(std::pair<const_model_iterator, const_model_iterator> mo
 		PointLight::Draw(models, glm::vec4(PointLight::GetPos(), 1.0f));
 		break;
 	}
+}
+
+void Light::ClearBuffers()
+{
+	const GLfloat depthVal = 1.0f;
+	if(!IndexDirectionOrSpotFBO.empty())
+		glClearNamedFramebufferfv(IndexDirectionOrSpotFBO.back(), GL_DEPTH, 0, &depthVal);
+	if (!IndexPointFBO.empty())
+		glClearNamedFramebufferfv(IndexPointFBO.back(), GL_DEPTH, 0, &depthVal);
+}
+
+Light::~Light()
+{
+	switch (Type)
+	{
+	case LightTypes::Spot:
+	case LightTypes::Directional:
+		if(!IndexDirectionOrSpotFBO.empty())
+			IndexDirectionOrSpotFBO.pop_back();
+		break;
+	case LightTypes::Point:
+		if (!IndexPointFBO.empty())
+			IndexPointFBO.pop_back();
+		break;
+	}
+	ListOfLights.push_back(Index);
 }

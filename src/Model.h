@@ -18,6 +18,7 @@ public:
     const std::shared_ptr <Shader> GetShader();
 
     Model();
+    Model(const Model&);
 private:
     /*  Данные модели  */
     std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.

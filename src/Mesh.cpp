@@ -82,60 +82,41 @@ void Mesh::setupMesh()
 
 void Mesh::Draw(Shader* shader)
 {
-    const size_t BufferSize = 32;
-    // bind appropriate textures
-    GLuint diffuseNr = 0;
-    GLuint specularNr = 0;
-    GLuint normalNr = 0;
-    GLuint heightNr = 0;
-    GLuint emissiveNr = 0;
-    GLuint matallic = 0;
-    GLuint roughness = 0;
-    GLuint ao = 0;
-    std::string number;
-    std::string name;
-    char Address[BufferSize];
-
-    for (GLuint i = 0; i < textures.size(); ++i)
+    for (GLuint i = 0; i < textures.size(); ++i) 
     {
-        glBindTextureUnit(i, textures[i]->id);
-        // retrieve texture number (the N in diffuse_textureN)
-
-        name = textures[i]->type;
-        if (name == "texture_diffuse")
-            snprintf(Address, BufferSize,"tex[%d].diffuse", diffuseNr++);// transfer unsigned int to stream
-        else if (name == "texture_specular")
-            snprintf(Address, BufferSize, "tex[%d].specular", specularNr++);
-        else if (name == "texture_normal")
-            snprintf(Address, BufferSize, "tex[%d].normal", normalNr++);
-        else if (name == "texture_height")
-            snprintf(Address, BufferSize, "tex[%d].height", heightNr++);
-        else if (name == "texture_emissive")
-            snprintf(Address, BufferSize, "tex[%d].emissive", emissiveNr++);
-        else if (name == "texture_metallic_rougness")
-            snprintf(Address, BufferSize, "tex[%d].metallic_roughness", matallic++);
-        /*else if (name == "texture_metallic")
-            sprintf_s(Address, BufferSize, "tex[%d].metallic", matallic++);
-        else if (name == "texture_roughness")
-            sprintf_s(Address, BufferSize, "tex[%d].roughness", roughness++);*/
-        else if (name == "texture_ambient_occlusion")
-            snprintf(Address, BufferSize, "tex[%d].ao", ao++);
-        else if(name == "SkyBox")
-            snprintf(Address, BufferSize, "skybox");
-
-        // now set the sampler to the correct texture unit
-        glUniform1i(glGetUniformLocation(shader->Program, Address), i);
-  
+        switch (textures[i]->type) 
+        {
+            case Texture_Types::Diffuse:
+                shader->setTexture("tex.diffuse", textures[i]->id, static_cast<GLuint>(Texture_Types::Diffuse));
+            break;
+            case Texture_Types::Normal:
+                shader->setTexture("tex.normal", textures[i]->id, static_cast<GLuint>(Texture_Types::Normal));
+            break;
+            case Texture_Types::Specular:
+                shader->setTexture("tex.specular", textures[i]->id, static_cast<GLuint>(Texture_Types::Specular));
+            break;
+            case Texture_Types::Emissive:
+                shader->setTexture("tex.emissive", textures[i]->id, static_cast<GLuint>(Texture_Types::Emissive));
+            break;
+            case Texture_Types::Height:
+                shader->setTexture("tex.height", textures[i]->id, static_cast<GLuint>(Texture_Types::Height));
+            break;
+            case Texture_Types::Metallic_roughness:
+                shader->setTexture("tex.metallic_roughness", textures[i]->id, static_cast<GLuint>(Texture_Types::Metallic_roughness));
+            break;
+            case Texture_Types::Ambient_occlusion:
+                shader->setTexture("tex.ao", textures[i]->id, static_cast<GLuint>(Texture_Types::Ambient_occlusion));
+            break;
+            case Texture_Types::Skybox:
+                shader->setTexture("skybox", textures[i]->id, static_cast<GLuint>(Texture_Types::Skybox));
+            break;
+        }
     }
-    name = std::string("mat[");
-    for (size_t i = 0; i < material.size(); ++i) 
-    {
-        number = std::to_string(i);
-        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].ambient").c_str()), material[i].ambient.r, material[i].ambient.g, material[i].ambient.b);
-        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].diffuse").c_str()), material[i].diffuse.r, material[i].diffuse.g, material[i].diffuse.b);
-        glUniform3f(glGetUniformLocation(shader->Program, (name + number + "].specular").c_str()), material[i].specular.r, material[i].specular.g, material[i].specular.b);
-        glUniform1f(glGetUniformLocation(shader->Program, (name + number + "].shininess").c_str()), material[i].shininess);
-    }
+
+    glUniform3f(glGetUniformLocation(shader->Program, "mat.ambient"), material.ambient.r, material.ambient.g, material.ambient.b);
+    glUniform3f(glGetUniformLocation(shader->Program, "mat.diffuse"), material.diffuse.r, material.diffuse.g, material.diffuse.b);
+    glUniform3f(glGetUniformLocation(shader->Program, "mat.specular"), material.specular.r, material.specular.g, material.specular.b);
+    glUniform1f(glGetUniformLocation(shader->Program, "mat.shininess"), material.shininess);
 
     // draw mesh
     glBindVertexArray(VAO);

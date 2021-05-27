@@ -11,6 +11,7 @@ class Node:public Entity
 	std::list < std::shared_ptr <Mesh>> Meshes;
 public:
 	Node();
+	Node(const Node&);
 
 	Transformation tr;
 

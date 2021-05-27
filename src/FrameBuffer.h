@@ -32,7 +32,6 @@ class FrameBuffer
 		void DetachBuffer();
 
 		virtual void SendToShader(const Shader& sh, std::string_view NameUniform, std::uint16_t BindIndex);
-		//std::shared_ptr<Shader> GetShader();
 };
 
 class PostProcessBuffer:public FrameBuffer 

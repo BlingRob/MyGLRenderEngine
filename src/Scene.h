@@ -54,6 +54,7 @@ class Scene
 	Scene_Information GetInfo();
 
 	Scene();
+	~Scene();
 	//bool LoadModels(const std::string& path);
 };
 

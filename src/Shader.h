@@ -15,7 +15,7 @@ public:
 	void setScal(std::string_view, const float) const;
 	void setScal(std::string_view, const int) const;
 	void setScal(std::string_view, const bool) const;
-	void Shader::setScal(std::string_view, const uint64_t) const;
+	void setScal(std::string_view, const uint64_t) const;
 
 	void setVec(std::string_view, const glm::vec2&) const;
 	void setVec(std::string_view, const glm::vec3&) const;
@@ -26,7 +26,8 @@ public:
 	void setMat(std::string_view, const glm::mat4&) const;
 	void setMats(std::string_view, const GLfloat*, GLsizei) const;
 
-	void setSubroutine(std::string_view name, GLenum ShaderType);
+	void setSubroutine(std::string_view name, GLenum ShaderType) const;
+	void setTexture(std::string_view name, GLuint TextureIndx,GLuint PointBindIndex) const;
 };
 
 #endif

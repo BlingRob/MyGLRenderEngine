@@ -22,12 +22,13 @@ class Loader
 
 	std::shared_ptr<Node> processNode(aiNode* node);
 	std::shared_ptr<Mesh> processMesh(aiMesh* mesh);
-	std::vector< std::shared_ptr<Texture>> loadTexture(aiMaterial* mat, aiTextureType type, std::string typeName);
+	std::vector< std::shared_ptr<Texture>> loadTexture(aiMaterial* mat, aiTextureType type, Texture_Types MyType);
 	Material loadMaterial(aiMaterial* mat, uint16_t indx);
 	/*path - maybe address in programm, if FromProc is true, then texture loading from current process;
 	  if FromProc is false path must be pointer to const char* with internal file path*/
 	static GLuint TextureFromFile(const void* path, std::size_t width, std::size_t height, bool FromProc);
 	static GLuint CubeTextureFromFile(std::vector<std::string_view> paths);
+	void GetTransform(glm::mat4& whereTo, const aiMatrix4x4& FromWhere);
 	
 public:
 	static std::unique_ptr<Node> LoadSkyBox(std::vector<std::string_view> paths);

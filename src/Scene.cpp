@@ -7,11 +7,11 @@ void Scene::Draw()
 		glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	Light::ClearBuffers();
 	GLenum err = glGetError();
 	for (const auto& lig : Lights) 
 		lig.second->DrawShadows(std::make_pair(Models.cbegin(), Models.cend()));
-	
-	//set cube map array
+
 	for (auto& mod : Models)
 	{
 		sh = mod.second->GetShader();
@@ -142,4 +142,9 @@ void Scene::SetBackGround(std::shared_ptr<Node> box)
 Scene_Information Scene::GetInfo()
 {
 	return std::move(Scene_Information({ Models.size(), Lights.size(), Shaders.size()}));
+}
+
+Scene::~Scene() 
+{
+	Mesh::GlobalTextures.clear();
 }

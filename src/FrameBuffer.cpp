@@ -20,15 +20,6 @@ FrameBuffer::FrameBuffer(const FrameBuffer& fr)
 }
 FrameBuffer::FrameBuffer(FrameBuffer&& fr):FrameBuffer(static_cast<const FrameBuffer&>(fr))
 {
-    /*_mWeight = fr._mWeight;
-    _mHeight = fr._mHeight;
-    textureID = fr.textureID;
-    Render = fr.Render;
-    OldFBO = fr.OldFBO;
-    RenderInclude = fr.RenderInclude;
-    TextureInclude = fr.TextureInclude;
-    FBO = fr.FBO;*/
-
     fr.textureID = GL_NONE;
     fr.Render = GL_NONE;
     fr.OldFBO = GL_NONE;
@@ -118,8 +109,7 @@ void FrameBuffer::DetachBuffer()
 }
 void FrameBuffer::SendToShader(const Shader& sh,std::string_view NameUniform, std::uint16_t BindIndex)
 {
-    glBindTextureUnit(BindIndex, FrameBuffer::textureID);
-    glUniform1i(glGetUniformLocation(sh.Program, NameUniform.data()), BindIndex);
+    sh.setTexture(NameUniform, FrameBuffer::textureID, BindIndex);
 }
 
 PostProcessBuffer::PostProcessBuffer(GLuint weight, GLuint height):FrameBuffer(weight, height)

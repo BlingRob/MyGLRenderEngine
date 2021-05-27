@@ -1,7 +1,7 @@
 #version 450 core 
 
 in vec3 TexCoords; 
-uniform samplerCubeArray skybox;
+layout (binding = 7) uniform samplerCubeArray skybox;
 
 out vec4 color;
 

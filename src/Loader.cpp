@@ -29,9 +29,9 @@ bool Loader::LoadScene(std::string_view path)
     IndexLight = scene->mNumLights - 1;
 
     loaded = true;
-
-    while (scene->mRootNode->mChildren[IndexModel]->mNumMeshes == 0)//Skip camera or lights nodes
-        --IndexModel;
+    if(scene->HasLights() || scene->HasCameras())
+        while (scene->mRootNode->mChildren[IndexModel]->mNumMeshes != 0)//Skip camera or lights nodes
+            --IndexModel;
 
     return true;
 }
@@ -87,7 +87,8 @@ std::unique_ptr<Light> Loader::GetLight()
               clq = glm::vec3( scene->mLights[IndexLight]->mAttenuationConstant,
                                scene->mLights[IndexLight]->mAttenuationLinear,
                                scene->mLights[IndexLight]->mAttenuationQuadratic);
-
+    glm::mat4 transform;
+    GetTransform(transform, LightNode->mParent->mTransformation);
 
     std::unique_ptr<Light> light;
     switch(scene->mLights[IndexLight]->mType)
@@ -103,7 +104,7 @@ std::unique_ptr<Light> Loader::GetLight()
         break;
         default:
         case aiLightSource_DIRECTIONAL:
-            light = std::make_unique<Light>(std::move(DirectionalLight(amb, dif, spec, dir)));
+            light = std::make_unique<Light>(std::move(DirectionalLight(amb, dif, spec, glm::mat3(transform) * dir)));
         break;
     }
     light->SetName(scene->mLights[IndexLight]->mName.C_Str());
@@ -115,7 +116,24 @@ std::unique_ptr<Camera> Loader::GetCamera()
     if (!Has_Camera())
         return nullptr;
 
+    glm::mat4 transform;
+
     aiNode* CameraNode = scene->mRootNode->FindNode(scene->mCameras[0]->mName);
+
+    if (CameraNode->mParent != nullptr)
+        GetTransform(transform, CameraNode->mParent->mTransformation);
+
+    std::unique_ptr<Camera> cam = std::make_unique<Camera>();
+
+    cam->Position = transform * glm::vec4(cam->Position, 1.0f);
+    cam->Front = glm::mat3(transform) * glm::vec3(scene->mCameras[0]->mLookAt.x,
+                             scene->mCameras[0]->mLookAt.y,
+                             scene->mCameras[0]->mLookAt.z);
+    cam->WorldUp = glm::vec3(scene->mCameras[0]->mUp.x,
+                             scene->mCameras[0]->mUp.y,
+                             scene->mCameras[0]->mUp.z);// * glm::mat3(transform);
+    /*
+    
     if (CameraNode->mParent != nullptr)
     {
         scene->mCameras[0]->mPosition.x = CameraNode->mParent->mTransformation[0][3];
@@ -134,7 +152,7 @@ std::unique_ptr<Camera> Loader::GetCamera()
             glm::vec3(scene->mCameras[0]->mUp.x,
                       scene->mCameras[0]->mUp.y,
                       scene->mCameras[0]->mUp.z)
-        );
+        );*/
     cam->SetName(scene->mCameras[0]->mName.C_Str());
 
     return std::move(cam);
@@ -142,7 +160,7 @@ std::unique_ptr<Camera> Loader::GetCamera()
 
 std::unique_ptr<Model> Loader::GetModel(uint32_t Indx) 
 {
-    if (!scene && !scene->mRootNode && Indx == -1 && scene->mRootNode->mChildren[Indx]->mNumMeshes == 0)
+    if (!scene || !scene->mRootNode || Indx == -1 || scene->mRootNode->mChildren[Indx]->mNumMeshes == 0)
         return nullptr;
     
     std::unique_ptr<Model> model = std::make_unique<Model>();
@@ -155,11 +173,10 @@ std::shared_ptr<Node> Loader::processNode(aiNode* node)
 {
     const uint16_t MatSize = 4;
     // process each mesh located at the current node
-    std::shared_ptr<Node> curNode = std::make_shared<Node>();
+    std::shared_ptr<Node> curNode = std::make_shared<Node>(),tmp;
     curNode->SetName(node->mName.C_Str());
-    std::shared_ptr<glm::mat4> ModelMatr = std::make_shared<glm::mat4>(1.0f);
-    for (uint16_t i = 0; i < MatSize * MatSize; ++i)//copy node's transform matr
-        (*ModelMatr)[static_cast<uint16_t>(i / MatSize)][i % MatSize] = node->mTransformation[i % MatSize][i / MatSize];
+    std::shared_ptr<glm::mat4> ModelMatr = std::make_shared<glm::mat4>(1.0f),TmpMat;
+    GetTransform(*ModelMatr, node->mTransformation);
     curNode->tr.Set(ModelMatr);
     //meshes.reserve(node->mNumMeshes);
     for (std::size_t i = 0; i < node->mNumMeshes; ++i)
@@ -171,7 +188,13 @@ std::shared_ptr<Node> Loader::processNode(aiNode* node)
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for (std::size_t i = 0; i < node->mNumChildren; ++i)
-        curNode->addChild(processNode(node->mChildren[i]));
+    {
+        tmp = processNode(node->mChildren[i]);
+        TmpMat = tmp->tr.Get();
+        *TmpMat = *ModelMatr * (*TmpMat);
+        tmp->tr.Set(TmpMat);
+        curNode->addChild(tmp);
+    }
     return curNode;
 }
 
@@ -249,27 +272,27 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
             }
 
             //load materials
-            CurMesh->material.emplace_back(loadMaterial(mat, mesh->mMaterialIndex));
+            CurMesh->material = loadMaterial(mat, mesh->mMaterialIndex);
         });
 
     // Loading texture's maps
     std::vector< std::shared_ptr<Texture>> texes;
     // 1. diffuse maps
-    texes = loadTexture(mat, aiTextureType_DIFFUSE, "texture_diffuse");
+    texes = loadTexture(mat, aiTextureType_DIFFUSE, Texture_Types::Diffuse);
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 2. specular maps
-    texes = loadTexture(mat, aiTextureType_SPECULAR, "texture_specular");
+    texes = loadTexture(mat, aiTextureType_SPECULAR, Texture_Types::Specular);
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 3. normal maps
-    texes = loadTexture(mat, aiTextureType_NORMALS, "texture_normal");//aiTextureType_HEIGHT
+    texes = loadTexture(mat, aiTextureType_NORMALS, Texture_Types::Normal);//aiTextureType_HEIGHT
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 4. height maps
-    texes = loadTexture(mat, aiTextureType_AMBIENT, "texture_height");
+    texes = loadTexture(mat, aiTextureType_AMBIENT, Texture_Types::Height);
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 5. emissive maps
-    texes = loadTexture(mat, aiTextureType_EMISSIVE, "texture_emissive");
+    texes = loadTexture(mat, aiTextureType_EMISSIVE, Texture_Types::Emissive);
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
-    texes = loadTexture(mat, aiTextureType_UNKNOWN, "texture_metallic_rougness");
+    texes = loadTexture(mat, aiTextureType_UNKNOWN, Texture_Types::Metallic_roughness);
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     /*// 6. metallic maps
     texes = loadTexture(mat, aiTextureType_METALNESS, "texture_metallic");
@@ -278,7 +301,7 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
     texes = loadTexture(mat, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());*/
     // 8. ambient_occlusion
-    texes = loadTexture(mat, aiTextureType_AMBIENT_OCCLUSION, "texture_ambient_occlusion");
+    texes = loadTexture(mat, aiTextureType_AMBIENT_OCCLUSION, Texture_Types::Ambient_occlusion);
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
 
     GeometryThread.join();
@@ -288,7 +311,7 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
     return CurMesh;
 }
 
-std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTextureType type, std::string typeName)
+std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTextureType type, Texture_Types typeName)
 {
     std::vector< std::shared_ptr<Texture>> textures;
     aiString path, name;
@@ -321,19 +344,22 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
 
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         // if texture hasn't been loaded already, load it
-        auto node = Mesh::GlobalTextures.find(std::hash<std::string>{}(static_cast<const char*>(TexturePtr)));
+        auto node = Mesh::GlobalTextures.find(std::hash<std::string>{}(std::string(name.C_Str()) + std::string(path.C_Str())));
         if (node != Mesh::GlobalTextures.end())
-             textures.push_back(Mesh::GlobalTextures.find(std::hash<std::string>{}(path.C_Str()))->second.lock());
+        {
+            if(std::find(textures.begin(), textures.end(), node->second.lock()) == textures.end())
+                textures.push_back(node->second.lock());
+        }
         else
         {
             std::shared_ptr <Texture> texture = std::make_shared<Texture>();
             texture->id = TextureFromFile(TexturePtr, Width, Height, scene->HasTextures());
-            texture->name = std::move(name);
-            texture->path = std::move(path);
+            texture->name = name;
+            texture->path = path;
             texture->type = typeName;
 
             textures.push_back(texture);
-            Mesh::GlobalTextures[std::hash<std::string>{}(texture->path.C_Str())] = texture;// store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
+            Mesh::GlobalTextures[std::hash<std::string>{}(std::string(name.C_Str()) + std::string(path.C_Str()))] = texture;// store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
         }     
     }
     return std::move(textures);
@@ -519,7 +545,7 @@ std::unique_ptr<Node> Loader::LoadSkyBox(std::vector<std::string_view> paths)
     texture->id = CubeTextureFromFile(paths);
     texture->name = "SkyBox";
     texture->path = paths[0].data();
-    texture->type = "SkyBox";
+    texture->type = Texture_Types::Skybox;
 
     curMesh->textures.push_back(texture);
     Mesh::GlobalTextures[std::hash<std::string>{}(texture->path.C_Str())] = texture;
@@ -545,31 +571,31 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
     if (Has_Camera())
         scen->SetCam(GetCamera());
 
+
     std::shared_ptr <Light> light;
     if (!Has_Light())
     {
         //default light
-        light = std::make_shared<Light>(std::move(PointLight(
-            glm::vec3(0.1f, 0.1f, 0.1f),
-            glm::vec3(0.8f, 0.8f, 0.8f),
-            glm::vec3(1.0f, 1.0f, 1.0f),
-            glm::vec3(-1.5f, 10.0f, 0.0f),
-            glm::vec3(0.6f, 0.09f, 0.032f))));
-        //light->SetType(LightTypes::Point);
+        
+        light = std::make_shared<Light>(std::move(DirectionalLight(
+                             glm::vec3(1.0f, 1.0f, 1.0f),
+                             glm::vec3(0.8f, 0.8f, 0.8f),
+                             glm::vec3(1.0f, 1.0f, 1.0f),
+                             glm::vec3(0.0f, -1.0f, 0.0f))));
         light->SetName("Default light");
         scen->AddLight(light);
-
-        Scene::DefaultPointLightModel->GetRoot()->tr.Set(light->tr.Get());
-        scen->AddModel(Scene::DefaultPointLightModel);
     }
     else
         while ((light = std::shared_ptr<Light>(GetLight().release())))
         {
             scen->AddLight(light);
-            if (Scene::DefaultPointLightModel)
+            if (light->GetType() == LightTypes::Point && Scene::DefaultPointLightModel)
             {
-                Scene::DefaultPointLightModel->GetRoot()->tr.Set(light->tr.Get());
-                scen->AddModel(Scene::DefaultPointLightModel);
+                std::shared_ptr<Model> ModelPointLight(std::make_shared<Model>(*Scene::DefaultPointLightModel.get()));
+                ModelPointLight->GetRoot()->tr = light->tr.Get();
+                ModelPointLight->SetName(light->GetName());
+                //Scene::DefaultPointLightModel->GetRoot()->tr.Set(light->tr.Get());
+                scen->AddModel(ModelPointLight);
             }
         }
 
@@ -585,12 +611,23 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
     for (int32_t i = 0; i <= IndexModel; ++i)
     {
         std::unique_ptr<Model> mod = GetModel(i);
-        mod->SetShader(sh);
-        scen->AddModel(std::shared_ptr<Model>(mod.release()));
+        if (mod)
+        {
+            mod->SetShader(sh);
+            scen->AddModel(std::shared_ptr<Model>(mod.release()));
+        }
     }
     //std::shared_ptr<Model> mod;
     //while ((mod = std::shared_ptr<Model>(GetModel().release())))
     //   scen->AddModel(mod);
 
     return std::move(scen);
+}
+
+void Loader::GetTransform(glm::mat4& whereTo, const aiMatrix4x4& FromWhere) 
+{
+    whereTo[0] = glm::vec4(FromWhere[0][0], FromWhere[1][0], FromWhere[2][0], FromWhere[3][0]);
+    whereTo[1] = glm::vec4(FromWhere[0][1], FromWhere[1][1], FromWhere[2][1], FromWhere[3][1]);
+    whereTo[2] = glm::vec4(FromWhere[0][2], FromWhere[1][2], FromWhere[2][2], FromWhere[3][2]);
+    whereTo[3] = glm::vec4(FromWhere[0][3], FromWhere[1][3], FromWhere[2][3], FromWhere[3][3]);
 }

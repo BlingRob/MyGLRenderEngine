@@ -32,3 +32,10 @@ Node::Node()
 {
 	tr.Set(std::make_shared<glm::mat4>(1.0f));
 }
+
+Node::Node(const Node& node) 
+{
+	Children = node.Children;
+	Meshes = node.Meshes;
+	tr = node.tr;
+}

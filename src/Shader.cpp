@@ -31,6 +31,12 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
 			glDeleteShader(geometryShader);
 }
 
+void Shader::setTexture(std::string_view name, GLuint TextureIndx, GLuint PointBindIndex) const
+{
+	glBindTextureUnit(PointBindIndex, TextureIndx);
+	glUniform1i(glGetUniformLocation(Program, name.data()), PointBindIndex);
+}
+
 void Shader::Use() { glUseProgram(Program); }
 
 GLuint Shader::CreateShader(const GLchar* Path, GLenum types)
@@ -111,7 +117,7 @@ void Shader::setMat(std::string_view name, const glm::mat4& mat) const
 	glUniformMatrix4fv(glGetUniformLocation(Program, name.data()), 1, GL_FALSE, glm::value_ptr(mat));
 }
 
-void Shader::setSubroutine(std::string_view name, GLenum ShaderType)
+void Shader::setSubroutine(std::string_view name, GLenum ShaderType) const
 {
 	GLuint Index = glGetSubroutineIndex(Program, ShaderType, name.data());
 	glUniformSubroutinesuiv(ShaderType, 1, &Index);

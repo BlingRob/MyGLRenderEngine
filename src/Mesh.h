@@ -17,10 +17,12 @@ struct Vertexes
     std::vector < GLfloat> Bitangents;
 };
 
+enum class Texture_Types:GLuint {Diffuse = 0, Normal = 1, Specular = 2, Emissive = 3, Height = 4, Metallic_roughness = 5, Ambient_occlusion = 6, Skybox = 7};
+
 struct Texture
 {
     GLuint id;
-    std::string type;
+    Texture_Types type;
     aiString name;
     aiString path;
     ~Texture()
@@ -47,7 +49,7 @@ public:
     Vertexes vertices;
     std::vector< std::shared_ptr<Texture>> textures;
     std::vector<GLuint> indices;
-    std::vector <Material> material;
+    Material material;
     /*  Functions  */
     //Mesh(Vertexes&& vertices, std::vector<GLuint>&& indices, std::vector < Texture>&& textures, Material&& material);
     ~Mesh();

@@ -141,34 +141,82 @@ class Light:public Entity
 		T& operator() ();
 }; */
 
-class Light:public Entity, public SpotLight
+class Light :public Entity, public SpotLight
 {
 	LightTypes Type = LightTypes::Point;
-	public:
-		/*c,l,q - attenuation*/
-		Light() = delete;
-		template<typename L>
-		explicit Light(const L& lig) : BLight(dynamic_cast<const BLight&>(lig)), Shadow(dynamic_cast<const Shadow&>(lig)), L(dynamic_cast<const L&>(lig))
+	std::string StrLightPos;
+	std::string StrNumLight;
+public:
+	/*c,l,q - attenuation*/
+	Light() = delete;
+	~Light();
+	template<typename L>
+	explicit Light(const L& lig) : BLight(dynamic_cast<const BLight&>(lig)), Shadow(dynamic_cast<const Shadow&>(lig)), L(dynamic_cast<const L&>(lig))
+	{
+		if constexpr (std::is_same<L, PointLight>::value)
 		{
-			if constexpr (std::is_same<L, PointLight>::value)
-				Type = LightTypes::Point;
-			else if constexpr (std::is_same<L, DirectionalLight>::value)
-				Type = LightTypes::Directional;
-			else
-				Type = LightTypes::Spot;
-		}		
-		template<typename L>
-			explicit Light(L&& lig) : BLight(dynamic_cast<BLight&&>(lig)), Shadow(dynamic_cast<Shadow&&>(lig)), L(dynamic_cast<L&&>(lig))
-		{
-			if constexpr (std::is_same<L, PointLight>::value)
-				Type = LightTypes::Point;
-			else if constexpr(std::is_same<L, DirectionalLight>::value)
-				Type = LightTypes::Directional;
-			else
-				Type = LightTypes::Spot;
+			Type = LightTypes::Point;
+			IndexPointFBO.push_back(FrameBuffer::FBO);
 		}
-		void SendToShader(const Shader& shader);
-		void DrawShadows(std::pair<const_model_iterator, const_model_iterator> models);
-		//void SetType(LightTypes);
-		LightTypes GetType() const;
+		else if constexpr (std::is_same<L, DirectionalLight>::value)
+		{
+			Type = LightTypes::Directional;
+			IndexDirectionOrSpotFBO.push_back(FrameBuffer::FBO);
+		}
+		else
+		{
+			Type = LightTypes::Spot;
+			IndexDirectionOrSpotFBO.push_back(FrameBuffer::FBO);
+		}
+
+		char buffer[32];
+		if (!ListOfLights.empty())
+		{
+			Index = *ListOfLights.begin();
+			snprintf(buffer, 32, "LightPositions[%d]", Index);
+			StrLightPos = std::string(buffer);
+			snprintf(buffer, 32, "light[%d].", Index);
+			StrNumLight = std::string(buffer);
+
+			ListOfLights.pop_front();
+		}
+	}
+	template<typename L>
+	explicit Light(L&& lig) : BLight(dynamic_cast<BLight&&>(lig)), Shadow(dynamic_cast<Shadow&&>(lig)), L(dynamic_cast<L&&>(lig))
+	{
+		if constexpr (std::is_same<L, PointLight>::value)
+		{
+			Type = LightTypes::Point;
+			IndexPointFBO.push_back(FrameBuffer::FBO);
+		}
+		else if constexpr (std::is_same<L, DirectionalLight>::value)
+		{
+			Type = LightTypes::Directional;
+			IndexDirectionOrSpotFBO.push_back(FrameBuffer::FBO);
+		}
+		else
+		{
+			Type = LightTypes::Spot;
+			IndexDirectionOrSpotFBO.push_back(FrameBuffer::FBO);
+		}
+
+		char buffer[32];
+		if (!ListOfLights.empty())
+		{
+			Index = *ListOfLights.begin();
+			snprintf(buffer, 32, "LightPositions[%d]", Index);
+			StrLightPos = std::string(buffer);
+			snprintf(buffer, 32, "light[%d].", Index);
+			StrNumLight = std::string(buffer);
+
+			ListOfLights.pop_front();
+		}
+	}
+	void SendToShader(const Shader& shader);
+	void DrawShadows(std::pair<const_model_iterator, const_model_iterator> models);
+	LightTypes GetType() const;
+
+	GLuint Index;
+	static void ClearBuffers();
+	static inline std::list <GLuint> ListOfLights{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, IndexDirectionOrSpotFBO, IndexPointFBO;
 }; 

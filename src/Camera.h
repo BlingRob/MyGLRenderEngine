@@ -55,15 +55,6 @@ public:
         return glm::lookAt(Position, Position + Front, Up);
     }
 
-    /*std::string GetName() const
-    {
-        return name;
-    }
-    void SetName(std::string name)
-    {
-        this->name = name;
-    }*/
-
     //Обрабатываем входные данные, полученные от любой клавиатуроподобной системы ввода. Принимаем входной параметр в виде определенного камерой перечисления (для абстрагирования его от оконных систем)
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
