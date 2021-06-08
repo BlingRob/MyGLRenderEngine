@@ -55,7 +55,7 @@ public:
     ~Mesh();
     /*  Functions    */
     void setupMesh();
-    void Draw(Shader* shader);
+    void Draw(const Shader* shader);
     /* Mesh's constants */
     static const std::size_t CardCoordsPerPoint = 3;
     static const std::size_t CardCoordsPerTextPoint = 2;

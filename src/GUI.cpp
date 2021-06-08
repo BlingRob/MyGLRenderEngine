@@ -99,6 +99,7 @@ void GUI::Interface()
 			if (fileDialog.HasSelected())
 			{
 				std::shared_ptr<Scene> OldScene = std::move(*_mScene);
+				OldScene.reset();
 				Loader loader;
 				SDL_SetCursor(LoadingCursor);
 				_mScene->reset(loader.GetScene(fileDialog.GetSelected().string()).release() );
@@ -115,7 +116,9 @@ void GUI::Interface()
 				ImGui::SetNextWindowPos(ImVec2(0, 20));
 				ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH / 3.0f, SCR_HEIGHT / 3.0f));
 				ImGui::Begin("Statistics", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
+					//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", TimeOnFrame, 1000.0f / TimeOnFrame);
 					ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+					ImGui::Text("Time on frame %.6f ms", TimeOnFrame);
 					ImGui::Text("Models in scene %d", info.Amount_models);
 					ImGui::Text("Lights in scene %d", info.Amount_lights);
 					ImGui::Text("Shaders in scene %d", info.Amount_shaders);

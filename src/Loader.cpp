@@ -29,9 +29,9 @@ bool Loader::LoadScene(std::string_view path)
     IndexLight = scene->mNumLights - 1;
 
     loaded = true;
-    if(scene->HasLights() || scene->HasCameras())
-        while (scene->mRootNode->mChildren[IndexModel]->mNumMeshes != 0)//Skip camera or lights nodes
-            --IndexModel;
+   // if(scene->HasLights() || scene->HasCameras())
+   //    while (scene->mRootNode->mChildren[IndexModel]->mNumMeshes != 0)//Skip camera or lights nodes
+   //         --IndexModel;
 
     return true;
 }
@@ -581,7 +581,7 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
                              glm::vec3(1.0f, 1.0f, 1.0f),
                              glm::vec3(0.8f, 0.8f, 0.8f),
                              glm::vec3(1.0f, 1.0f, 1.0f),
-                             glm::vec3(0.0f, -1.0f, 0.0f))));
+                             glm::vec3(0.0f, 0.0f, -1.0f))));
         light->SetName("Default light");
         scen->AddLight(light);
     }

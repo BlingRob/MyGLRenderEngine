@@ -56,7 +56,6 @@ class PointLight : public virtual BLight,public PointShadow
 	glm::vec3 position;
 	glm::vec3 clq;
 
-		
 	public:
 		PointLight() {};
 		PointLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s, const glm::vec3& p, const glm::vec3& clq);
@@ -141,11 +140,12 @@ class Light:public Entity
 		T& operator() ();
 }; */
 
-class Light :public Entity, public SpotLight
+class Light:public Entity, public SpotLight
 {
 	LightTypes Type = LightTypes::Point;
 	std::string StrLightPos;
 	std::string StrNumLight;
+
 public:
 	/*c,l,q - attenuation*/
 	Light() = delete;

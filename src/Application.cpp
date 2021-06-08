@@ -33,7 +33,7 @@
 			throw(std::string("Failed to create SDL window ") + SDL_GetError());
 		context = SDL_GL_CreateContext(window);
 		if (!context)
-			throw(std::string("Failed to create SDL context ") + SDL_GetError());
+			throw(std::string("Failed to create OpenGL context ") + SDL_GetError());
 
 		glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 
@@ -41,7 +41,7 @@
 		glDebugMessageCallback(MessageCallback, nullptr);
 
 		//gl options
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_DEBUG_OUTPUT);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -206,6 +206,7 @@
 			frame->Draw(SCR_WIDTH, SCR_HEIGHT);
 		}
 		gui->Draw();
+		gui->TimeOnFrame = static_cast<float>(chron());
 		SDL_GL_SwapWindow(window);
 
 		return true;

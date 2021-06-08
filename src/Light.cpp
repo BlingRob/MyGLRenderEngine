@@ -171,5 +171,5 @@ Light::~Light()
 			IndexPointFBO.pop_back();
 		break;
 	}
-	ListOfLights.push_back(Index);
+	ListOfLights.insert(std::lower_bound(ListOfLights.begin(), ListOfLights.end(), Index), Index);
 }

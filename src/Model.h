@@ -9,8 +9,8 @@
 class Model:public Entity
 {
 public:
-    /*  Методы   */
-    void Draw(std::shared_ptr <Shader>);
+    /*   Methods   */
+    void Draw(const Shader*);
     void SetRoot(std::shared_ptr<Node> root);
     std::shared_ptr<Node> GetRoot();
 
@@ -20,8 +20,7 @@ public:
     Model();
     Model(const Model&);
 private:
-    /*  Данные модели  */
-    std::vector<Texture> textures_loaded;	// stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
+    /*  Model's data  */
     std::shared_ptr<Node> mRootNode;
     std::shared_ptr <Shader> shader;
     Transformation tr;

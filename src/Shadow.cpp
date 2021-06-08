@@ -137,7 +137,7 @@ void DirectionShadow::InitOffsetTex(std::size_t size, int64_t samplesU, int64_t 
     glTextureParameteri(_3dTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTextureParameteri(_3dTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-    radius = 3.0f / ShadowMapSize;
+    radius = 3 / 1024.;
     OffsetTexSize = glm::vec3(size, size, (samplesU * samplesV) / 2.0f);
 }
 
@@ -145,6 +145,7 @@ void PointShadow::SendToShader(const Shader& sh)
 {
     sh.setTexture(PointNameShadowUniformTexture, ShadowArrayID, PointShadowBind);
     sh.setScal("far_plane", Far_Plane);
+    sh.setMat("lightProjection", ShadowProj);
 }
 void DirectionShadow::SendToShader(const Shader& sh)
 {
@@ -181,10 +182,10 @@ DirectionShadow::DirectionShadow(bool)
         ListOfShadowArrayIndexes.resize(TwoTypesLighs * MAX_LIGHTS_ONE_TYPE);
         std::iota(ListOfShadowArrayIndexes.begin(), ListOfShadowArrayIndexes.end(), 0);
 
+        InitOffsetTex(16, 8, 8);
         init = true;
     }
-        
-    InitOffsetTex(16, 8, 8);
+
     LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, -30.0f, 30.0f));
     //LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-static_cast<float>(ShadowMapSize)/2, static_cast<float>(ShadowMapSize) / 2, -static_cast<float>(ShadowMapSize) / 2, static_cast<float>(ShadowMapSize) / 2, 0.1f, Shadow::Far_Plane));
     //LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-static_cast<float>(ShadowMapSize), static_cast<float>(ShadowMapSize), 0.1f, Shadow::Far_Plane));
@@ -200,7 +201,7 @@ void PointShadow::Draw(std::pair<const_model_iterator, const_model_iterator> mod
     glViewport(0, 0, ShadowMapSize, ShadowMapSize);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(2.5f, 10.0f);
-    glCullFace(GL_FRONT);
+    //glCullFace(GL_FRONT);
     if (LightVector != lightPos)
     {
         LightVector = lightPos;
@@ -225,10 +226,10 @@ void PointShadow::Draw(std::pair<const_model_iterator, const_model_iterator> mod
     shader->setScal("Index", id);
     err = glGetError();
     for (auto& it = models.first; it != models.second; ++it)
-        it->second->Draw(shader);
+        it->second->Draw(shader.get());
     DetachBuffer();
     glDisable(GL_POLYGON_OFFSET_FILL);
-    glCullFace(GL_BACK);
+    //glCullFace(GL_BACK);
     glViewport(0, 0, OldView[2], OldView[3]);
 }
 
@@ -252,7 +253,7 @@ void DirectionShadow::Draw(std::pair<const_model_iterator, const_model_iterator>
     LightMat.SendToShader(*shader);
     //shader->setScal("Index", id);
     for (auto& it = Models.first; it != Models.second; ++it)
-        it->second->Draw(shader);
+        it->second->Draw(shader.get());
     DetachBuffer();
     glDisable(GL_POLYGON_OFFSET_FILL);
     glCullFace(GL_BACK);

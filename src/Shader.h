@@ -9,7 +9,7 @@ class Shader:public Entity
 	GLuint CreateShader(const GLchar* Path, GLenum types);
 public:
 	GLuint Program;
-	Shader(const GLchar* vertexPath, const GLchar* framentPath,const GLchar* geometryPath);
+	Shader(const GLchar* vertexPath, const GLchar* framentPath,const GLchar* geometryPath = nullptr);
 	void Use();
 
 	void setScal(std::string_view, const float) const;

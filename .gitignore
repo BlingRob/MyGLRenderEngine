@@ -1,6 +1,7 @@
 /.vs
 /x64
 /Debug
+/Release
 /Models/*
 OpenGl/Debug
 OpenGl/x64

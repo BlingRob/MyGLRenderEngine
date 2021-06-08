@@ -9,23 +9,17 @@ void Node::addChild(std::shared_ptr<Node> child)
 	Children.push_back(child);
 }
 
-void Node::Draw(std::shared_ptr <Shader> sh)
+void Node::Draw(const Shader* sh)
 {
-		try
-		{
-			for (const auto& mesh : Meshes)
-			{
-				tr.SendToShader(*sh);
 
-				mesh->Draw(sh.get());
-			}
-		}
-		catch (std::string str)
-		{
-			std::cerr << str << std::endl;
-		}
-		for (const auto& chld : Children)
-			chld->Draw(sh);
+	for (const auto& mesh : Meshes)
+	{
+		tr.SendToShader(*sh);
+
+		mesh->Draw(sh);
+	}
+	for (const auto& chld : Children)
+		chld->Draw(sh);
 }
 
 Node::Node() 

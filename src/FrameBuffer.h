@@ -16,8 +16,8 @@ class FrameBuffer
 		GLuint textureID;
 		GLuint FBO, Render;
 		GLint OldFBO;
-	public:
 		FrameBuffer() {};
+	public:
 		FrameBuffer(const FrameBuffer& fr);
 		FrameBuffer(FrameBuffer&& fr);
 		FrameBuffer(GLuint weight, GLuint height);

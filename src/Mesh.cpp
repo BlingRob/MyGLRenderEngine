@@ -80,7 +80,7 @@ void Mesh::setupMesh()
     glVertexArrayAttribFormat(VAO, 4, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
 }
 
-void Mesh::Draw(Shader* shader)
+void Mesh::Draw(const Shader* shader)
 {
     for (GLuint i = 0; i < textures.size(); ++i) 
     {

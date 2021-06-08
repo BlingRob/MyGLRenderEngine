@@ -5,6 +5,7 @@ void Matrices::SendToShader(const Shader& shader)
 	shader.setMat("transform.view", *View);
 	shader.setMat("transform.projection", *Projection);
 	shader.setMat("transform.PV", (*Projection) * (*View));
+	shader.setMat("invView", glm::inverse((*View)));
 }
 
 void Transformation::Set(const std::shared_ptr <glm::mat4> matr)

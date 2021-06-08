@@ -3,8 +3,6 @@
 void Scene::Draw()
 {
 	std::shared_ptr<Shader> sh;
-	if (!SkyBoxSetted)
-		glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	Light::ClearBuffers();
@@ -31,13 +29,12 @@ void Scene::Draw()
 		sh = GetShader("SkyBox");
 		sh->Use();
 		sh->setMat("transform.PV", (*matrs.Projection * glm::mat4(glm::mat3(*matrs.View))));
-		SkyBox->Draw(sh);
+		SkyBox->Draw(sh.get());
 		glDepthFunc(GL_LESS);
 		glFrontFace(GL_CCW);
 	}
 
 }
-
 
 void Scene::AddModel(std::shared_ptr<Model> mod) 
 {
@@ -80,6 +77,7 @@ const std::map<std::size_t, std::shared_ptr<Light>>* Scene::GetLights() const
 void Scene::SetBackGround(glm::vec4 col) 
 {
 	BackGroundColour = col;
+	glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
 }
 
 void Scene::AddShader(std::shared_ptr<Shader> sh) 

@@ -19,6 +19,7 @@ public:
 	bool invertion = false;
 	bool convolution = false;
 	std::shared_ptr<glm::mat3> Core;
+	float TimeOnFrame = 0.0f;
 private:
 	std::shared_ptr<std::unique_ptr<Scene>> _mScene;
 	SDL_Window* _mWindow;

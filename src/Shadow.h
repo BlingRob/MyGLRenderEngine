@@ -65,10 +65,10 @@ class DirectionShadow : public virtual Shadow
 		std::string StrShadowMatrix;
 		Matrices LightMat;
 	private:
-		void InitOffsetTex(std::size_t size, int64_t samplesU, int64_t samplesV);
-		GLuint _3dTexture;
-		GLfloat radius;
-		glm::vec3 OffsetTexSize;
+		static void InitOffsetTex(std::size_t size, int64_t samplesU, int64_t samplesV);
+		static inline GLuint _3dTexture;
+		static inline GLfloat radius;
+		static inline glm::vec3 OffsetTexSize;
 		static inline GLuint ShadowArrayID;
 		static inline std::list<GLint> ListOfShadowArrayIndexes;
 		static inline bool init = false;

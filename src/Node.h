@@ -17,6 +17,6 @@ public:
 
 	void addMesh(std::shared_ptr<Mesh> mesh);
 	void addChild(std::shared_ptr<Node> child);
-	void Draw(std::shared_ptr <Shader> sh);
+	void Draw(const Shader* sh);
 };
 
