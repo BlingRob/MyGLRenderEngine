@@ -59,7 +59,6 @@ uniform uint NumLights;
 uniform vec3 viewPos;
 uniform Light light[MAX_LIGHTS];
 //uniform vec4 LightPositions[MAX_LIGHTS];
-uniform mat4 invView;
 uniform mat4 lightProjection;
 
 layout (binding = 10) uniform samplerCubeArray PointShadowMaps;
@@ -80,20 +79,21 @@ out vec4 FragColor;
 
 in VS_OUT {
     vec3 FragPos;
-   // vec3 TangentViewPos;
+    vec3 TangentViewPos;
     vec2 TexCoords;
-   // vec3 TangentFragPos;
+    vec3 TangentFragPos;
   //  vec4 TangentLightPositions[MAX_LIGHTS];
     vec3 Normal;
     vec4 ShadowCoords[NUM_SPOT_DIR_LIGHTS];
 } fs_in;
 
-vec3 getNormalFromMap();
+vec3 getNormalFromMap(vec2 texCoord);
 void GetLVH(in vec4 LightPosition,out vec3 L,out vec3 V,out vec3 H);
 float GetAttenuation(in vec4 LightPosition,in Light light);
 
 vec3 PhongLight(Light,Material,Texture);
-vec3 ImproveLight(Material,Texture);
+vec3 ImproveLight(Material,Texture,vec2);
+vec2 ParallaxMapping(vec2 texCoords,vec3 viewDir);
 
 float DistributionGGX(vec3, vec3, float);
 float GeometrySchlickGGX(float, float);
@@ -108,10 +108,11 @@ float PCSS_PointLight(uint);
 
 void main()
 { 
+    vec3 viewDir   = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
     //FragColor = vec4(texture(tex[0].normal, fs_in.TexCoords).rgb,0.0f);
     //FragColor = vec4(vec3(textureProj(shadowMap,fs_in.FragPosLightSpace)),0.0f);
     //FragColor = vec4(vec3(ShadowCalculation(0)),1.0f);
-    FragColor = vec4(ImproveLight(mat, tex),1.0f);
+    FragColor = vec4(ImproveLight(mat, tex, ParallaxMapping(fs_in.TexCoords,viewDir)),1.0f);
     //FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 
 
@@ -202,8 +203,8 @@ float PointShadowCalculation(uint index,vec3 normal)
     float shadow = currentDepth - bias  > closestDepth ? 0.0 : 1.0;
     return shadow;*/  
     vec3 fragToLight = fs_in.FragPos - vec3(light[index].LightPositions);
-    //if(min(dot(fragToLight,normal),0.0f) == 0.0f)
-    //    return 0.0f; 
+    if(min(dot(fragToLight,normal),0.0f) == 0.0f)
+        return 0.0f; 
     //float closestDepth = texture(shadowMaps, vec4(fragToLight, index)).r;
     //closestDepth *= far_plane; 
     float currentDepth = length(fragToLight);
@@ -266,14 +267,14 @@ float PointShadowCalculation(uint index,vec3 normal)
     return 1 - shadow;*/
 }
 
-vec3 getNormalFromMap()
+vec3 getNormalFromMap(vec2 texCoord)
 {
-    vec3 tangentNormal = texture(tex.normal, fs_in.TexCoords).xyz * 2.0 - 1.0;
+    vec3 tangentNormal = texture(tex.normal, texCoord).xyz * 2.0 - 1.0;
 
     vec3 Q1  = dFdx(fs_in.FragPos);
     vec3 Q2  = dFdy(fs_in.FragPos);
-    vec2 st1 = dFdx(fs_in.TexCoords);
-    vec2 st2 = dFdy(fs_in.TexCoords);
+    vec2 st1 = dFdx(texCoord);//&
+    vec2 st2 = dFdy(texCoord);
 
     vec3 N   = normalize(fs_in.Normal);
     vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
@@ -374,17 +375,17 @@ float GeometryCookTorrance(vec3 N, vec3 V, vec3 L, float roughness)
     return min(min(1.0f,k * NdotV),k * NdotL);
 }
 
-vec3 ImproveLight(Material mat,Texture tex)
+vec3 ImproveLight(Material mat,Texture tex,vec2 texCoord)
 {
     float shadow,attenuation;
     //vec3 N = normalize((2.0f * texture(tex.normal,fs_in.TexCoords).rgb) - 1.0f); 
-    vec3 N = getNormalFromMap(); 
+    vec3 N = getNormalFromMap(texCoord); 
     vec3 Lo = vec3(0.0);
 
-    vec3 albedo = pow(texture(tex.diffuse, fs_in.TexCoords).rgb, vec3(gamma));
-    float metallic = texture(tex.metallic_roughness, fs_in.TexCoords).b;
-    float roughness = texture(tex.metallic_roughness, fs_in.TexCoords).g;
-    float ao        = texture(tex.ao, fs_in.TexCoords).r;
+    vec3 albedo = pow(texture(tex.diffuse, texCoord).rgb, vec3(gamma));
+    float metallic = texture(tex.metallic_roughness, texCoord).b;
+    float roughness = texture(tex.metallic_roughness, texCoord).g;
+    float ao        = texture(tex.ao, texCoord).r;
     vec3 F0 = vec3(0.04); 
     F0      = mix(F0, albedo, metallic);
 
@@ -434,6 +435,14 @@ vec3 ImproveLight(Material mat,Texture tex)
     color = pow(color, vec3(1.0/gamma));
      
      return color;
+}
+
+vec2 ParallaxMapping(vec2 texCoords,vec3 viewDir)
+{
+    float height = texture(tex.height, texCoords).r;
+    vec2 p = viewDir.xy / viewDir.z * (height * 0.1);
+    return texCoords - p;
+
 }
 /*
 vec3 PhongLight(PointLight light,Material mat,Texture tex)

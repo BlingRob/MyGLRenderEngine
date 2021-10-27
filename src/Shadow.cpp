@@ -2,21 +2,16 @@
 
 Shadow::Shadow(bool):FrameBuffer(ShadowMapSize, ShadowMapSize)
 {
-    glNamedFramebufferReadBuffer(FBO, GL_NONE);
-    glNamedFramebufferDrawBuffer(FBO, GL_NONE);
+    glNamedFramebufferReadBuffer(*FBO, GL_NONE);
+    glNamedFramebufferDrawBuffer(*FBO, GL_NONE);
     LightVector = glm::vec4(0.0f);
-    id = -1;
 }
 
 Shadow::Shadow(const Shadow& shadow):FrameBuffer(dynamic_cast<const FrameBuffer&>(shadow))
 {
     id = shadow.id;
 }
-Shadow::Shadow(Shadow&& shadow): FrameBuffer(dynamic_cast<FrameBuffer&&>(shadow))
-{
-    id = shadow.id;
-    shadow.id = -1;
-}
+
 Shadow::~Shadow()
 {
 }
@@ -37,7 +32,9 @@ PointShadow::PointShadow(bool)
         glTextureParameterfv(ShadowArrayID, GL_TEXTURE_BORDER_COLOR, borderColor);
 
         ListOfShadowArrayIndexes.resize(MAX_LIGHTS_ONE_TYPE);
-        std::iota(ListOfShadowArrayIndexes.begin(), ListOfShadowArrayIndexes.end(), 0);
+        uint16_t indexes = 0;
+        for (auto& el : ListOfShadowArrayIndexes)
+            el = std::make_shared<GLint>(indexes++);
 
         init = true;
     }
@@ -48,14 +45,10 @@ PointShadow::PointShadow(const PointShadow& ps) noexcept
 {
     ShadowProj = ps.ShadowProj;
 }
-PointShadow::PointShadow(PointShadow&& ps) noexcept
-{
-    LightVector = glm::vec4(0.0f);
-    ShadowProj = std::move(ps.ShadowProj);
-}
+
 PointShadow::~PointShadow()
 {
-    if (id != -1)
+    if (id.use_count() == 1)
         ListOfShadowArrayIndexes.insert(std::lower_bound(ListOfShadowArrayIndexes.begin(), ListOfShadowArrayIndexes.end(), id), id);
 }
 
@@ -70,7 +63,7 @@ void DirectionShadow::AddBuffer()
         id = *ListOfShadowArrayIndexes.begin();
         ListOfShadowArrayIndexes.pop_front();
         //glNamedFramebufferTexture(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
-        glNamedFramebufferTextureLayer(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0, id);
+        glNamedFramebufferTextureLayer(*FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0, *id);
     }
 }
 void PointShadow::AddBuffer() 
@@ -79,7 +72,7 @@ void PointShadow::AddBuffer()
     {
         id = *ListOfShadowArrayIndexes.begin();
         ListOfShadowArrayIndexes.pop_front();
-        glNamedFramebufferTexture(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
+        glNamedFramebufferTexture(*FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
     }
 }
 
@@ -180,7 +173,10 @@ DirectionShadow::DirectionShadow(bool)
         scale_bias_matrix[3] = glm::vec4(0.5f);
         scale_bias_matrix[3][3] = 1;
         ListOfShadowArrayIndexes.resize(TwoTypesLighs * MAX_LIGHTS_ONE_TYPE);
-        std::iota(ListOfShadowArrayIndexes.begin(), ListOfShadowArrayIndexes.end(), 0);
+        uint16_t indexes = 0;
+        for (auto& el : ListOfShadowArrayIndexes)
+            el = std::make_shared<GLint>(indexes++);
+        //std::iota(ListOfShadowArrayIndexes.begin(), ListOfShadowArrayIndexes.end(), 0);
 
         InitOffsetTex(16, 8, 8);
         init = true;
@@ -196,7 +192,6 @@ void PointShadow::Draw(std::pair<const_model_iterator, const_model_iterator> mod
 {
     static GLfloat OldView[4];
     AttachBuffer();
-    GLenum err = glGetError();
     glGetFloatv(GL_VIEWPORT, OldView);
     glViewport(0, 0, ShadowMapSize, ShadowMapSize);
     glEnable(GL_POLYGON_OFFSET_FILL);
@@ -223,8 +218,7 @@ void PointShadow::Draw(std::pair<const_model_iterator, const_model_iterator> mod
     shader->setMats("shadowMatrices", pViewMatrix[0], AmountMatrixes);
     shader->setVec("lightPos", LightVector);
     shader->setScal("far_plane", Far_Plane);
-    shader->setScal("Index", id);
-    err = glGetError();
+    shader->setScal("Index", *id);
     for (auto& it = models.first; it != models.second; ++it)
         it->second->Draw(shader.get());
     DetachBuffer();
@@ -260,15 +254,6 @@ void DirectionShadow::Draw(std::pair<const_model_iterator, const_model_iterator>
     glViewport(0, 0, OldView[2], OldView[3]);
 }
 
-DirectionShadow::DirectionShadow(DirectionShadow&& ds) noexcept
-{
-    LightMat = std::move(ds.LightMat);
-    _3dTexture = ds._3dTexture;
-    ds._3dTexture = GL_NONE;
-    radius = ds.radius;
-    OffsetTexSize = std::move(ds.OffsetTexSize);
-    StrShadowMatrix = std::move(ds.StrShadowMatrix);
-}
 
 DirectionShadow::DirectionShadow(const DirectionShadow& ds) noexcept
 {
@@ -282,6 +267,6 @@ DirectionShadow::DirectionShadow(const DirectionShadow& ds) noexcept
 DirectionShadow::~DirectionShadow() 
 {
     glDeleteTextures(1, &_3dTexture);
-    if (id != -1)
+    if (id.use_count() == 1)
         ListOfShadowArrayIndexes.insert(std::lower_bound(ListOfShadowArrayIndexes.begin(), ListOfShadowArrayIndexes.end(), id), id);
 }

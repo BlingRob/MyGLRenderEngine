@@ -87,28 +87,28 @@ void Mesh::Draw(const Shader* shader)
         switch (textures[i]->type) 
         {
             case Texture_Types::Diffuse:
-                shader->setTexture("tex.diffuse", textures[i]->id, static_cast<GLuint>(Texture_Types::Diffuse));
+                shader->setTexture("tex.diffuse", std::get<GLuint>(textures[i]->id), static_cast<GLuint>(Texture_Types::Diffuse));
             break;
             case Texture_Types::Normal:
-                shader->setTexture("tex.normal", textures[i]->id, static_cast<GLuint>(Texture_Types::Normal));
+                shader->setTexture("tex.normal", std::get<GLuint>(textures[i]->id), static_cast<GLuint>(Texture_Types::Normal));
             break;
             case Texture_Types::Specular:
-                shader->setTexture("tex.specular", textures[i]->id, static_cast<GLuint>(Texture_Types::Specular));
+                shader->setTexture("tex.specular", std::get<GLuint>(textures[i]->id), static_cast<GLuint>(Texture_Types::Specular));
             break;
             case Texture_Types::Emissive:
-                shader->setTexture("tex.emissive", textures[i]->id, static_cast<GLuint>(Texture_Types::Emissive));
+                shader->setTexture("tex.emissive", std::get<GLuint>(textures[i]->id), static_cast<GLuint>(Texture_Types::Emissive));
             break;
             case Texture_Types::Height:
-                shader->setTexture("tex.height", textures[i]->id, static_cast<GLuint>(Texture_Types::Height));
+                shader->setTexture("tex.height", std::get<GLuint>(textures[i]->id), static_cast<GLuint>(Texture_Types::Height));
             break;
             case Texture_Types::Metallic_roughness:
-                shader->setTexture("tex.metallic_roughness", textures[i]->id, static_cast<GLuint>(Texture_Types::Metallic_roughness));
+                shader->setTexture("tex.metallic_roughness", std::get<GLuint>(textures[i]->id), static_cast<GLuint>(Texture_Types::Metallic_roughness));
             break;
             case Texture_Types::Ambient_occlusion:
-                shader->setTexture("tex.ao", textures[i]->id, static_cast<GLuint>(Texture_Types::Ambient_occlusion));
+                shader->setTexture("tex.ao", std::get<GLuint>(textures[i]->id), static_cast<GLuint>(Texture_Types::Ambient_occlusion));
             break;
             case Texture_Types::Skybox:
-                shader->setTexture("skybox", textures[i]->id, static_cast<GLuint>(Texture_Types::Skybox));
+                shader->setTexture("skybox", std::get<GLuint>(textures[i]->id), static_cast<GLuint>(Texture_Types::Skybox));
             break;
         }
     }

@@ -8,14 +8,14 @@ void Scene::Draw()
 	Light::ClearBuffers();
 	GLenum err = glGetError();
 	for (const auto& lig : Lights) 
-		lig.second->DrawShadows(std::make_pair(Models.cbegin(), Models.cend()));
+		lig.second->DrawShadows(GetModels());
 
 	for (auto& mod : Models)
 	{
 		sh = mod.second->GetShader();
 		sh->Use();
 		sh->setScal("NumLights", Lights.size());
-		matrs.SendToShader(*sh);//Needing use uniform buffer
+		matrs->SendToShader(*sh);//Needing use uniform buffer
 		sh->setVec("viewPos", GetCam()->Position);//for 
 		for (const auto& lig : Lights)
 			lig.second->SendToShader(*sh);//really important
@@ -28,12 +28,11 @@ void Scene::Draw()
 		glDepthFunc(GL_LEQUAL);
 		sh = GetShader("SkyBox");
 		sh->Use();
-		sh->setMat("transform.PV", (*matrs.Projection * glm::mat4(glm::mat3(*matrs.View))));
+		sh->setMat("transform.PV", (*matrs->Projection * glm::mat4(glm::mat3(*matrs->View))));
 		SkyBox->Draw(sh.get());
 		glDepthFunc(GL_LESS);
 		glFrontFace(GL_CCW);
 	}
-
 }
 
 void Scene::AddModel(std::shared_ptr<Model> mod) 
@@ -69,9 +68,13 @@ const glm::vec4 Scene::GetBackGround() const
 	return BackGroundColour;
 }
 
-const std::map<std::size_t, std::shared_ptr<Light>>* Scene::GetLights() const
+const std::pair<Scene::LIt, Scene::LIt> Scene::GetLights() const
 {
-	return &Lights;
+	return make_pair(Lights.cbegin(), Lights.cend());
+}
+const std::pair<Scene::MIt, Scene::MIt> Scene::GetModels() const
+{
+	return make_pair(Models.cbegin(), Models.cend());
 }
 
 void Scene::SetBackGround(glm::vec4 col) 
@@ -85,18 +88,18 @@ void Scene::AddShader(std::shared_ptr<Shader> sh)
 	Shaders[std::hash<std::string_view>{}(sh->GetName())] = sh;
 }
 
-void Scene::SetCam(std::unique_ptr<Camera> Cam)
+void Scene::SetCam(std::shared_ptr<Camera> Cam)
 {
 	camera = std::move(Cam);
 }
 
-Camera* Scene::GetCam() const 
+std::shared_ptr<Camera> Scene::GetCam() const
 {
-	return camera.get();
+	return matrs->cam;
 }
 
 
-Scene::Scene() 
+Scene::Scene(std::shared_ptr <Position_Controller> contr)
 {
 	//default background
 	BackGroundColour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -112,10 +115,10 @@ Scene::Scene()
 	shader = std::make_shared<Shader>("../Shaders/SkyBox.vert", "../Shaders/SkyBox.frag", nullptr);
 	shader->SetName("SkyBox");
 	AddShader(shader);
-	SetCam(std::make_unique<Camera>(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
+	//SetCam(std::make_unique<Camera>(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
 	SkyBox = DefaultSkyBox;
 	SkyBoxSetted = true;
-
+	SetController(contr);
 };
 /*
 bool Scene::LoadModels(const std::string& path)
@@ -140,6 +143,12 @@ void Scene::SetBackGround(std::shared_ptr<Node> box)
 Scene_Information Scene::GetInfo()
 {
 	return std::move(Scene_Information({ Models.size(), Lights.size(), Shaders.size()}));
+}
+void Scene::SetController(std::shared_ptr <Position_Controller> contr) 
+{
+	if (camera)
+		contr->cam = camera;
+	matrs = contr;
 }
 
 Scene::~Scene() 

@@ -33,3 +33,12 @@ Node::Node(const Node& node)
 	Meshes = node.Meshes;
 	tr = node.tr;
 }
+std::pair<Node::MIt, Node::MIt> Node::GetMeshes() 
+{
+	return std::make_pair(Meshes.cbegin(), Meshes.cend());
+}
+
+std::pair<Node::NIt, Node::NIt> Node::GetChildren() 
+{
+	return std::make_pair(Children.cbegin(), Children.cend());
+}

@@ -3,9 +3,12 @@ FrameBuffer::FrameBuffer(GLuint weight, GLuint height)
 {
     _mWeight = weight;
     _mHeight = height;
-    textureID = Render = OldFBO = GL_NONE;
+    textureID = std::shared_ptr<GLuint>(new GLuint(GL_NONE), [&](auto* tex) {glDeleteTextures(1, tex); delete tex; });
+    Render = std::shared_ptr<GLuint>(new GLuint(GL_NONE), [&](auto* ren) {glDeleteRenderbuffers(1, ren); delete ren; });
+    FBO = std::shared_ptr<GLuint>(new GLuint(GL_NONE), [&](auto* fbo) {glDeleteFramebuffers(1, fbo); delete fbo; });
+    OldFBO = GL_NONE;
     RenderInclude = TextureInclude = false;
-    glCreateFramebuffers(1, &FBO);
+    glCreateFramebuffers(1, FBO.get());
 }
 FrameBuffer::FrameBuffer(const FrameBuffer& fr) 
 {
@@ -18,23 +21,16 @@ FrameBuffer::FrameBuffer(const FrameBuffer& fr)
     TextureInclude = fr.TextureInclude;
     FBO = fr.FBO;
 }
-FrameBuffer::FrameBuffer(FrameBuffer&& fr):FrameBuffer(static_cast<const FrameBuffer&>(fr))
-{
-    fr.textureID = GL_NONE;
-    fr.Render = GL_NONE;
-    fr.OldFBO = GL_NONE;
-    fr.RenderInclude = false; 
-    fr.TextureInclude = false;
-    fr.FBO = GL_NONE;
-}
+
 
 FrameBuffer::~FrameBuffer()
 {
-    glDeleteFramebuffers(1, &FBO);
-    if(RenderInclude)
-       glDeleteRenderbuffers(1, &Render);
-    if(TextureInclude)
-       glDeleteTextures(1, &textureID);
+    //if(FBO)
+    //glDeleteFramebuffers(1, &FBO);
+    //if(RenderInclude)
+    //   glDeleteRenderbuffers(1, &Render);
+    //if(TextureInclude)
+    //   glDeleteTextures(1, &textureID);
 }
 
 std::tuple<GLenum, GLenum, GLenum> FrameBuffer::GetGlBufferType(BufferType BuffType)
@@ -69,39 +65,39 @@ std::tuple<GLenum, GLenum, GLenum> FrameBuffer::GetGlBufferType(BufferType BuffT
 
 void FrameBuffer::AddFrameBuffer(BufferType BuffType)
 {
-    glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
+    glCreateTextures(GL_TEXTURE_2D, 1, textureID.get());
 
-    glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTextureParameteri(*textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(*textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    glBindTexture(GL_TEXTURE_2D, *textureID);
     auto [Attachment, Format, Type] = GetGlBufferType(BuffType);
     //glTextureStorage2D(textureID, 1, Format, weight, height);
     glTexImage2D(GL_TEXTURE_2D, 0, Type, _mWeight, _mHeight, 0, Type, Format, NULL);
     glBindTexture(GL_TEXTURE_2D, 0);
 
-    glNamedFramebufferTexture(FBO, Attachment, textureID, 0);
+    glNamedFramebufferTexture(*FBO, Attachment, *textureID, 0);
     TextureInclude = true;
 }
 
 void FrameBuffer::AddRenderBuffer(BufferType BuffType)
 {
-    glCreateRenderbuffers(1, &Render);
+    glCreateRenderbuffers(1, Render.get());
     auto [Attachment, Format, Type] = GetGlBufferType(BuffType);
-    glNamedRenderbufferStorage(Render, Format, _mWeight, _mHeight);
-    glNamedFramebufferRenderbuffer(FBO, Attachment, GL_RENDERBUFFER, Render);
+    glNamedRenderbufferStorage(*Render, Format, _mWeight, _mHeight);
+    glNamedFramebufferRenderbuffer(*FBO, Attachment, GL_RENDERBUFFER, *Render);
     RenderInclude = true;
 }
 
 bool FrameBuffer::IsCorrect() 
 {
-    return glCheckNamedFramebufferStatus(FBO, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
+    return glCheckNamedFramebufferStatus(*FBO, GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE;
 }
 
 void FrameBuffer::AttachBuffer() 
 {
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &OldFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, FBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, *FBO);
 }
 void FrameBuffer::DetachBuffer() 
 {
@@ -109,7 +105,7 @@ void FrameBuffer::DetachBuffer()
 }
 void FrameBuffer::SendToShader(const Shader& sh,std::string_view NameUniform, std::uint16_t BindIndex)
 {
-    sh.setTexture(NameUniform, FrameBuffer::textureID, BindIndex);
+    sh.setTexture(NameUniform, *FrameBuffer::textureID, BindIndex);
 }
 
 PostProcessBuffer::PostProcessBuffer(GLuint weight, GLuint height):FrameBuffer(weight, height)

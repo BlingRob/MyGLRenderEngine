@@ -13,8 +13,7 @@ class FrameBuffer
 		bool RenderInclude, TextureInclude;
 	protected:
 		GLuint _mWeight, _mHeight;
-		GLuint textureID;
-		GLuint FBO, Render;
+		std::shared_ptr<GLuint> textureID, FBO, Render;
 		GLint OldFBO;
 		FrameBuffer() {};
 	public:

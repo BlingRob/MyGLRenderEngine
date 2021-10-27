@@ -2,6 +2,8 @@
 #include "Headers.h"
 #include "Shader.h"
 #include <assimp/scene.h>
+#include "STB_Loader.h"
+#include "ParallelStructures.h"
 
 struct Vertexes
 {
@@ -21,13 +23,13 @@ enum class Texture_Types:GLuint {Diffuse = 0, Normal = 1, Specular = 2, Emissive
 
 struct Texture
 {
-    GLuint id;
+    std::variant<GLuint, std::unique_ptr<STB_Loader>> id; //Texture created in graphics API:Yes - there is index, no - there is buffer with bin data
     Texture_Types type;
     aiString name;
     aiString path;
     ~Texture()
     {
-        glDeleteTextures(1, &id);
+        glDeleteTextures(1, &std::get<GLuint>(id));
     }
 };
 
@@ -45,7 +47,7 @@ class Mesh
     
 public:
     /*  Mesh Data  */
-    static inline std::map<std::size_t, std::weak_ptr<Texture>> GlobalTextures;
+    static inline ParallelMap<std::size_t, std::weak_ptr<Texture>> GlobalTextures;
     Vertexes vertices;
     std::vector< std::shared_ptr<Texture>> textures;
     std::vector<GLuint> indices;

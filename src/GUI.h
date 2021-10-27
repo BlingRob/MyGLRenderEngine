@@ -2,6 +2,8 @@
 #include "Headers.h"
 #include <SDL.h>
 #include "Loader.h"
+#include "Window.h"
+#include "Transformation.h"
 //GUI
 #define IMGUI_INCLUDE_IMCONFIG_H
 #include "imgui.h"
@@ -11,7 +13,7 @@
 class GUI
 {
 public:
-	GUI(SDL_Window* window, SDL_GLContext* context,std::shared_ptr<std::unique_ptr<Scene>> scene);
+	GUI(std::shared_ptr < SDL_Window> window, std::shared_ptr <void> context, std::shared_ptr<std::unique_ptr<Scene>> scene, std::shared_ptr<Position_Controller>);
 	~GUI();
 	void Draw();
 
@@ -19,10 +21,10 @@ public:
 	bool invertion = false;
 	bool convolution = false;
 	std::shared_ptr<glm::mat3> Core;
-	float TimeOnFrame = 0.0f;
 private:
 	std::shared_ptr<std::unique_ptr<Scene>> _mScene;
-	SDL_Window* _mWindow;
+	std::shared_ptr < SDL_Window> _mWindow;
+	std::shared_ptr<Position_Controller> _mContr;
 	ImGui::FileBrowser fileDialog;
 	SDL_Cursor *DefaultCursor,
 			   *LoadingCursor;

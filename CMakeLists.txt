@@ -87,6 +87,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${RESOURCE_FILES}")
 ###########################################################
 ############################Special unix###################
 if(NOT WIN32)
-	list(APPEND CMAKE_CXX_FLAGS "-pthread -lGL -std=c++11 ${CMAKE_CXX_FLAGS}")
+	list(APPEND CMAKE_CXX_FLAGS "-pthread -lGL -std=c++17 ${CMAKE_CXX_FLAGS}")
 	#set(CMAKE_Cxx_CREATE_STATIC_LIBRARY OFF)
 endif()

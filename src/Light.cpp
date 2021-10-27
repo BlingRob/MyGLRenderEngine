@@ -110,7 +110,7 @@ LightTypes Light::GetType() const
 void Light::SendToShader(const Shader& shader)
 {
 	BLight::SendToShader(StrNumLight, shader);
-	shader.setScal((StrNumLight + "index"), Shadow::id);
+	shader.setScal((StrNumLight + "index"), *Shadow::id);
 	switch (Type)
 	{
 		case LightTypes::Directional:

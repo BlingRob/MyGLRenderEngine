@@ -1,4 +1,5 @@
 #include "Headers.h"
+#include "MemoryManager.h"
 #include "Scene.h"
 #include "Application.h"
 
@@ -29,6 +30,9 @@ int main(int argc, char* args[])
 		freopen("Log.txt", "w", stdout);
 		freopen("ErrLog.txt", "w", stderr);
 	#endif
+	//	Manager mgr;
+	//	{std::shared_ptr<glm::mat4> mat = mgr.GetMat4(); }
+		
 	try
 	{
 		rend();

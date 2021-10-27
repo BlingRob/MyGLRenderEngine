@@ -41,9 +41,9 @@ uniform uint NumLights;
 
 out VS_OUT {
     vec3 FragPos;
-   // vec3 TangentViewPos;
+    vec3 TangentViewPos;
     vec2 TexCoords;
-   // vec3 TangentFragPos;
+    vec3 TangentFragPos;
   //  vec4 TangentLightPositions[MAX_LIGHTS];
     vec3 Normal;
     vec4 ShadowCoords[NUM_SPOT_DIR_LIGHTS];
@@ -53,15 +53,16 @@ void main()
 {
     vs_out.FragPos = vec3(transform.model * vec4(position,1.0f));
 
-    //vec3 N = normalize(NormalMatrix * VertexNormal);
-    //vec3 T = normalize(NormalMatrix * aTangent);
-    //vec3 B = normalize(NormalMatrix * aBitangent);
+    vec3 N = normalize(NormalMatrix * VertexNormal);
+    vec3 T = normalize(NormalMatrix * aTangent);
+    vec3 B = normalize(NormalMatrix * aBitangent);
     //T = normalize(T - dot(T, N) * N);
 
-    //mat3 TBN = transpose(mat3(T,B,N));
+    mat3 TBN = transpose(mat3(T,B,N));
     //translate coordinats in tangent space
-    //vs_out.TangentViewPos            = TBN * viewPos;
-    //vs_out.TangentFragPos     = TBN * vs_out.FragPos;
+    vs_out.TangentViewPos            = TBN * viewPos;
+    vs_out.TangentFragPos     = TBN * vs_out.FragPos;
+    
     vs_out.Normal = NormalMatrix * VertexNormal;   
     for(uint i = 0;i < NumLights;++i)
     {

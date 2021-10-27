@@ -94,6 +94,7 @@ std::unique_ptr<Light> Loader::GetLight()
     switch(scene->mLights[IndexLight]->mType)
     {
         case aiLightSource_POINT:
+            //light = std::make_unique<Light>(PointLight(amb, dif, spec, pos, clq));
             light = std::make_unique<Light>(std::move(PointLight(amb, dif, spec, pos, clq)));
 
         break;
@@ -205,8 +206,6 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
     aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
 
     //Create additional thread for load geometry and material of mesh
-    std::thread GeometryThread([&]()
-        {
             // walk through each of the mesh's vertices
             CurMesh->vertices.Positions.resize(Mesh::CardCoordsPerPoint * mesh->mNumVertices);
             CurMesh->vertices.Normals.resize(Mesh::CardCoordsPerPoint * mesh->mNumVertices);
@@ -257,23 +256,23 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
                     // bitangent
                     CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i] =     0.0f;
                     CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i + 1] = 0.0f;
-                    CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i + 2] = 0.0f;
-                }
-            }
-            // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
+        CurMesh->vertices.Bitangents[Mesh::CardCoordsPerPoint * i + 2] = 0.0f;
+      }
+    }
+    // now wak through each of the mesh's faces (a face is a mesh its triangle) and retrieve the corresponding vertex indices.
 
-            CurMesh->indices.reserve(mesh->mNumFaces * mesh->mFaces[0].mNumIndices);//Indices = 3 * card of face's number
-            for (std::size_t i = 0; i < mesh->mNumFaces; ++i)
-            {
-                aiFace face = mesh->mFaces[i];
-                // retrieve all indices of the face and store them in the indices vector
-                for (std::size_t j = 0; j < face.mNumIndices; j++)
-                    CurMesh->indices.push_back(face.mIndices[j]);
-            }
+    CurMesh->indices.reserve(mesh->mNumFaces * mesh->mFaces[0].mNumIndices);//Indices = 3 * card of face's number
+    for (std::size_t i = 0; i < mesh->mNumFaces; ++i)
+    {
+        aiFace face = mesh->mFaces[i];
+           // retrieve all indices of the face and store them in the indices vector
+        for (std::size_t j = 0; j < face.mNumIndices; j++)
+            CurMesh->indices.push_back(face.mIndices[j]);
+    }
 
-            //load materials
-            CurMesh->material = loadMaterial(mat, mesh->mMaterialIndex);
-        });
+    //load materials
+    CurMesh->material = loadMaterial(mat, mesh->mMaterialIndex);
+
 
     // Loading texture's maps
     std::vector< std::shared_ptr<Texture>> texes;
@@ -304,9 +303,6 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
     texes = loadTexture(mat, aiTextureType_AMBIENT_OCCLUSION, Texture_Types::Ambient_occlusion);
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
 
-    GeometryThread.join();
-
-    CurMesh->setupMesh();
     // return a mesh object created from the extracted mesh data
     return CurMesh;
 }
@@ -353,7 +349,7 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
         else
         {
             std::shared_ptr <Texture> texture = std::make_shared<Texture>();
-            texture->id = TextureFromFile(TexturePtr, Width, Height, scene->HasTextures());
+            texture->id = std::make_unique<STB_Loader>(TexturePtr, Width, Height, scene->HasTextures());
             texture->name = name;
             texture->path = path;
             texture->type = typeName;
@@ -379,48 +375,25 @@ Material Loader::loadMaterial(aiMaterial* mat, uint16_t indx)
     return std::move(MeshMaterial);
 }
 
-GLuint Loader::TextureFromFile(const void* path, std::size_t width, std::size_t height, bool FromProc)
+
+GLuint Loader::CreateTexture(std::unique_ptr<STB_Loader> buf)
 {
     GLuint textureID = 0;
-    const unsigned char* data;
-    int w, h, nrComponents = 4;
-    bool Loaded = false;
 
-    if (FromProc)
-    {
-        if (height == 0)
-        {
-            data = static_cast<const unsigned char*>(stbi_load_from_memory((unsigned char*)path, static_cast<int>(width), &w, &h, &nrComponents, 0));
-            //std::cout << stbi_failure_reason() << std::endl;
-            Loaded = true;
-        }
-        else
-        {
-            data = static_cast<const unsigned char*>(path);
-            w = static_cast<int>(width);
-            h = static_cast<int>(height);
-        }
-    }
-    else
-    {
-        data = stbi_load(static_cast<const char*>(path), &w, &h, &nrComponents, 0);
-        Loaded = true;
-    }
-
-    if (data)
+    if (buf)
     {
         GLenum format = GL_RGB8, mipfor = GL_RGB;
-        if (nrComponents == 1)
+        if (buf->nrComponents[0] == 1)
         {
             format = GL_R8;
             mipfor = GL_RED;
         }
-        else if (nrComponents == 3)
+        else if (buf->nrComponents[0] == 3)
         {
             format = GL_RGB8;
             mipfor = GL_RGB;
         }
-        else if (nrComponents == 4)
+        else if (buf->nrComponents[0] == 4)
         {
             format = GL_RGBA8;
             mipfor = GL_RGBA;
@@ -434,70 +407,67 @@ GLuint Loader::TextureFromFile(const void* path, std::size_t width, std::size_t 
         glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTextureStorage2D(textureID, 1, format, w, h);
-        glTextureSubImage2D(textureID, 0, 0, 0, w, h, mipfor, GL_UNSIGNED_BYTE, data);
+        glTextureStorage2D(textureID, 1, format, buf->w[0], buf->h[0]);
+        glTextureSubImage2D(textureID, 0, 0, 0, buf->w[0], buf->h[0], mipfor, GL_UNSIGNED_BYTE, buf->data[0]);
     }
     else
-    {
-        std::cerr << "Texture failed to load at path: " << path << std::endl;
-    }
-    if (Loaded)
-        stbi_image_free(const_cast<unsigned char*>(data));
+        std::cerr << "Create GL texture is failed: received empty data!" << std::endl;
 
     return textureID;
 }
-
-GLuint Loader::CubeTextureFromFile(std::vector<std::string_view> paths)
+GLuint Loader::CreateTexture(std::unique_ptr<STB_Loader> buf, Texture_Buffer_Type type)
 {
     GLuint textureID = 0;
 
-    int width, height, nrComponents;
-    unsigned char* data;
-
-    glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &textureID);
-
-    data = stbi_load(paths[0].data(), &width, &height, &nrComponents, 0);
-    glTextureStorage3D(textureID, 1, GL_RGB8, width, height, 6);
-    glTextureSubImage3D(textureID, 0, 0, 0, 0, width, height, 1, GL_RGB, GL_UNSIGNED_BYTE, data);
-
-    for (std::size_t i = 1; i < paths.size(); ++i)
+    if (buf)
     {
-        data = stbi_load(paths[i].data(), &width, &height, &nrComponents, 0);
-
-        if (data)
+        switch (type)
         {
-            GLenum format = GL_RGB32F, mipfor = GL_RGB;
-            if (nrComponents == 1)
-            {
-                mipfor = GL_RED;
-                format = GL_R8;
-            }
-            else if (nrComponents == 3)
-            {
-                format = GL_RGB8;
-                mipfor = GL_RGB;
-            }
-            else if (nrComponents == 4)
-            {
-                format = GL_RGBA8;
-                mipfor = GL_RGBA;
-            }
+        case Texture_Buffer_Type::Cube:
+            glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &textureID);
 
-            glTextureSubImage3D(textureID, 0, 0, 0, static_cast<GLint>(i), width, height, 1, mipfor, GL_UNSIGNED_BYTE, data);
-            stbi_image_free(data);
+            glTextureStorage3D(textureID, 1, GL_RGB8, buf->w[0], buf->h[0], 6);
+            for (std::uint16_t i = 0; i < 6; ++i)
+            {
+                if (buf->data[i])
+                {
+                    GLenum format = GL_RGB32F, mipfor = GL_RGB;
+                    switch (buf->nrComponents[i])
+                    {
+                    case 1:
+                        mipfor = GL_RED;
+                        format = GL_R8;
+                        break;
+                    case 3:
+                        format = GL_RGB8;
+                        mipfor = GL_RGB;
+                        break;
+                    case 4:
+                        format = GL_RGBA8;
+                        mipfor = GL_RGBA;
+                        break;
+                    default:
+                        break;
+                    }
+                    glTextureSubImage3D(textureID, 0, 0, 0, static_cast<GLint>(i), buf->w[i], buf->h[i], 1, mipfor, GL_UNSIGNED_BYTE, buf->data[i]);
+                }
+            }
+            break;
+        default:
+            break;
         }
-        else
-        {
-            std::cerr << "Texture failed to load at path " << std::endl;
-        }
+
+        glTextureParameteri(textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(textureID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+        glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        return textureID;
     }
-    glTextureParameteri(textureID, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(textureID, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(textureID, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    
-    return textureID;
+    else
+        return GL_NONE;
+
 }
 
 std::unique_ptr<Node> Loader::LoadSkyBox(std::vector<std::string_view> paths)
@@ -542,7 +512,7 @@ std::unique_ptr<Node> Loader::LoadSkyBox(std::vector<std::string_view> paths)
     curMesh->vertices.Bitangents.resize(0);
 
     std::shared_ptr <Texture> texture = std::make_shared<Texture>();
-    texture->id = CubeTextureFromFile(paths);
+    texture->id = CreateTexture(std::make_unique<STB_Loader>(paths), Texture_Buffer_Type::Cube);
     texture->name = "SkyBox";
     texture->path = paths[0].data();
     texture->type = Texture_Types::Skybox;
@@ -563,7 +533,7 @@ Loader::~Loader()
 
 std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
 {
-    std::unique_ptr<Scene> scen = std::make_unique<Scene>();
+    std::unique_ptr<Scene> scen = std::make_unique<Scene>(nullptr);
     LoadScene(path);
 
     if (!Is_Load())
@@ -599,24 +569,25 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
             }
         }
 
-        //std::list<std::thread> threads;// (new std::thread[IndexModel + 1]);
-        //std::unique_ptr<std::future<std::unique_ptr<Model>>[]> results(new std::future <std::unique_ptr<Model>>[IndexModel + 1]);
-        //auto AdMod = [&](int32_t n) {  scen->AddModel(std::shared_ptr<Model>(GetModel(n).release())); };
-        //for (int32_t i = 0; i <= IndexModel; ++i)
-        //    threads.push_back(std::thread(AdMod,i));
-        //for (auto& th : threads)
-        //    th.join();
-        //    results[i] = std::async(std::launch::async, AdMod, i);
     std::shared_ptr<Shader> sh = scen->GetShader("Default");
+    #pragma omp parallel for shared(sh, scen)
     for (int32_t i = 0; i <= IndexModel; ++i)
     {
         std::unique_ptr<Model> mod = GetModel(i);
         if (mod)
         {
             mod->SetShader(sh);
-            scen->AddModel(std::shared_ptr<Model>(mod.release()));
+            #pragma omp critical
+            {
+                scen->AddModel(std::shared_ptr<Model>(mod.release())); 
+            }
         }
     }
+
+    std::pair<Scene::MIt, Scene::MIt> models = scen->GetModels();
+    for (Scene::MIt it = models.first; it != models.second; ++it)
+        CreateGLObjects(it->second->GetRoot());
+    
     //std::shared_ptr<Model> mod;
     //while ((mod = std::shared_ptr<Model>(GetModel().release())))
     //   scen->AddModel(mod);
@@ -630,4 +601,20 @@ void Loader::GetTransform(glm::mat4& whereTo, const aiMatrix4x4& FromWhere)
     whereTo[1] = glm::vec4(FromWhere[0][1], FromWhere[1][1], FromWhere[2][1], FromWhere[3][1]);
     whereTo[2] = glm::vec4(FromWhere[0][2], FromWhere[1][2], FromWhere[2][2], FromWhere[3][2]);
     whereTo[3] = glm::vec4(FromWhere[0][3], FromWhere[1][3], FromWhere[2][3], FromWhere[3][3]);
+}
+
+
+void Loader::CreateGLObjects(std::shared_ptr<Node> node)
+{
+    std::pair<Node::MIt, Node::MIt> meshes = node->GetMeshes();
+    for (Node::MIt it = meshes.first; it != meshes.second; ++it)
+    {
+        it->get()->setupMesh();
+        for (auto& tex : it->get()->textures)
+            if(tex.get()->id.index() == 1)
+                tex.get()->id = CreateTexture(std::move(std::get<std::unique_ptr <STB_Loader> >(tex.get()->id)) );
+    }
+    std::pair<Node::NIt, Node::NIt> chld = node->GetChildren();
+    for (Node::NIt it = chld.first; it != chld.second; ++it)
+        CreateGLObjects(*it);
 }

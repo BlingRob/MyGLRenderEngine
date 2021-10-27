@@ -1,14 +1,14 @@
 #include "GUI.h"
 
-GUI::GUI(SDL_Window* window, SDL_GLContext* context, std::shared_ptr<std::unique_ptr<Scene>> scene)
+GUI::GUI(std::shared_ptr < SDL_Window> window, std::shared_ptr <void> context, std::shared_ptr<std::unique_ptr<Scene>> scene, std::shared_ptr<Position_Controller> contr)
 {
 	_mScene = scene;
 	_mWindow = window;
+	_mContr = contr;
 	//GUI Initialization
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO();
-	(void)io;
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
 	io.Fonts->AddFontDefault();
 	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
@@ -18,7 +18,7 @@ GUI::GUI(SDL_Window* window, SDL_GLContext* context, std::shared_ptr<std::unique
 	//ImGui::StyleColorsClassic();
 
 	// Setup Platform/Renderer backends for imgui
-	ImGui_ImplSDL2_InitForOpenGL(window, context);
+	ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
 	ImGui_ImplOpenGL3_Init("#version 450");
 	// Setup file dialog
 	fileDialog.SetTitle("Choosing scene");
@@ -48,7 +48,7 @@ void GUI::Interface()
 {
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(_mWindow);
+	ImGui_ImplSDL2_NewFrame(_mWindow.get());
 
 	ImGui::NewFrame();
 	{
@@ -103,6 +103,7 @@ void GUI::Interface()
 				Loader loader;
 				SDL_SetCursor(LoadingCursor);
 				_mScene->reset(loader.GetScene(fileDialog.GetSelected().string()).release() );
+				_mScene->get()->SetController(_mContr);
 				fileDialog.ClearSelected();
 				SDL_SetCursor(DefaultCursor);
 			}
@@ -112,13 +113,13 @@ void GUI::Interface()
 			if (_mScene)
 			{
 				Scene_Information info = (*_mScene)->GetInfo();
-				SDL_GetWindowSize(_mWindow, &SCR_WIDTH, &SCR_HEIGHT);
+				SDL_GetWindowSize(_mWindow.get(), &SCR_WIDTH, &SCR_HEIGHT);
 				ImGui::SetNextWindowPos(ImVec2(0, 20));
 				ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH / 3.0f, SCR_HEIGHT / 3.0f));
 				ImGui::Begin("Statistics", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 					//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", TimeOnFrame, 1000.0f / TimeOnFrame);
 					ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-					ImGui::Text("Time on frame %.6f ms", TimeOnFrame);
+					ImGui::Text("Time on frame %.6f ms", *_mContr->dt);
 					ImGui::Text("Models in scene %d", info.Amount_models);
 					ImGui::Text("Lights in scene %d", info.Amount_lights);
 					ImGui::Text("Shaders in scene %d", info.Amount_shaders);

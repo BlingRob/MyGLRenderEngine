@@ -5,20 +5,24 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <map>
+#include <stack>
 #include <fstream>
 #include <sstream>
-#include <map>
 #include <memory>
 #include <list>
 #include <functional>
 #include <type_traits>
-//Multi thread
-//#include <atomic>
-//#include <mutex>
-#include <thread>
-#include <future>
 #include <algorithm>
 #include <numeric>
+#include <variant>
+#include <iterator>
+//Multi thread
+#include <atomic>
+#include <mutex>
+#include <thread>
+#include <future>
+#include <execution>
 
 //opengl
 #include "gl/gl.h"

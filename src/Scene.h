@@ -16,7 +16,8 @@ struct Scene_Information
 
 class Scene
 {
-	std::unique_ptr<Camera> camera;
+	std::shared_ptr<Camera> camera;
+	std::shared_ptr <Position_Controller> matrs;
 	std::map<std::size_t, std::shared_ptr<Model>> Models;
 	std::map<std::size_t, std::shared_ptr<Light>> Lights;
 	std::map<std::size_t, std::shared_ptr<Shader>> Shaders;
@@ -25,6 +26,8 @@ class Scene
 	std::shared_ptr<Node> SkyBox;
 
 	public:
+	using LIt = std::map<std::size_t, std::shared_ptr<Light>>::const_iterator; // Iterator on conteiner with light
+	using MIt = std::map<std::size_t, std::shared_ptr<Model>>::const_iterator; // Iterator on conteiner with light
 	
 	void SetBackGround(glm::vec4 col);
 	const glm::vec4 GetBackGround() const;
@@ -38,22 +41,23 @@ class Scene
 	std::shared_ptr<Model>		  GetModel(std::string_view  name);
 	std::shared_ptr<Light>        GetLight(std::string_view  name);
 	/*Return const pointer to std::map conteiner with pairs (NameHash-pointerToLight)*/
-	const std::map<std::size_t, std::shared_ptr<Light>>* GetLights() const;
+	const std::pair<LIt, LIt> GetLights() const;
+	/*Return const pointer to std::map conteiner with pairs (NameHash-pointerToModels)*/
+	const std::pair<MIt, MIt> GetModels() const;
 
 	void Draw();
 
-	Matrices matrs;
-
-	void SetCam(std::unique_ptr<Camera>);
-	Camera* GetCam() const;
+	void SetCam(std::shared_ptr<Camera>);
+	std::shared_ptr<Camera> GetCam() const;
 
 	static inline std::shared_ptr<Model> DefaultPointLightModel;
 	static inline std::shared_ptr<Node> DefaultSkyBox;
 	bool SkyBoxSetted = false;
 
 	Scene_Information GetInfo();
+	void SetController(std::shared_ptr <Position_Controller>);
 
-	Scene();
+	Scene(std::shared_ptr <Position_Controller>);
 	~Scene();
 	//bool LoadModels(const std::string& path);
 };

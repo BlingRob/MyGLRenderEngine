@@ -17,7 +17,7 @@ protected:
 	glm::vec4 LightVector;
 	//virtual void SendToShader(const Shader& sh) = 0; 
 	//virtual void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4) = 0;
-	GLint id;
+	std::shared_ptr<GLint> id;
 	const uint16_t MAX_LIGHTS_ONE_TYPE = 5;
 
 	void AddBuffer();
@@ -25,7 +25,6 @@ public:
 	Shadow() {};
 	Shadow(bool);
 	Shadow(const Shadow&);
-	Shadow(Shadow&&);
 	~Shadow();
 };
 
@@ -37,13 +36,12 @@ public:
 	PointShadow() {};
 	PointShadow(bool);
 	PointShadow(const PointShadow& ) noexcept;
-	PointShadow(PointShadow&&) noexcept;
 	~PointShadow();
 	void SendToShader(const Shader& sh);
 	void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4);
 private:
 	static inline GLuint ShadowArrayID;
-	static inline std::list<GLint> ListOfShadowArrayIndexes;
+	static inline std::list<std::shared_ptr<GLint>> ListOfShadowArrayIndexes;
 	static inline bool init = false;
 	static inline std::shared_ptr<Shader> shader;
 
@@ -70,7 +68,7 @@ class DirectionShadow : public virtual Shadow
 		static inline GLfloat radius;
 		static inline glm::vec3 OffsetTexSize;
 		static inline GLuint ShadowArrayID;
-		static inline std::list<GLint> ListOfShadowArrayIndexes;
+		static inline std::list<std::shared_ptr<GLint>> ListOfShadowArrayIndexes;
 		static inline bool init = false;
 		static inline std::shared_ptr<Shader> shader;
 
@@ -78,7 +76,6 @@ class DirectionShadow : public virtual Shadow
 		DirectionShadow() {};
 		DirectionShadow(bool);
 		DirectionShadow(const DirectionShadow&) noexcept;
-		DirectionShadow(DirectionShadow&&) noexcept;
 		~DirectionShadow();
 	void SendToShader(const Shader& sh);
 	void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4);

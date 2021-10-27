@@ -5,10 +5,14 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 #include <assimp/pbrmaterial.h>
-//Texture's loader
-#include "stb/stb_image.h"
+//Texture loader
+#include "STB_Loader.h"
 //Load OGLfuns
 #include <SDL.h>
+//OpenMp
+#include <omp.h>
+
+enum class Texture_Buffer_Type :GLuint { _2D, Cube };
 
 class Loader
 {
@@ -26,9 +30,12 @@ class Loader
 	Material loadMaterial(aiMaterial* mat, uint16_t indx);
 	/*path - maybe address in programm, if FromProc is true, then texture loading from current process;
 	  if FromProc is false path must be pointer to const char* with internal file path*/
-	static GLuint TextureFromFile(const void* path, std::size_t width, std::size_t height, bool FromProc);
-	static GLuint CubeTextureFromFile(std::vector<std::string_view> paths);
+	static GLuint CreateTexture(std::unique_ptr<STB_Loader>);
+	static GLuint CreateTexture(std::unique_ptr<STB_Loader>, Texture_Buffer_Type);
+
 	void GetTransform(glm::mat4& whereTo, const aiMatrix4x4& FromWhere);
+
+	void CreateGLObjects(std::shared_ptr<Node>);
 	
 public:
 	static std::unique_ptr<Node> LoadSkyBox(std::vector<std::string_view> paths);
@@ -48,4 +55,5 @@ public:
 	void Destroy();
 	~Loader();
 };
+
 
