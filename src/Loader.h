@@ -16,7 +16,8 @@ enum class Texture_Buffer_Type :GLuint { _2D, Cube };
 
 class Loader
 {
-	std::unique_ptr<aiScene> scene;
+	const aiScene* _mscene;
+	std::shared_ptr <Assimp::Importer> importer;
 	std::string directory;
 
 	bool loaded;

@@ -80,9 +80,9 @@
 	{
 		*scene = std::move(s);
 	}
-	const std::shared_ptr<std::unique_ptr<Scene>> RenderEngine::GetScen() const
+	Scene* RenderEngine::GetScen() const
 	{
-		return scene;
+		return scene.get()->get();
 	}
 
 

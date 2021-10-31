@@ -16,8 +16,10 @@ struct Scene_Information
 
 class Scene
 {
+	std::function<void()> DeleterAssimpScene;
 	std::shared_ptr<Camera> camera;
 	std::shared_ptr <Position_Controller> matrs;
+
 	std::map<std::size_t, std::shared_ptr<Model>> Models;
 	std::map<std::size_t, std::shared_ptr<Light>> Lights;
 	std::map<std::size_t, std::shared_ptr<Shader>> Shaders;
@@ -57,7 +59,7 @@ class Scene
 	Scene_Information GetInfo();
 	void SetController(std::shared_ptr <Position_Controller>);
 
-	Scene(std::shared_ptr <Position_Controller>);
+	Scene(std::shared_ptr <Position_Controller>, std::function<void()> fun = []() {});
 	~Scene();
 	//bool LoadModels(const std::string& path);
 };

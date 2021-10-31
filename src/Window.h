@@ -16,8 +16,8 @@ class Window
 	bool keys[1024] = { false };
 
 	//mouse controll
-	GLfloat lastX, lastY;
-	GLboolean clicked, firstMouse;
+	float lastX, lastY;
+	bool clicked, firstMouse;
 	bool ChangedProj = false;
 	bool ChangedView = false;
 	//callbacks

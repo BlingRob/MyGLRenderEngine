@@ -5,18 +5,39 @@
 #include "STB_Loader.h"
 #include "ParallelStructures.h"
 
-struct Vertexes
+struct Vertexess
 {
     // positions
-    std::vector < GLfloat> Positions;
+    std::vector <GLfloat> Positions;
     // normals
-    std::vector < GLfloat> Normals;
+    std::vector <GLfloat> Normals;
     // texCoords
-    std::vector < GLfloat> TexCoords;
+    std::vector <GLfloat> TexCoords;
     // tangents
-    std::vector < GLfloat> Tangents;
+    std::vector <GLfloat> Tangents;
     // bitangents
-    std::vector < GLfloat> Bitangents;
+    std::vector <GLfloat> Bitangents;
+};
+
+struct Vertexes
+{
+    enum PointTypes
+    {
+        positions = 0, normals, texture, tangent, bitangent
+    };
+    //Vertexess(std::array<std::size_t, 5> sizes, float* pos, float* nor, float* tc, float* tan, float* bits) :
+    //    _msizes(std::move(sizes)), Positions(pos), Normals(nor), TexCoords(tc), Tangents(tc), Bitangents(bits) {}
+    std::array<std::size_t, 5> _msizes{0, 0, 0, 0, 0};
+    // positions
+    aiVector3D* Positions;
+    // normals
+    aiVector3D* Normals;
+    // texCoords
+    aiVector3D* TexCoords;
+    // tangents
+    aiVector3D* Tangents;
+    // bitangents
+    aiVector3D* Bitangents;
 };
 
 enum class Texture_Types:GLuint {Diffuse = 0, Normal = 1, Specular = 2, Emissive = 3, Height = 4, Metallic_roughness = 5, Ambient_occlusion = 6, Skybox = 7};

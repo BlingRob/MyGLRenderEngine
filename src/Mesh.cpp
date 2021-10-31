@@ -25,7 +25,7 @@ Mesh::~Mesh()
 
 void Mesh::setupMesh()
 {
-
+    std::array<std::size_t, 5> Biases;
     // create buffers/arrays
 
     // load data into vertex buffers
@@ -36,16 +36,25 @@ void Mesh::setupMesh()
     glCreateBuffers(1,&EBO);
     glNamedBufferStorage(EBO, sizeof(GLuint) * indices.size(), indices.data(), 0);
 
+    std::size_t i = 0, sum = 0;
+    std::size_t Bytes = sizeof(GLfloat) * std::accumulate(vertices._msizes.begin(), vertices._msizes.end(), 0, [&Biases,&i,&sum](auto& accum, std::size_t& x)
+        {
+            sum = (accum + x);
+            Biases[i++] = sizeof(GLfloat) * sum;
+            return sum;
+        });
+
     //pos - 3,nor - 3, tex - 2, tan - 3, btan - 3 = 14 
 
     glCreateBuffers(1, &VBO);
     //glNamedBufferData(VBO[0], sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size() + vertices.TexCoords.size() + vertices.Tangents.size() + vertices.Bitangents.size()), NULL, GL_STATIC_DRAW);
-    glNamedBufferStorage(VBO, sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size() + vertices.TexCoords.size() + vertices.Tangents.size() + vertices.Bitangents.size()), NULL, GL_DYNAMIC_STORAGE_BIT);
-    glNamedBufferSubData(VBO, 0, vertices.Positions.size() * sizeof(GLfloat), vertices.Positions.data());
-    glNamedBufferSubData(VBO, sizeof(GLfloat) * vertices.Positions.size(), sizeof(GLfloat) * vertices.Normals.size(), vertices.Normals.data());
-    glNamedBufferSubData(VBO, sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size()), sizeof(GLfloat) * vertices.TexCoords.size(), vertices.TexCoords.data());
-    glNamedBufferSubData(VBO, sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size() + vertices.TexCoords.size()), sizeof(GLfloat) * vertices.Tangents.size(), vertices.Tangents.data());
-    glNamedBufferSubData(VBO, sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size() + vertices.TexCoords.size() + vertices.Tangents.size()), sizeof(GLfloat) * vertices.Bitangents.size(), vertices.Bitangents.data());
+    glNamedBufferStorage(VBO, Bytes, NULL, GL_DYNAMIC_STORAGE_BIT);
+    glNamedBufferSubData(VBO, 0, Biases[0], vertices.Positions);
+    glNamedBufferSubData(VBO, Biases[0], sizeof(GLfloat) * vertices._msizes[Vertexes::PointTypes::normals], vertices.Normals);
+    glNamedBufferSubData(VBO, Biases[1], sizeof(GLfloat) * vertices._msizes[Vertexes::PointTypes::texture], vertices.TexCoords);
+    glNamedBufferSubData(VBO, Biases[2], sizeof(GLfloat) * vertices._msizes[Vertexes::PointTypes::tangent], vertices.Tangents);
+    glNamedBufferSubData(VBO, Biases[3], sizeof(GLfloat) * vertices._msizes[Vertexes::PointTypes::bitangent], vertices.Bitangents);
+
     // set the vertex attribute pointers
 
     glCreateVertexArrays(1, &VAO);
@@ -54,6 +63,7 @@ void Mesh::setupMesh()
     for (uint16_t i = 0; i < 5; ++i)
         glEnableVertexArrayAttrib(VAO, i);
 
+
     // vertex Positions
     glVertexArrayAttribBinding(VAO, 0, 0);
     glVertexArrayVertexBuffer(VAO, 0, VBO, 0, sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
@@ -61,22 +71,22 @@ void Mesh::setupMesh()
     
     // vertex normals
     glVertexArrayAttribBinding(VAO, 1, 1);
-    glVertexArrayVertexBuffer(VAO, 1, VBO, sizeof(GLfloat) * vertices.Positions.size(), sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
+    glVertexArrayVertexBuffer(VAO, 1, VBO, Biases[0], sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
     glVertexArrayAttribFormat(VAO, 1, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);//vertices.Positions.size() * sizeof(GLfloat)
     
     // vertex texture coords
     glVertexArrayAttribBinding(VAO, 2, 2);
-    glVertexArrayVertexBuffer(VAO, 2, VBO, sizeof(GLfloat) * (vertices.Normals.size() + vertices.Positions.size()), sizeof(GLfloat) * Mesh::CardCoordsPerTextPoint);
+    glVertexArrayVertexBuffer(VAO, 2, VBO, Biases[1], sizeof(GLfloat) * Mesh::CardCoordsPerTextPoint);
     glVertexArrayAttribFormat(VAO, 2, Mesh::CardCoordsPerTextPoint, GL_FLOAT, GL_FALSE, 0);
     
     // vertex tangent
     glVertexArrayAttribBinding(VAO, 3, 3);
-    glVertexArrayVertexBuffer(VAO, 3, VBO, sizeof(GLfloat) * (vertices.Normals.size() + vertices.Positions.size() + vertices.TexCoords.size()), sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
+    glVertexArrayVertexBuffer(VAO, 3, VBO, Biases[2], sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
     glVertexArrayAttribFormat(VAO, 3, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
     
     // vertex bitangent
     glVertexArrayAttribBinding(VAO, 4, 4);
-    glVertexArrayVertexBuffer(VAO, 4, VBO, sizeof(GLfloat) * (vertices.Normals.size() + vertices.Positions.size() + vertices.TexCoords.size() + vertices.Tangents.size()), sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
+    glVertexArrayVertexBuffer(VAO, 4, VBO, Biases[3], sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
     glVertexArrayAttribFormat(VAO, 4, Mesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
 }
 

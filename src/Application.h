@@ -13,13 +13,10 @@
 	class RenderEngine
 	{
 		std::shared_ptr<Position_Controller> _mcontr;
+		//Pointer of window class
 		std::unique_ptr<Window> _mWindow;
 		//Scene
-		//std::unique_ptr<Scene> scene;
 		std::shared_ptr<std::unique_ptr<Scene>> scene;
-		//time:difference, current, last
-		float dt;
-
 		//Time
 		Chronometr chron;
 		//GUI
@@ -30,16 +27,11 @@
 			RenderEngine();
 			~RenderEngine()
 			{
-				//While all smart pointers won't clean gl objects, mustn't delete gl context
-				//Close and destroy the window
-				//SDL_DestroyWindow(window);
-				// Clean up
-				//SDL_Quit();
 			}
 			bool MainLoop();
 			double GetTime();
 			void SetScen(std::unique_ptr<Scene>);
-			const std::shared_ptr<std::unique_ptr<Scene>> GetScen() const;
+			Scene* GetScen() const;
 
 	};
 

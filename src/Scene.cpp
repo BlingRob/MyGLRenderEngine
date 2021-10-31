@@ -99,7 +99,7 @@ std::shared_ptr<Camera> Scene::GetCam() const
 }
 
 
-Scene::Scene(std::shared_ptr <Position_Controller> contr)
+Scene::Scene(std::shared_ptr <Position_Controller> contr, std::function<void()> fun)
 {
 	//default background
 	BackGroundColour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -119,6 +119,7 @@ Scene::Scene(std::shared_ptr <Position_Controller> contr)
 	SkyBox = DefaultSkyBox;
 	SkyBoxSetted = true;
 	SetController(contr);
+	DeleterAssimpScene = fun;
 };
 /*
 bool Scene::LoadModels(const std::string& path)
@@ -154,4 +155,5 @@ void Scene::SetController(std::shared_ptr <Position_Controller> contr)
 Scene::~Scene() 
 {
 	Mesh::GlobalTextures.clear();
+	DeleterAssimpScene();
 }

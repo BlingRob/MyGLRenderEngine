@@ -1,6 +1,6 @@
 #include "STB_Loader.h"
 
-void STB_Loader::LoadTexture(const void* path, std::size_t width, std::size_t height, bool FromProc)
+void STB_Loader::LoadTexture(void* path, std::size_t width, std::size_t height, bool FromProc)
 {
     size = 1;
     if (FromProc)
@@ -12,8 +12,9 @@ void STB_Loader::LoadTexture(const void* path, std::size_t width, std::size_t he
         }
         else
         {
-            data[0] = new unsigned char[4 * width * height];
-            std::copy_n(std::execution::par, static_cast<const unsigned char*>(path), 4 * width * height, data[0]);//need check out
+            //data[0] = new unsigned char[4 * width * height];
+            //std::copy_n(std::execution::par, static_cast<const unsigned char*>(path), 4 * width * height, data[0]);//need check out
+            data[0] = static_cast<unsigned char*>(path);
             //data[0] = std::unique_ptr<unsigned char, decltype(&STB_Loader::DeleteTexture)>(static_cast<const unsigned char*>(path), &STB_Loader::DeleteTexture);
             w[0] = static_cast<int>(width);
             h[0] = static_cast<int>(height);

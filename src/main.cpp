@@ -1,12 +1,13 @@
 #include "Headers.h"
-#include "MemoryManager.h"
+//#include "MemoryManager.h"
 #include "Scene.h"
 #include "Application.h"
+
 
 void rend() 
 	{
 		RenderEngine eng;
-		eng.GetScen()->get()->SetBackGround(glm::vec4(0.117f, 0.187f, 0.253f, 1.0f));
+		eng.GetScen()->SetBackGround(glm::vec4(0.117f, 0.187f, 0.253f, 1.0f));
 		std::shared_ptr<Light> lig;
 		while(eng.MainLoop())
 		{
@@ -18,7 +19,7 @@ void rend()
 		}
 	}
 
-
+	
 int main(int argc, char* args[])
 {
 	#if defined(__WIN32__)
@@ -30,9 +31,17 @@ int main(int argc, char* args[])
 		freopen("Log.txt", "w", stdout);
 		freopen("ErrLog.txt", "w", stderr);
 	#endif
-	//	Manager mgr;
-	//	{std::shared_ptr<glm::mat4> mat = mgr.GetMat4(); }
-		
+		/*
+		Manager mgr;
+		{
+			std::shared_ptr<glm::mat4> mat = mgr.GetMat<glm::mat4>(); 
+			std::shared_ptr<glm::mat4> mat2 = mgr.GetMat<glm::mat4>();
+			std::shared_ptr<glm::mat3> mat3 = mgr.GetMat<glm::mat3>();
+			std::shared_ptr<glm::mat3> mat4 = mgr.GetMat<glm::mat3>();
+			mat4.reset();
+			mat.reset();
+			mat2.reset();
+		}*/
 	try
 	{
 		rend();
