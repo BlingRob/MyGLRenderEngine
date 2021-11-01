@@ -97,36 +97,6 @@ enum class LightTypes
 	Directional = 0, Point, Spot
 };
 
-
-/*
-class Light:public Entity
-{
-	LightTypes Type = LightTypes::Point;
-	typedef PointLight t;
-	using type = t;
-	using const_model_iterator = std::map<std::size_t, std::shared_ptr<Model>>::const_iterator;
-	std::variant<DirectionalLight, SpotLight, PointLight> _mlight;
-	public:
-		/*c,l,q - attenuation
-		Light();
-		template<typename L>
-		Light(L& lig){ _mlight(lig); };
-		template<typename L>
-		Light::Light(L&& lig) : L(lig) {}
-		/*Light(glm::vec3 ambient = glm::vec3(0.0f),glm::vec3 diffuse = glm::vec3(0.0f), glm::vec3 specular = glm::vec3(0.0f),
-			float constant = 0.0f, float linear = 0.0f, float quadric = 0.0f, glm::vec3 position = glm::vec3(0.0f), glm::vec3 direction = glm::vec3(0.0f),
-			float BigAngel = 60, float SmallAngel = 30):
-			BLight(ambient, diffuse, specular),
-			SpotLight(ambient, diffuse, specular, position, direction, constant, linear, quadric, BigAngel, SmallAngel) {}
-		//Light(SpotLight);
-		void SendToShader(const Shader& shader);
-		void DrawShadows(std::pair<const_model_iterator, const_model_iterator> models);
-		void SetType(LightTypes);
-		LightTypes GetType() const;
-		template<typename T>
-		T& operator() ();
-}; */
-
 class Light:public Entity, public SpotLight
 {
 	LightTypes Type = LightTypes::Point;

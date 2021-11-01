@@ -30,9 +30,6 @@ bool Loader::LoadScene(std::string_view path)
     IndexLight = _mscene->mNumLights - 1;
 
     loaded = true;
-   // if(scene->HasLights() || scene->HasCameras())
-   //    while (scene->mRootNode->mChildren[IndexModel]->mNumMeshes != 0)//Skip camera or lights nodes
-   //         --IndexModel;
 
     return true;
 }
@@ -160,13 +157,12 @@ std::unique_ptr<Camera> Loader::GetCamera()
 
 std::unique_ptr<Model> Loader::GetModel(uint32_t Indx) 
 {
-    if (!_mscene || !_mscene->mRootNode || Indx == -1 || _mscene->mRootNode->mChildren[Indx]->mNumMeshes == 0)
+    if (!_mscene || !_mscene->mRootNode || Indx == -1)
         return nullptr;
     
     std::unique_ptr<Model> model = std::make_unique<Model>();
     model->SetName(_mscene->mRootNode->mChildren[Indx]->mName.C_Str());
     model->SetRoot(processNode(_mscene->mRootNode->mChildren[Indx]));
-    _mscene->mRootNode->mChildren[Indx] = nullptr;
     return std::move(model);
 }
 
@@ -179,13 +175,15 @@ std::shared_ptr<Node> Loader::processNode(aiNode* node)
     std::shared_ptr<glm::mat4> ModelMatr = std::make_shared<glm::mat4>(1.0f),TmpMat;
     GetTransform(*ModelMatr, node->mTransformation);
     curNode->tr.Set(ModelMatr);
-    //meshes.reserve(node->mNumMeshes);
     for (std::size_t i = 0; i < node->mNumMeshes; ++i)
     {
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        aiMesh* mesh = _mscene->mMeshes[node->mMeshes[i]];
-        curNode->addMesh(processMesh(mesh));
+        auto IterMesh = GlobalMeshes.find(std::hash<std::string>{}(std::string(_mscene->mMeshes[node->mMeshes[i]]->mName.C_Str())));
+        if(IterMesh != GlobalMeshes.end())
+            curNode->addMesh(IterMesh->second.lock());
+        else
+            curNode->addMesh(processMesh(_mscene->mMeshes[node->mMeshes[i]]));
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for (std::size_t i = 0; i < node->mNumChildren; ++i)
@@ -202,15 +200,22 @@ std::shared_ptr<Node> Loader::processNode(aiNode* node)
 std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
 {
     std::shared_ptr<Mesh> CurMesh = std::make_shared<Mesh>();
+    CurMesh->SetName(mesh->mName.C_Str());
     // process materials
     aiMaterial* mat = _mscene->mMaterials[mesh->mMaterialIndex];
 
     //Create additional thread for load geometry and material of mesh
-            // walk through each of the mesh's vertices
+   // walk through each of the mesh's vertices
+
     if (mesh->HasPositions())
     {
         CurMesh->vertices._msizes[Vertexes::PointTypes::positions] = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
         CurMesh->vertices.Positions = mesh->mVertices;
+    }
+    if (mesh->HasNormals()) 
+    {
+        CurMesh->vertices._msizes[Vertexes::PointTypes::normals] = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
+        CurMesh->vertices.Normals = mesh->mNormals;
     }
     if (mesh->HasTangentsAndBitangents()) 
     {
@@ -222,21 +227,16 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
     }
     if (mesh->HasTextureCoords(0)) 
     {
-        CurMesh->vertices._msizes[Vertexes::PointTypes::texture] = mesh->mNumVertices * Mesh::CardCoordsPerTextPoint;
+        CurMesh->vertices._msizes[Vertexes::PointTypes::texture] = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
         CurMesh->vertices.TexCoords = mesh->mTextureCoords[0];
     }
-
-    //work only with triangle
-    //CurMesh->indices.size = 3llu * mesh->mNumFaces;
-    //CurMesh->indices.IndArr = mesh->mFaces;
    
     CurMesh->indices.reserve(mesh->mNumFaces * mesh->mFaces[0].mNumIndices);//Indices = 3 * card of face's number
     for (std::size_t i = 0; i < mesh->mNumFaces; ++i)
     {
-        aiFace face = mesh->mFaces[i];
            // retrieve all indices of the face and store them in the indices vector
-        for (std::size_t j = 0; j < face.mNumIndices; j++)
-            CurMesh->indices.push_back(face.mIndices[j]);
+        for (std::size_t j = 0; j < mesh->mFaces[i].mNumIndices; j++)
+            CurMesh->indices.push_back(mesh->mFaces[i].mIndices[j]);
     }
 
     //load materials
@@ -277,10 +277,10 @@ std::shared_ptr <Mesh> Loader::processMesh(aiMesh* mesh)
 
 std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTextureType type, Texture_Types typeName)
 {
-    std::vector< std::shared_ptr<Texture>> textures;
+    std::vector<std::shared_ptr<Texture>> textures;
     aiString path, name;
     void* TexturePtr;
-    aiTexture* tex;
+    const aiTexture* tex;
     std::string str;
     uint32_t Width, Height;
 
@@ -295,7 +295,7 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
         if (_mscene->HasTextures())// textures are embedded in scene file
         {
              str = std::string(path.C_Str());//assimp docs, if tex embedded: path's string has format *TextureIndex
-             tex = _mscene->mTextures[std::stoul(str.substr(1))];
+             tex = _mscene->GetEmbeddedTexture(str.c_str());
              Width = tex->mWidth;
              Height = tex->mHeight;
              TexturePtr = tex->pcData;
@@ -309,8 +309,9 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
 
         // check if texture was loaded before and if so, continue to next iteration: skip loading a new texture
         // if texture hasn't been loaded already, load it
-        auto node = Mesh::GlobalTextures.find(std::hash<std::string>{}(std::string(name.C_Str()) + std::string(path.C_Str())));
-        if (node != Mesh::GlobalTextures.end())
+        std::size_t hash = std::hash<std::string>{}((std::string(name.C_Str()) + std::string(path.C_Str())));
+        auto node = GlobalTextures.find(hash);
+        if (node != GlobalTextures.end())
         {
             if(std::find(textures.begin(), textures.end(), node->second.lock()) == textures.end())
                 textures.push_back(node->second.lock());
@@ -324,7 +325,7 @@ std::vector< std::shared_ptr<Texture>> Loader::loadTexture(aiMaterial* mat, aiTe
             texture->type = typeName;
 
             textures.push_back(texture);
-            Mesh::GlobalTextures[std::hash<std::string>{}(std::string(name.C_Str()) + std::string(path.C_Str()))] = texture;// store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
+            GlobalTextures[hash] = texture;// store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.
         }     
     }
     return std::move(textures);
@@ -343,7 +344,6 @@ Material Loader::loadMaterial(aiMaterial* mat, uint16_t indx)
 
     return std::move(MeshMaterial);
 }
-
 
 GLuint Loader::CreateTexture(std::unique_ptr<STB_Loader> buf)
 {
@@ -483,7 +483,7 @@ std::unique_ptr<Node> Loader::LoadSkyBox(std::vector<std::string_view> paths)
     texture->type = Texture_Types::Skybox;
 
     curMesh->textures.push_back(texture);
-    Mesh::GlobalTextures[std::hash<std::string>{}(texture->path.C_Str())] = texture;
+    //GlobalTextures[std::hash<std::string>{}(texture->path.C_Str())] = texture;
 
     curMesh->setupMesh();
     curNode->addMesh(curMesh);

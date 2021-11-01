@@ -153,8 +153,7 @@ DirectionShadow::DirectionShadow(bool)
     if (!init) 
     {
         const uint16_t TwoTypesLighs = 2;
-        //shader = std::make_shared<Shader>("../Shaders/DirectDepthMap.vs", "../Shaders/DirectDepthMap.frag", "../Shaders/DirectDepthMap.gs");
-        shader = std::make_shared<Shader>("../Shaders/DirectDepthMap.vs", "../Shaders/DirectDepthMap.frag", nullptr);
+        shader = std::make_shared<Shader>("../Shaders/DirectDepthMap.vs", "../Shaders/DirectDepthMap.frag");
 
         glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &ShadowArrayID);
 

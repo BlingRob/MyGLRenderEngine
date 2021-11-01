@@ -102,7 +102,7 @@ void GUI::Interface()
 				OldScene.reset();
 				Loader loader;
 				SDL_SetCursor(LoadingCursor);
-				_mScene->reset(loader.GetScene(fileDialog.GetSelected().string()).release() );
+				*_mScene = loader.GetScene(fileDialog.GetSelected().string());
 				_mScene->get()->SetController(_mContr);
 				fileDialog.ClearSelected();
 				SDL_SetCursor(DefaultCursor);

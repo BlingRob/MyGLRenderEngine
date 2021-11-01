@@ -104,15 +104,15 @@ Scene::Scene(std::shared_ptr <Position_Controller> contr, std::function<void()> 
 	//default background
 	BackGroundColour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
 	//default shaders
-	std::shared_ptr<Shader> shader = std::make_shared<Shader>("../Shaders/Base.vert", "../Shaders/Base.frag",nullptr);
+	std::shared_ptr<Shader> shader = std::make_shared<Shader>("../Shaders/Base.vert", "../Shaders/Base.frag");
 	shader->SetName("Default");
 	AddShader(shader);
-	shader = std::make_shared<Shader>("../Shaders/Light.vert", "../Shaders/Light.frag", nullptr);
+	shader = std::make_shared<Shader>("../Shaders/Light.vert", "../Shaders/Light.frag");
 	shader->SetName("PointLight");
 	AddShader(shader);
 	if (DefaultPointLightModel)
 		DefaultPointLightModel->SetShader(shader);
-	shader = std::make_shared<Shader>("../Shaders/SkyBox.vert", "../Shaders/SkyBox.frag", nullptr);
+	shader = std::make_shared<Shader>("../Shaders/SkyBox.vert", "../Shaders/SkyBox.frag");
 	shader->SetName("SkyBox");
 	AddShader(shader);
 	//SetCam(std::make_unique<Camera>(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f)));
@@ -154,6 +154,6 @@ void Scene::SetController(std::shared_ptr <Position_Controller> contr)
 
 Scene::~Scene() 
 {
-	Mesh::GlobalTextures.clear();
+	//Mesh::GlobalTextures.clear();
 	DeleterAssimpScene();
 }

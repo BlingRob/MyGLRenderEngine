@@ -112,7 +112,7 @@ void main()
     //FragColor = vec4(texture(tex[0].normal, fs_in.TexCoords).rgb,0.0f);
     //FragColor = vec4(vec3(textureProj(shadowMap,fs_in.FragPosLightSpace)),0.0f);
     //FragColor = vec4(vec3(ShadowCalculation(0)),1.0f);
-    FragColor = vec4(ImproveLight(mat, tex, ParallaxMapping(fs_in.TexCoords,viewDir)),1.0f);
+    FragColor = vec4(ImproveLight(mat, tex, fs_in.TexCoords),1.0f);//ParallaxMapping(fs_in.TexCoords,viewDir)
     //FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 
 

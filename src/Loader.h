@@ -25,6 +25,9 @@ class Loader
 	int32_t IndexModel;
 	int32_t IndexLight;
 
+	ParallelMap<std::size_t, std::weak_ptr<Mesh>> GlobalMeshes;
+	ParallelMap<std::size_t, std::weak_ptr<Texture>> GlobalTextures;
+
 	std::shared_ptr<Node> processNode(aiNode* node);
 	std::shared_ptr<Mesh> processMesh(aiMesh* mesh);
 	std::vector< std::shared_ptr<Texture>> loadTexture(aiMaterial* mat, aiTextureType type, Texture_Types MyType);

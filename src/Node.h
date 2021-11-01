@@ -7,7 +7,6 @@
 
 class Node:public Entity
 {
-	
 	std::list<std::shared_ptr<Node>> Children;
 	std::list <std::shared_ptr <Mesh>> Meshes;
 public:

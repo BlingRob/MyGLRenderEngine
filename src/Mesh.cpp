@@ -1,26 +1,17 @@
 #include "Mesh.h"
 
 
-/*Mesh :: Mesh(Vertexes&& vertices, std::vector<GLuint>&& indices, std::vector < Texture>&& textures, Material&& material)
-{
-    this->vertices = std::move(vertices);
-    this->indices = std::move(indices);
-    this->textures = std::move(textures);
-    this->material = std::move(material);
-
-    setupMesh();
-}*/
 Mesh::~Mesh()
 {
     glDeleteBuffers(1, &EBO);
     glDeleteBuffers(1, &VBO);
     glDeleteVertexArrays(1, &VAO);
-    for (auto& tex : textures) 
+    /*for (auto& tex : textures)
     {
         if (auto it = GlobalTextures.find(std::hash<std::string>{}(tex->path.C_Str()));tex.use_count() == 1 && it != GlobalTextures.end())
             GlobalTextures.erase(it);
         tex.reset();
-    }
+    }*/
 }
 
 void Mesh::setupMesh()
@@ -76,7 +67,7 @@ void Mesh::setupMesh()
     
     // vertex texture coords
     glVertexArrayAttribBinding(VAO, 2, 2);
-    glVertexArrayVertexBuffer(VAO, 2, VBO, Biases[1], sizeof(GLfloat) * Mesh::CardCoordsPerTextPoint);
+    glVertexArrayVertexBuffer(VAO, 2, VBO, Biases[1], sizeof(GLfloat) * Mesh::CardCoordsPerPoint);
     glVertexArrayAttribFormat(VAO, 2, Mesh::CardCoordsPerTextPoint, GL_FLOAT, GL_FALSE, 0);
     
     // vertex tangent
