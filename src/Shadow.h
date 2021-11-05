@@ -17,37 +17,34 @@ protected:
 	glm::vec4 LightVector;
 	//virtual void SendToShader(const Shader& sh) = 0; 
 	//virtual void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4) = 0;
-	std::shared_ptr<GLint> id;
+	GLint id;
 	const uint16_t MAX_LIGHTS_ONE_TYPE = 5;
 
 	void AddBuffer();
 public:
-	Shadow() {};
-	Shadow(bool);
+	Shadow();
 	Shadow(const Shadow&);
 	~Shadow();
 };
 
 class PointShadow:public virtual Shadow
 {
-protected:
-	void AddBuffer();
+	
 public:
-	PointShadow() {};
-	PointShadow(bool);
+	PointShadow();
 	PointShadow(const PointShadow& ) noexcept;
 	~PointShadow();
+	//Return FBO
+	GLuint AddBuffer(GLuint ShadowId);
 	void SendToShader(const Shader& sh);
 	void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4);
 private:
 	static inline GLuint ShadowArrayID;
-	static inline std::list<std::shared_ptr<GLint>> ListOfShadowArrayIndexes;
 	static inline bool init = false;
 	static inline std::shared_ptr<Shader> shader;
 
 	const GLsizei AmountMatrixes = 6;
 	glm::mat4 ShadowProj;
-	static inline bool Cleared = false;
 	std::array<glm::mat4,6> ViewMatrix;
 	GLfloat* pViewMatrix[6];
 
@@ -59,8 +56,7 @@ class DirectionShadow : public virtual Shadow
 {
 	protected:
 		static inline glm::mat4 scale_bias_matrix;
-		void AddBuffer();
-		std::string StrShadowMatrix;
+		//std::string StrShadowMatrix;
 		Matrices LightMat;
 	private:
 		static void InitOffsetTex(std::size_t size, int64_t samplesU, int64_t samplesV);
@@ -68,14 +64,14 @@ class DirectionShadow : public virtual Shadow
 		static inline GLfloat radius;
 		static inline glm::vec3 OffsetTexSize;
 		static inline GLuint ShadowArrayID;
-		static inline std::list<std::shared_ptr<GLint>> ListOfShadowArrayIndexes;
 		static inline bool init = false;
 		static inline std::shared_ptr<Shader> shader;
-
+		std::string _mStrNumLight;
 	public:
-		DirectionShadow() {};
-		DirectionShadow(bool);
+		DirectionShadow(const std::string& StrNumLight);
 		DirectionShadow(const DirectionShadow&) noexcept;
+		//return FBO
+		GLuint AddBuffer(GLuint ShadowId);
 		~DirectionShadow();
 	void SendToShader(const Shader& sh);
 	void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4);

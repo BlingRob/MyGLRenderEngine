@@ -8,81 +8,92 @@
 
 class BLight
 {
-	glm::vec3 ambient;
-	glm::vec3 diffuse;
-	glm::vec3 specular;
-
 public:
-	BLight() {};
-	BLight(const glm::vec3& a, const  glm::vec3& d, const glm::vec3& s):
-		ambient(a),diffuse(d),specular(s){
+	BLight() {}
+	BLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s,
+		const glm::vec3& CLQ):
+		_mAmbient(a), _mDiffuse(d), _mSpecular(s), _mCLQ(CLQ) {
 	}
-	BLight(const BLight& bl): ambient(bl.ambient), diffuse(bl.diffuse), specular(bl.specular) { };
+	BLight(const BLight& bl) : _mAmbient(bl._mAmbient), _mDiffuse(bl._mDiffuse), _mSpecular(bl._mSpecular), _mCLQ(bl._mCLQ)
+	{ }
 	glm::vec3 GetAmbient() const;
 	glm::vec3 GetDiffuse() const;
 	glm::vec3 GetSpecular() const;
+	glm::vec3 GetAttenuation() const;
 
 	void SetAmbient(const glm::vec3&);
 	void SetDiffuse(const glm::vec3&);
 	void SetSpecular(const glm::vec3&);
-	
-	void SendToShader(const std::string& name, const Shader& shader);
+	void SetAttenuation(const glm::vec3&);
+
+	void SendToShader(const Shader& shader);
+
+	private:
+
+	glm::vec3 _mAmbient;
+	glm::vec3 _mDiffuse;
+	glm::vec3 _mSpecular;
+	glm::vec3 _mCLQ;
+
+	protected:
+	std::string _mStrNumLight;
+	void SetNumStr(const std::string&);
 };
 
-class DirectionalLight:public virtual BLight, public DirectionShadow
+class DirectionalLight:public virtual BLight
 {
 protected:
 	glm::vec3 direction;
-
+	std::shared_ptr<DirectionShadow> _mShadow;
 public:
-	DirectionalLight() {};
-	DirectionalLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s, const glm::vec3& dir);
-	DirectionalLight(const DirectionalLight& dl) :BLight(dynamic_cast<const BLight&>(dl)), Shadow(dynamic_cast<const Shadow&>(dl)), DirectionShadow(dynamic_cast<const DirectionShadow&>(dl))
+	DirectionalLight() {}
+	DirectionalLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s,
+		const glm::vec3& CLQ, const glm::vec3& dir);
+	DirectionalLight(const DirectionalLight& dl):BLight(dl)
 	{
 		direction = dl.direction;
+		_mShadow = dl._mShadow;
 	}
 	virtual void SendToShader(const Shader& shader);
 	void ChangeDirection(const glm::vec3&);
 	glm::vec3 GetDir();
 };
 
-class PointLight : public virtual BLight,public PointShadow
+class PointLight : public virtual BLight
 {
+	protected:
 	glm::vec3 position;
-	glm::vec3 clq;
-
+	std::shared_ptr<PointShadow> _mShadow;
 	public:
 		PointLight() {};
-		PointLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s, const glm::vec3& p, const glm::vec3& clq);
-		PointLight(const PointLight& pl):BLight(dynamic_cast<const BLight&>(pl)), Shadow(dynamic_cast<const Shadow&>(pl)), PointShadow(dynamic_cast<const PointShadow&>(pl))
+		PointLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s,
+			const glm::vec3& CLQ, const glm::vec3& p);
+		PointLight(const PointLight& pl):BLight(pl)
 		{
-			this->clq = pl.clq;
 			tr = pl.tr;
+			_mShadow = pl._mShadow;
 		}
-		void SetAttenuation(const glm::vec3&);
-		glm::vec3 GetAttenuation() const;
 
 	Transformation tr;
 	/*Set new pos*/
 	void SetPos(const glm::vec3& p);
 	/*Return current pos*/
 	glm::vec3 GetPos() const;
-	void SendToShader(const Shader& shader);
+	virtual void SendToShader(const Shader& shader);
 };
 
-class SpotLight: public virtual PointLight, public virtual DirectionalLight
+class SpotLight : public PointLight, public DirectionalLight
 {
 	float Theta; //angel of big cone
 	float Alpha; //angel of small cone
 	public:
-		SpotLight() {};
-		SpotLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s,
-			const glm::vec3& p, const glm::vec3& dir,glm::vec3& CLQ,
-			float BigAngel = 60, float SmallAngel = 30):
-			PointLight(a, d, s, p, CLQ), DirectionalLight(a, d, s, dir) /*DirectionalLight(a, d, s, dir)*/,
+		explicit SpotLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s,
+			const glm::vec3& CLQ, const glm::vec3& p, const glm::vec3& dir,
+			float BigAngel = 60, float SmallAngel = 30)://BLight(a,d,s, CLQ),
+			PointLight(a, d, s, CLQ, p), DirectionalLight(a, d, s, CLQ, dir),
 			Theta(BigAngel),Alpha(SmallAngel){}
 		template<typename L>
-		SpotLight(const L& sp) :PointLight(dynamic_cast<const PointLight&>(sp)), DirectionalLight(dynamic_cast<const DirectionalLight&>(sp)) 
+		explicit SpotLight(const L& sp): BLight(sp), L(sp)
 		{
 		};
 
@@ -97,53 +108,107 @@ enum class LightTypes
 	Directional = 0, Point, Spot
 };
 
+class Light_Indexes
+{
+	public:
+	GLuint _Light_id;
+	GLint _Shadow_id;
+	GLuint _FBO_id;
+	template<typename Light_t>
+	Light_Indexes(const Light_t&)
+	{
+		if (Shadow_types<Light_t>::ShadowIdxes.empty())
+			throw("Limit of shadows is exceeded!");
+		_Shadow_id = *Shadow_types<Light_t>::ShadowIdxes.begin();
+		Shadow_types<Light_t>::ShadowIdxes.pop_front();
+
+		if (LightIdxes.empty())
+			throw("Light limit is exceeded!");
+		_Light_id = *LightIdxes.begin();
+		LightIdxes.pop_front();
+
+		Destructor = [&,this]()
+		{
+			Shadow_types<Light_t>::ShadowIdxes.insert(std::lower_bound(Shadow_types<Light_t>::ShadowIdxes.begin(), Shadow_types<Light_t>::ShadowIdxes.end(), _Shadow_id), _Shadow_id);
+		};
+	}
+
+	~Light_Indexes() 
+	{
+		LightIdxes.insert(std::lower_bound(LightIdxes.begin(), LightIdxes.end(), _Light_id), _Light_id);
+		Destructor();
+	}
+	private:
+	
+	template<typename Light_t>
+	struct Shadow_types
+	{
+		static inline std::list<GLint> ShadowIdxes{ 0, 1, 2, 3, 4};
+	};
+
+	std::function<void()> Destructor;
+
+	static inline std::list<GLuint> LightIdxes{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14 };
+};
+
 class Light:public Entity, public SpotLight
 {
-	LightTypes Type = LightTypes::Point;
-	std::string StrLightPos;
-	std::string StrNumLight;
-
 public:
+	using const_model_iterator = std::map<std::size_t, std::shared_ptr<Model>>::const_iterator;
 	/*c,l,q - attenuation*/
 	Light() = delete;
 	~Light();
 	template<typename L>
-	explicit Light(L lig) : BLight(lig), Shadow(lig), L(lig)
+	explicit Light(L lig) : BLight(lig), SpotLight(lig)
 	{
+		try 
+		{
+			Indexes = std::make_shared<Light_Indexes>(lig);
+		}
+		catch (const char* msg) 
+		{
+			throw("Impossible create light");
+		}
+
 		if constexpr (std::is_same<L, PointLight>::value)
 		{
 			Type = LightTypes::Point;
-			IndexPointFBO.push_back(*FrameBuffer::FBO);
+			Indexes->_FBO_id = L::_mShadow->AddBuffer(Indexes->_Shadow_id);
 		}
 		else if constexpr (std::is_same<L, DirectionalLight>::value)
 		{
 			Type = LightTypes::Directional;
-			IndexDirectionOrSpotFBO.push_back(*FrameBuffer::FBO);
+			Indexes->_FBO_id = L::_mShadow->AddBuffer(Indexes->_Shadow_id);
 		}
 		else
 		{
 			Type = LightTypes::Spot;
-			IndexDirectionOrSpotFBO.push_back(*FrameBuffer::FBO);
 		}
 
 		char buffer[32];
-		if (!ListOfLights.empty())
+		if (Indexes)
 		{
-			Index = *ListOfLights.begin();
-			snprintf(buffer, 32, "LightPositions[%d]", Index);
-			StrLightPos = std::string(buffer);
-			snprintf(buffer, 32, "light[%d].", Index);
+			//snprintf(buffer, 32, "LightPositions[%d]", Indexes->_Light_id);
+			//StrLightPos = std::string(buffer);
+			snprintf(buffer, 32, "light[%d].", Indexes->_Light_id);
 			StrNumLight = std::string(buffer);
-
-			ListOfLights.pop_front();
+			BLight::SetNumStr(StrNumLight);
+			_mFBO.push_back(Indexes->_FBO_id);
+			StrNumLight = StrNumLight + "index";
 		}
+
 	}
 
 	void SendToShader(const Shader& shader);
 	void DrawShadows(std::pair<const_model_iterator, const_model_iterator> models);
+	static void ClearBuffers();
 	LightTypes GetType() const;
 
-	GLuint Index;
-	static void ClearBuffers();
-	static inline std::list <GLuint> ListOfLights{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14}, IndexDirectionOrSpotFBO, IndexPointFBO;
+	private:
+	LightTypes Type = LightTypes::Point;
+	//std::string StrLightPos;
+	std::string StrNumLight;
+	std::shared_ptr<Light_Indexes> Indexes;
+
+	static inline std::list <GLuint> _mFBO;
 }; 

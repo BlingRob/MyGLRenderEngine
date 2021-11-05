@@ -28,7 +28,7 @@ void Mesh::setupMesh()
     glNamedBufferStorage(EBO, sizeof(GLuint) * indices.size(), indices.data(), 0);
 
     std::size_t i = 0, sum = 0;
-    std::size_t Bytes = sizeof(GLfloat) * std::accumulate(vertices._msizes.begin(), vertices._msizes.end(), 0, [&Biases,&i,&sum](auto& accum, std::size_t& x)
+    std::size_t Bytes = sizeof(GLfloat) * std::accumulate(vertices._msizes.begin(), vertices._msizes.end(), 0, [&Biases,&i,&sum](auto& accum, auto& x)
         {
             sum = (accum + x);
             Biases[i++] = sizeof(GLfloat) * sum;

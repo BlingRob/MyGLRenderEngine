@@ -90,18 +90,16 @@ std::unique_ptr<Light> Loader::GetLight()
     switch(_mscene->mLights[IndexLight]->mType)
     {
         case aiLightSource_POINT:
-            //light = std::make_unique<Light>(PointLight(amb, dif, spec, pos, clq));
-            light = std::make_unique<Light>(std::move(PointLight(amb, dif, spec, pos, clq)));
-
+            light = std::make_unique<Light>(PointLight(amb, dif, spec, clq, pos));
         break;
         case aiLightSource_SPOT:
-            light = std::make_unique<Light>(std::move(SpotLight(amb, dif, spec, pos, dir, clq,
+            light = std::make_unique<Light>(SpotLight(amb, dif, spec, clq, pos, dir,
                 _mscene->mLights[IndexLight]->mAngleOuterCone,
-                _mscene->mLights[IndexLight]->mAngleInnerCone)));
+                _mscene->mLights[IndexLight]->mAngleInnerCone));
         break;
         default:
         case aiLightSource_DIRECTIONAL:
-            light = std::make_unique<Light>(std::move(DirectionalLight(amb, dif, spec, glm::mat3(transform) * dir)));
+            light = std::make_unique<Light>(DirectionalLight(amb, dif, spec, clq, glm::mat3(transform) * dir));
         break;
     }
     light->SetName(_mscene->mLights[IndexLight]->mName.C_Str());
@@ -513,11 +511,12 @@ std::unique_ptr<Scene> Loader::GetScene(std::string_view path)
     {
         //default light
         
-        light = std::make_shared<Light>(std::move(DirectionalLight(
+        light = std::make_shared<Light>(DirectionalLight(
                              glm::vec3(1.0f, 1.0f, 1.0f),
                              glm::vec3(0.8f, 0.8f, 0.8f),
                              glm::vec3(1.0f, 1.0f, 1.0f),
-                             glm::vec3(0.0f, 0.0f, -1.0f))));
+                             glm::vec3(1.0f, 0.0f, 0.0f),
+                             glm::vec3(0.0f, 0.0f, -1.0f)));
         light->SetName("Default light");
         scen->AddLight(light);
     }

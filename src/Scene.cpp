@@ -9,7 +9,7 @@ void Scene::Draw()
 	GLenum err = glGetError();
 	for (const auto& lig : Lights) 
 		lig.second->DrawShadows(GetModels());
-
+	err = glGetError();
 	for (auto& mod : Models)
 	{
 		sh = mod.second->GetShader();
@@ -19,7 +19,6 @@ void Scene::Draw()
 		sh->setVec("viewPos", GetCam()->Position);//for 
 		for (const auto& lig : Lights)
 			lig.second->SendToShader(*sh);//really important
-			
 		mod.second->Draw(nullptr);
 	}	
 	if (SkyBoxSetted)

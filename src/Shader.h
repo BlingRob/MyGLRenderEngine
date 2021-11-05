@@ -16,6 +16,7 @@ public:
 	void setScal(std::string_view, const int) const;
 	void setScal(std::string_view, const bool) const;
 	void setScal(std::string_view, const uint64_t) const;
+	void setScal(std::string_view, const GLuint) const;
 
 	void setVec(std::string_view, const glm::vec2&) const;
 	void setVec(std::string_view, const glm::vec3&) const;

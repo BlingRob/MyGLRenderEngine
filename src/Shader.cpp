@@ -90,6 +90,10 @@ void Shader::setScal(std::string_view name, const uint64_t num) const
 {
 	glUniform1ui(glGetUniformLocation(Program, name.data()), num);
 }
+void Shader::setScal(std::string_view name, const GLuint num) const
+{
+	glUniform1ui(glGetUniformLocation(Program, name.data()), num);
+}
 
 void Shader::setVec(std::string_view name,const glm::vec2& vec) const
 {
