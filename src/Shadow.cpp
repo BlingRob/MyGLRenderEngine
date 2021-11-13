@@ -49,14 +49,13 @@ void Shadow::AddBuffer()
 {
 
 }
-GLuint DirectionShadow::AddBuffer(GLuint ShadowId)
+GLuint DirectionShadow::AddBuffer(GLint ShadowId)
 {
     id = ShadowId;
     glNamedFramebufferTextureLayer(*FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0, id);
-    //glNamedFramebufferTexture(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
     return *FBO;
 }
-GLuint PointShadow::AddBuffer(GLuint ShadowId)
+GLuint PointShadow::AddBuffer(GLint ShadowId)
 {
     id = ShadowId;
     glNamedFramebufferTexture(*FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
@@ -136,7 +135,7 @@ void DirectionShadow::SendToShader(const Shader& sh)
     sh.setVec("OffsetTexSize", OffsetTexSize);
 }
 
-DirectionShadow::DirectionShadow(const std::string& StrNumLight)
+DirectionShadow::DirectionShadow()
 {
     if (!init) 
     {
@@ -163,12 +162,15 @@ DirectionShadow::DirectionShadow(const std::string& StrNumLight)
         init = true;
     }
 
-    _mStrNumLight = (StrNumLight + "ShadowMatrix");
-    LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, -30.0f, 30.0f));
+    LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, -30.0f, 30.0f));
     //LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-static_cast<float>(ShadowMapSize)/2, static_cast<float>(ShadowMapSize) / 2, -static_cast<float>(ShadowMapSize) / 2, static_cast<float>(ShadowMapSize) / 2, 0.1f, Shadow::Far_Plane));
     //LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-static_cast<float>(ShadowMapSize), static_cast<float>(ShadowMapSize), 0.1f, Shadow::Far_Plane));
 }
 
+void DirectionShadow::SetStrNumLight(const std::string& StrNumLight)
+{
+    _mStrNumLight = (StrNumLight + "ShadowMatrix");
+}
 
 void PointShadow::Draw(std::pair<const_model_iterator, const_model_iterator> models,glm::vec4 lightPos)
 {
@@ -211,14 +213,14 @@ void PointShadow::Draw(std::pair<const_model_iterator, const_model_iterator> mod
 
 void DirectionShadow::Draw(std::pair<const_model_iterator, const_model_iterator> Models, glm::vec4 direction)
 {
-    static GLfloat OldView[4];
+    GLfloat OldView[4];
     AttachBuffer();
     glGetFloatv(GL_VIEWPORT, OldView);
     glViewport(0, 0, ShadowMapSize, ShadowMapSize);
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(2.5f, 10.0f);
     glCullFace(GL_FRONT);
-    const glm::vec3 SceneCenter(0.0f,2.0f,0.0f);
+    //const glm::vec3 SceneCenter(0.0f,2.0f,0.0f);
     //LightMat.View = std::make_shared<glm::mat4>(glm::lookAt(SceneCenter,
    //     SceneCenter + glm::vec3(direction),
    //        glm::vec3(0.0f, 1.0f, 0.0f)));
@@ -227,7 +229,6 @@ void DirectionShadow::Draw(std::pair<const_model_iterator, const_model_iterator>
            glm::vec3(0.0f, -1.0f, 0.0f)));
     shader->Use();
     LightMat.SendToShader(*shader);
-    //shader->setScal("Index", id);
     for (auto& it = Models.first; it != Models.second; ++it)
         it->second->Draw(shader.get());
     DetachBuffer();

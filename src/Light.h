@@ -89,7 +89,7 @@ class SpotLight : public PointLight, public DirectionalLight
 	public:
 		explicit SpotLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s,
 			const glm::vec3& CLQ, const glm::vec3& p, const glm::vec3& dir,
-			float BigAngel = 60, float SmallAngel = 30)://BLight(a,d,s, CLQ),
+			float BigAngel = 60, float SmallAngel = 30):
 			PointLight(a, d, s, CLQ, p), DirectionalLight(a, d, s, CLQ, dir),
 			Theta(BigAngel),Alpha(SmallAngel){}
 		template<typename L>
@@ -170,6 +170,13 @@ public:
 			throw("Impossible create light");
 		}
 
+		char buffer[32];
+
+		snprintf(buffer, 32, "light[%d].", Indexes->_Light_id);
+		StrNumLight = std::string(buffer);
+		BLight::SetNumStr(StrNumLight);
+		StrNumLight = StrNumLight + "index";	
+
 		if constexpr (std::is_same<L, PointLight>::value)
 		{
 			Type = LightTypes::Point;
@@ -179,24 +186,14 @@ public:
 		{
 			Type = LightTypes::Directional;
 			Indexes->_FBO_id = L::_mShadow->AddBuffer(Indexes->_Shadow_id);
+			L::_mShadow->SetStrNumLight(BLight::_mStrNumLight);
 		}
 		else
 		{
 			Type = LightTypes::Spot;
 		}
 
-		char buffer[32];
-		if (Indexes)
-		{
-			//snprintf(buffer, 32, "LightPositions[%d]", Indexes->_Light_id);
-			//StrLightPos = std::string(buffer);
-			snprintf(buffer, 32, "light[%d].", Indexes->_Light_id);
-			StrNumLight = std::string(buffer);
-			BLight::SetNumStr(StrNumLight);
-			_mFBO.push_back(Indexes->_FBO_id);
-			StrNumLight = StrNumLight + "index";
-		}
-
+		_mFBO.push_back(Indexes->_FBO_id);
 	}
 
 	void SendToShader(const Shader& shader);
@@ -206,7 +203,6 @@ public:
 
 	private:
 	LightTypes Type = LightTypes::Point;
-	//std::string StrLightPos;
 	std::string StrNumLight;
 	std::shared_ptr<Light_Indexes> Indexes;
 

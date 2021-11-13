@@ -48,7 +48,7 @@ void BLight::SetNumStr(const std::string& str)
 DirectionalLight::DirectionalLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s, const glm::vec3& CLQ, const glm::vec3& dir) :
 BLight(a, d, s, CLQ), direction(dir)
 {
-	_mShadow = std::make_shared<DirectionShadow>(_mStrNumLight);
+	_mShadow = std::make_shared<DirectionShadow>();
 }
 
 void DirectionalLight::SendToShader(const Shader& shader)
@@ -114,13 +114,10 @@ LightTypes Light::GetType() const
 void Light::SendToShader(const Shader& shader)
 {
 	BLight::SendToShader(shader);
-	GLenum err = glGetError();
 	shader.setScal(StrNumLight, Indexes->_Shadow_id);
-	err = glGetError();
 	switch (Type)
 	{
 		case LightTypes::Directional:
-			//shader.setMat((StrNumLight + "ShadowMatrix"), scale_bias_matrix * (*LightMat.Projection) * (*LightMat.View));
 			DirectionalLight::SendToShader(shader);
 		break;
 		case LightTypes::Spot:
@@ -156,10 +153,6 @@ void Light::ClearBuffers()
 	if (!_mFBO.empty()) 
 		for(const auto& fbo:_mFBO)
 			glClearNamedFramebufferfv(fbo, GL_DEPTH, 0, &depthVal);
-	//if(!IndexDirectionOrSpotFBO.empty())
-	//	glClearNamedFramebufferfv(IndexDirectionOrSpotFBO.back(), GL_DEPTH, 0, &depthVal);
-	//if (!IndexPointFBO.empty())
-	//	glClearNamedFramebufferfv(IndexPointFBO.back(), GL_DEPTH, 0, &depthVal);
 }
 
 Light::~Light()

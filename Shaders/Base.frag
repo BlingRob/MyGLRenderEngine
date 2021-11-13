@@ -100,8 +100,8 @@ float GeometrySchlickGGX(float, float);
 float GeometrySmith(vec3, vec3, vec3, float);
 vec3 fresnelSchlick(float cosTheta, vec3 F0);
 
-float PointShadowCalculation(uint,vec3);
-float ShadowCalculationDirect(uint, vec4);
+float PointShadowCalculation(int,vec3);
+float ShadowCalculationDirect(int, vec4);
 
 float PCSS_ShadowCalculationDirect(uint, vec4);
 float PCSS_PointLight(uint);
@@ -118,13 +118,15 @@ void main()
 
     ////FragColor = vec4(fs_in.FragPos,1.0f);
     //vec3 N = getNormalFromMap(); 
+
+    //FragColor = texture(DirLightShadowMaps,vec3(fs_in.ShadowCoords[0].xy / fs_in.ShadowCoords[0].w, 0));
     /*vec3 N = fs_in.Normal;
     FragColor = vec4(0.0f);
     for(int i = 0;i < NumLights;++i)
-        if(light[i].LightPositions.w == 1)
-            FragColor += vec4(PointShadowCalculation(i, N));///point
-       else
-            FragColor += vec4(ShadowCalculationDirect(i, fs_in.ShadowCoords[i]));///spot or dir*/
+        if(light[i].LightPositions.w == 0)
+        //    FragColor += vec4(PointShadowCalculation(i, N));///point
+       //else
+            FragColor += vec4(ShadowCalculationDirect(i, fs_in.ShadowCoords[i]));*////spot or dir
 
     //FragColor = vec4(vec3(PointShadowCalculation(0)),1.0f);
     //vec3 fragToLight0 = fs_in.FragPos - vec3(LightPositions[0]); 
@@ -134,7 +136,7 @@ void main()
     //FragColor += vec4(1.0f - 1.0/(length(fs_in.FragPos - vec3(LightPositions[1]))+ 0.0001));
 }
 
-float ShadowCalculationDirect(uint index, vec4 fragPosLightSpace)
+float ShadowCalculationDirect(int index, vec4 fragPosLightSpace)
 {
     fragPosLightSpace /= fragPosLightSpace.w;
     //float closestDepth = texture(DirLightShadowMaps,vec3(fragPosLightSpace.xy,light[index].index)).r;
@@ -186,7 +188,7 @@ float ShadowCalculationDirect(uint index, vec4 fragPosLightSpace)
     return shadow;
 }
 
-float PointShadowCalculation(uint index,vec3 normal)
+float PointShadowCalculation(int index,vec3 normal)
 {
     // perform perspective divide
     //fragPosLightSpace /= fragPosLightSpace.w;
@@ -391,7 +393,7 @@ vec3 ImproveLight(Material mat,Texture tex,vec2 texCoord)
 
     vec3 L,V,H;
 
-    for(uint i = 0;i < NumLights;++i)
+    for(int i = 0;i < NumLights;++i)
     {
         if(light[i].LightPositions.w == 1)
         {

@@ -15,11 +15,8 @@ protected:
 	const GLuint ShadowMapSize = 1024;
 	const GLfloat borderColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glm::vec4 LightVector;
-	//virtual void SendToShader(const Shader& sh) = 0; 
-	//virtual void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4) = 0;
 	GLint id;
 	const uint16_t MAX_LIGHTS_ONE_TYPE = 5;
-
 	void AddBuffer();
 public:
 	Shadow();
@@ -27,7 +24,7 @@ public:
 	~Shadow();
 };
 
-class PointShadow:public virtual Shadow
+class PointShadow:public Shadow
 {
 	
 public:
@@ -35,13 +32,13 @@ public:
 	PointShadow(const PointShadow& ) noexcept;
 	~PointShadow();
 	//Return FBO
-	GLuint AddBuffer(GLuint ShadowId);
+	GLuint AddBuffer(GLint ShadowId);
 	void SendToShader(const Shader& sh);
 	void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4);
 private:
 	static inline GLuint ShadowArrayID;
-	static inline bool init = false;
 	static inline std::shared_ptr<Shader> shader;
+	static inline bool init = false;
 
 	const GLsizei AmountMatrixes = 6;
 	glm::mat4 ShadowProj;
@@ -52,11 +49,10 @@ private:
 	const std::string_view PointNameShadowUniformTexture = { "PointShadowMaps" };
 };
 
-class DirectionShadow : public virtual Shadow
+class DirectionShadow : public Shadow
 {
 	protected:
 		static inline glm::mat4 scale_bias_matrix;
-		//std::string StrShadowMatrix;
 		Matrices LightMat;
 	private:
 		static void InitOffsetTex(std::size_t size, int64_t samplesU, int64_t samplesV);
@@ -64,14 +60,15 @@ class DirectionShadow : public virtual Shadow
 		static inline GLfloat radius;
 		static inline glm::vec3 OffsetTexSize;
 		static inline GLuint ShadowArrayID;
-		static inline bool init = false;
 		static inline std::shared_ptr<Shader> shader;
+		static inline bool init = false;
 		std::string _mStrNumLight;
 	public:
-		DirectionShadow(const std::string& StrNumLight);
+		DirectionShadow();
 		DirectionShadow(const DirectionShadow&) noexcept;
 		//return FBO
-		GLuint AddBuffer(GLuint ShadowId);
+		GLuint AddBuffer(GLint ShadowId);
+		void SetStrNumLight(const std::string& StrNumLight);
 		~DirectionShadow();
 	void SendToShader(const Shader& sh);
 	void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4);

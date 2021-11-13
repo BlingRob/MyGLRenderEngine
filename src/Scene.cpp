@@ -3,13 +3,11 @@
 void Scene::Draw()
 {
 	std::shared_ptr<Shader> sh;
-
+	//GLenum err = glGetError();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	Light::ClearBuffers();
-	GLenum err = glGetError();
 	for (const auto& lig : Lights) 
 		lig.second->DrawShadows(GetModels());
-	err = glGetError();
 	for (auto& mod : Models)
 	{
 		sh = mod.second->GetShader();
