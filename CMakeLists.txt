@@ -2,86 +2,36 @@ cmake_minimum_required(VERSION 3.17)
 project(GraphicsEngine)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_BUILD_TYPE Debug)
-###########################OpenGL##########################
-add_library(OpenGL STATIC ${CMAKE_SOURCE_DIR}/deps/gl/gl.h ${CMAKE_SOURCE_DIR}/deps/gl/gl.c)
-###########################################################
-###################Build my files##########################
+###################Collect project files##########################
 file(GLOB_RECURSE SOURCE_FILES
-			src/*.c
-			src/*.cpp)
-
+			RenderEngine/*.c
+			RenderEngine/*.cpp)
 file(GLOB_RECURSE HEADER_FILES
-		src/*.h
-		src/*.hpp)
+			RenderEngine/*.h
+			RenderEngine/*.hpp)
+		
+source_group(TREE ${CMAKE_SOURCE_DIR}/RenderEngine FILES ${SOURCE_FILES})
+source_group(TREE ${CMAKE_SOURCE_DIR}/RenderEngine FILES ${HEADER_FILES})
 ###########################################################
-###############Including main directories##################
-include_directories(${CMAKE_SOURCE_DIR}/subprojects/)
-include_directories(${CMAKE_SOURCE_DIR}/deps/)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/deps/libs CACHE PATH " " FORCE)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/deps/libs CACHE PATH " " FORCE)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/exe CACHE PATH " " FORCE)
-######################Build imgui##########################
-include_directories(${CMAKE_SOURCE_DIR}/cmake/imgui/)
-#copy configuration
-file(COPY ${CMAKE_SOURCE_DIR}/config/imconfig.h
-     DESTINATION ${CMAKE_SOURCE_DIR}/cmake/imgui)
-file(COPY ${CMAKE_SOURCE_DIR}/cmake/imgui/backends/imgui_impl_opengl3.h
-		  DESTINATION ${CMAKE_SOURCE_DIR}/cmake/imgui/)
-file(COPY ${CMAKE_SOURCE_DIR}/cmake/imgui/backends/imgui_impl_sdl.h
-		  DESTINATION ${CMAKE_SOURCE_DIR}/cmake/imgui/)
-file(COPY ${CMAKE_SOURCE_DIR}/cmake/imgui/backends/imgui_impl_opengl3.cpp
-		  DESTINATION ${CMAKE_SOURCE_DIR}/cmake/imgui/)
-file(COPY ${CMAKE_SOURCE_DIR}/cmake/imgui/backends/imgui_impl_sdl.cpp
-		  DESTINATION ${CMAKE_SOURCE_DIR}/cmake/imgui/)
-#collect imgui's source files 
-file(GLOB IMGUI_HEADERS ${CMAKE_SOURCE_DIR}/cmake/imgui/*.h)
-file(GLOB IMGUI_SOURCE ${CMAKE_SOURCE_DIR}/cmake/imgui/*.cpp)
-
-#create library
-add_library(IMGUI STATIC ${IMGUI_HEADERS} ${IMGUI_SOURCE})
-if(WIN32)
-	set_target_properties(IMGUI PROPERTIES LINKER_LANGUAGE Cxx) 
-endif()
-###########################################################
-##########################Assimp build#####################
-include_directories(${CMAKE_SOURCE_DIR}/cmake/assimp/include/)
-include_directories(${CMAKE_SOURCE_DIR}/subprojects/assimp/include/)
-add_subdirectory(${CMAKE_SOURCE_DIR}/cmake/assimp ${CMAKE_SOURCE_DIR}/subprojects/assimp EXCLUDE_FROM_ALL)
-set(ASSIMP_BUILD_TESTS OFF)
-set(ASSIMP_SHARED_LIBS ON)
-set(ASSIMP_INSTALL OFF)
-set(ASSIMP_BUILD_ASSIMP_TOOLS OFF)
-set(ASSIMP_NO_EXPORT ON)
-set_target_properties(assimp
-    PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/deps/libs"
-    LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/deps/libs"
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/exe"
-)
-###########################################################
-##########################Glm##############################
-include_directories(${CMAKE_SOURCE_DIR}/cmake/glm/)
-###########################################################
-############################STB############################
-add_library(STB STATIC ${CMAKE_SOURCE_DIR}/deps/stb/stb_image.h ${CMAKE_SOURCE_DIR}/deps/stb/stb_image.cpp)
-###########################################################
-############################SDL############################
-add_subdirectory(${CMAKE_SOURCE_DIR}/cmake/sdl ${CMAKE_SOURCE_DIR}/subprojects/sdl)
-###########################################################
-# Put all libraries into a variable
-set(LIBS IMGUI assimp SDL2 SDL2main OpenGL STB)
+#Resolve all dependencies
+add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/)
+#include dependencies headers
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/)
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/assimp/include)
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/glm/)
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/imgui)
 
 if(WIN32)
-	add_executable(${PROJECT_NAME} WIN32 ${SOURCE_FILES} ${HEADER_FILES})
+	add_executable(${PROJECT_NAME} WIN32 ${HEADER_FILES} ${SOURCE_FILES})
 else()
-	add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${HEADER_FILES} )
+	add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} )
 endif()
+
 # Define the link libraries
+#LIBS from subdirs
 target_link_libraries(${PROJECT_NAME} ${LIBS})
-# Include target directories
-target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/cmake/sdl/include/)
-target_include_directories(IMGUI PUBLIC ${CMAKE_SOURCE_DIR}/cmake/sdl/include/)
-############################Set resource###################
+target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/dependencies/sdl/include/)
+###Collect resources
 file(GLOB RESOURCE_FILES ${CMAKE_SOURCE_DIR}/Shaders/*)
 set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${RESOURCE_FILES}")
 ###########################################################

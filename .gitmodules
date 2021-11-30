@@ -1,16 +1,16 @@
 [submodule "glm"]
-	path = cmake/glm
+	path = dependencies/glm
 	url = https://github.com/g-truc/glm.git
 	branch = master
 [submodule "imgui"]
-	path = cmake/imgui
+	path = dependencies/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = master
 [submodule "sdl"]
-	path = cmake/sdl
+	path = dependencies/sdl
 	url = https://github.com/libsdl-org/SDL.git
 	branch = main
 [submodule "assimp"]
-	path = cmake/assimp
+	path = dependencies/assimp
 	url = https://github.com/assimp/assimp.git
 	branch = master
