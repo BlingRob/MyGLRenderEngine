@@ -21,7 +21,7 @@ class Scene
 {
 	std::function<void()> DeleterAssimpScene;
 	std::shared_ptr<Camera> camera;
-	std::shared_ptr <Position_Controller> matrs;
+	std::shared_ptr<Position_Controller> matrs;
 
 	std::map<std::size_t, std::shared_ptr<Model>> Models;
 	std::map<std::size_t, std::shared_ptr<Light>> Lights;
@@ -64,7 +64,6 @@ class Scene
 
 	Scene(std::shared_ptr <Position_Controller>, std::function<void()> fun = []() {});
 	~Scene();
-	//bool LoadModels(const std::string& path);
 };
 
 

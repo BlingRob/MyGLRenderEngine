@@ -113,38 +113,42 @@ LightTypes Light::GetType() const
 
 void Light::SendToShader(const Shader& shader)
 {
-	BLight::SendToShader(shader);
-	shader.setScal(StrNumLight, Indexes->_Shadow_id);
-	switch (Type)
+	if (Initialized)
 	{
+		BLight::SendToShader(shader);
+		shader.setScal(StrNumLight, Indexes->_Shadow_id);
+		switch (Type)
+		{
 		case LightTypes::Directional:
 			DirectionalLight::SendToShader(shader);
-		break;
+			break;
 		case LightTypes::Spot:
 			SpotLight::SendToShader(shader);
-		break;
+			break;
 		case LightTypes::Point:
 		default:
 			PointLight::SendToShader(shader);
-		break;
+			break;
+		}
 	}
 }
 
 void Light::DrawShadows(std::pair<const_model_iterator, const_model_iterator> models)
 {
-	switch (Type)
-	{
-	case LightTypes::Directional:
-		DirectionalLight::_mShadow->Draw(models, glm::vec4(DirectionalLight::GetDir(), 0.0f));
-		break;
-	case LightTypes::Spot:
-		//SpotLight::Draw(models, glm::vec4(PointLight::GetPos(), 1.0f));
-		break;
-	case LightTypes::Point:
-	default:
-		PointLight::_mShadow->Draw(models, glm::vec4(PointLight::GetPos(), 1.0f));
-		break;
-	}
+	if(Initialized)
+		switch (Type)
+		{
+		case LightTypes::Directional:
+			DirectionalLight::_mShadow->Draw(models, glm::vec4(DirectionalLight::GetDir(), 0.0f));
+			break;
+		case LightTypes::Spot:
+			//SpotLight::Draw(models, glm::vec4(PointLight::GetPos(), 1.0f));
+			break;
+		case LightTypes::Point:
+		default:
+			PointLight::_mShadow->Draw(models, glm::vec4(PointLight::GetPos(), 1.0f));
+			break;
+		}
 }
 
 void Light::ClearBuffers()
@@ -157,13 +161,16 @@ void Light::ClearBuffers()
 
 Light::~Light()
 {
-	_mFBO.remove(Indexes->_FBO_id);
-	switch (Type)
+	if (Initialized)
 	{
-	case LightTypes::Spot:
-	case LightTypes::Directional:
-		break;
-	case LightTypes::Point:
-		break;
+		_mFBO.remove(Indexes->_FBO_id);
+		switch (Type)
+		{
+		case LightTypes::Spot:
+		case LightTypes::Directional:
+			break;
+		case LightTypes::Point:
+			break;
+		}
 	}
 }

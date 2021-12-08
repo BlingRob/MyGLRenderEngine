@@ -20,7 +20,7 @@ protected:
 	void AddBuffer();
 public:
 	Shadow();
-	Shadow(const Shadow&);
+	Shadow(const Shadow&) = default;
 	~Shadow();
 };
 

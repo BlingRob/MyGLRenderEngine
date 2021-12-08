@@ -60,10 +60,10 @@ bool SceneLoader::Has_Light()
 std::unique_ptr<Light> SceneLoader::GetLight()
 {
     if (!Has_Light() || IndexLight == -1)
-        return std::unique_ptr<Light>(nullptr);
+        return std::unique_ptr<Light>();
     aiNode* LightNode = _mscene->mRootNode->FindNode(_mscene->mLights[IndexLight]->mName);
     if(LightNode == nullptr)
-        return std::unique_ptr<Light>(nullptr);
+        return std::unique_ptr<Light>();
 
     glm::vec3 amb =  glm::vec3(_mscene->mLights[IndexLight]->mColorAmbient.r,
                                 _mscene->mLights[IndexLight]->mColorAmbient.g,
@@ -104,7 +104,7 @@ std::unique_ptr<Light> SceneLoader::GetLight()
     }
     light->SetName(_mscene->mLights[IndexLight]->mName.C_Str());
     --IndexLight;
-    return std::move(light);
+    return light;
 }
 std::unique_ptr<Camera> SceneLoader::GetCamera()
 {
@@ -150,7 +150,7 @@ std::unique_ptr<Camera> SceneLoader::GetCamera()
         );*/
     cam->SetName(_mscene->mCameras[0]->mName.C_Str());
 
-    return std::move(cam);
+    return cam;
 }
 
 std::unique_ptr<Model> SceneLoader::GetModel(uint32_t Indx)
@@ -161,7 +161,7 @@ std::unique_ptr<Model> SceneLoader::GetModel(uint32_t Indx)
     std::unique_ptr<Model> model = std::make_unique<Model>();
     model->SetName(_mscene->mRootNode->mChildren[Indx]->mName.C_Str());
     model->SetRoot(processNode(_mscene->mRootNode->mChildren[Indx]));
-    return std::move(model);
+    return model;
 }
 
 std::shared_ptr<Node> SceneLoader::processNode(aiNode* node)
@@ -241,24 +241,30 @@ std::shared_ptr <Mesh> SceneLoader::processMesh(aiMesh* mesh)
     CurMesh->material = loadMaterial(mat, mesh->mMaterialIndex);
 
     // Loading texture's maps
-    std::vector< std::shared_ptr<Texture>> texes;
+    std::vector<std::shared_ptr<Texture>> texes;
     // 1. diffuse maps
     texes = loadTexture(mat, aiTextureType_DIFFUSE, Texture_Types::Diffuse);
+    //CurMesh->textures.emplace_back(CurMesh->textures.end(), texes.begin(), texes.end());
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 2. specular maps
     texes = loadTexture(mat, aiTextureType_SPECULAR, Texture_Types::Specular);
+    //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 3. normal maps
     texes = loadTexture(mat, aiTextureType_NORMALS, Texture_Types::Normal);//aiTextureType_HEIGHT
+    //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 4. height maps
     texes = loadTexture(mat, aiTextureType_AMBIENT, Texture_Types::Height);
+    //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 5. emissive maps
     texes = loadTexture(mat, aiTextureType_EMISSIVE, Texture_Types::Emissive);
+    //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     texes = loadTexture(mat, aiTextureType_UNKNOWN, Texture_Types::Metallic_roughness);
-    CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
+    //CurMesh->textures.emplace_back(std::move(texes));
+    //CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     /*// 6. metallic maps
     texes = loadTexture(mat, aiTextureType_METALNESS, "texture_metallic");
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
@@ -267,6 +273,7 @@ std::shared_ptr <Mesh> SceneLoader::processMesh(aiMesh* mesh)
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());*/
     // 8. ambient_occlusion
     texes = loadTexture(mat, aiTextureType_AMBIENT_OCCLUSION, Texture_Types::Ambient_occlusion);
+    //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
 
     // return a mesh object created from the extracted mesh data
@@ -327,7 +334,7 @@ std::vector<std::shared_ptr<Texture>> SceneLoader::loadTexture(aiMaterial* mat, 
          textures.push_back(texture);
          GlobalTextures[hash] = texture;// store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.    
     }
-    return std::move(textures);
+    return textures;
 }
 
 Material SceneLoader::loadMaterial(aiMaterial* mat, uint16_t indx)
@@ -341,62 +348,8 @@ Material SceneLoader::loadMaterial(aiMaterial* mat, uint16_t indx)
     mat->Get(AI_MATKEY_COLOR_SPECULAR, MeshMaterial.specular);
     mat->Get(AI_MATKEY_SHININESS, MeshMaterial.shininess);
 
-    return std::move(MeshMaterial);
+    return MeshMaterial;
 }
-
-
-std::unique_ptr<Node> SceneLoader::LoadSkyBox(std::vector<std::string_view> paths)
-{
-    std::unique_ptr<Node> curNode = std::make_unique<Node>();
-    curNode->SetName("SkyBox");
-    std::shared_ptr<Mesh> curMesh = std::make_shared<Mesh>();
-    //Cube's vertices
-    curMesh->vertices._msizes[Vertexes::PointTypes::positions] = 24;
-    curMesh->vertices.Positions = new aiVector3D[8]
-    {
-        aiVector3D {-1.0f,   1.0f,  -1.0f},
-        aiVector3D {1.0f,    1.0f,  -1.0f},
-        aiVector3D {1.0f,    -1.0f,  -1.0f},
-        aiVector3D {-1.0f,  -1.0f,  -1.0f},
-        aiVector3D {-1.0f,  1.0f,   1.0f},
-        aiVector3D {1.0f,   1.0f,   1.0f},
-        aiVector3D {1.0f, -1.0f,   1.0f},
-        aiVector3D {-1.0f,  -1.0f,  1.0f}
-    };
-
-    curMesh->indices = std::vector<GLuint>
-    (
-        {
-            0, 1, 2,
-            0, 2, 3,
-            2, 1, 5,
-            2, 5, 6,
-            3, 2, 6,
-            3, 6, 7,
-            0, 3, 7,
-            0, 7, 4,
-            1, 0, 4,
-            1, 4, 5,
-            6, 5, 4,
-            6, 4, 7
-        }
-    );
-
-    std::shared_ptr <Texture> texture = std::make_shared<Texture>();
-    texture->imgs = ImageLoader::LoadTexture(paths);
-    texture->type = Texture_Types::Skybox;
-    texture->createGLTex();
-    texture->name = "SkyBox";
-    texture->path = paths[0].data();
-
-    curMesh->textures.push_back(texture);
-
-    curMesh->setupMesh();
-    curNode->addMesh(curMesh);
-
-    return std::move(curNode);
-}
-
 
 SceneLoader::~SceneLoader()
 {
@@ -429,7 +382,7 @@ std::unique_ptr<Scene> SceneLoader::GetScene(std::string_view path)
         scen->AddLight(light);
     }
     else
-        while ((light = std::shared_ptr<Light>(GetLight().release())))
+        while ((light = std::shared_ptr<Light>(GetLight())))
         {
             scen->AddLight(light);
             if (light->GetType() == LightTypes::Point && Scene::DefaultPointLightModel)
@@ -443,7 +396,8 @@ std::unique_ptr<Scene> SceneLoader::GetScene(std::string_view path)
         }
 
     std::shared_ptr<Shader> sh = scen->GetShader("Default");
-    #pragma omp parallel for shared(sh, scen)
+    //#pragma omp parallel for shared(sh, scen)
+    #pragma omp parallel for
     for (int32_t i = 0; i <= IndexModel; ++i)
     {
         std::unique_ptr<Model> mod = GetModel(i);
@@ -461,7 +415,7 @@ std::unique_ptr<Scene> SceneLoader::GetScene(std::string_view path)
     for (Scene::MIt it = models.first; it != models.second; ++it)
         CreateGLObjects(it->second->GetRoot());
     
-    return std::move(scen);
+    return scen;
 }
 
 void SceneLoader::GetTransform(glm::mat4& whereTo, const aiMatrix4x4& FromWhere)

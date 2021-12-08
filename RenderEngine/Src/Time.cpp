@@ -3,7 +3,7 @@
 double Chronometr::operator()()
 {
 	CurrentTime = std::chrono::high_resolution_clock::now();
-	dt = std::chrono::duration<double, std::milli>(CurrentTime - LastTime).count() / milli;
+	dt = std::chrono::duration<double, std::milli>(CurrentTime - LastTime).count() / std::milli::den;
 	LastTime = CurrentTime;
 	return dt;
 }

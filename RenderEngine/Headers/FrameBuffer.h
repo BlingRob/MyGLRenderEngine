@@ -17,12 +17,11 @@ class FrameBuffer
 		bool RenderInclude, TextureInclude;
 	protected:
 		GLuint _mWeight, _mHeight;
-		std::shared_ptr<GLuint> textureID, FBO, Render;
+		GLuint textureID, FBO, Render;
 		GLint OldFBO;
-		FrameBuffer() {};
 	public:
-		FrameBuffer(const FrameBuffer& fr);
-		FrameBuffer(FrameBuffer&& fr);
+		FrameBuffer(const FrameBuffer& fr) = default;
+		FrameBuffer(FrameBuffer&& fr) noexcept;
 		FrameBuffer(GLuint weight, GLuint height);
 		~FrameBuffer();
 

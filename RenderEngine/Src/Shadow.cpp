@@ -2,15 +2,11 @@
 
 Shadow::Shadow():FrameBuffer(ShadowMapSize, ShadowMapSize)
 {
-    glNamedFramebufferReadBuffer(*FBO, GL_NONE);
-    glNamedFramebufferDrawBuffer(*FBO, GL_NONE);
+    glNamedFramebufferReadBuffer(FBO, GL_NONE);
+    glNamedFramebufferDrawBuffer(FBO, GL_NONE);
     LightVector = glm::vec4(0.0f);
 }
 
-Shadow::Shadow(const Shadow& shadow):FrameBuffer(dynamic_cast<const FrameBuffer&>(shadow))
-{
-    id = shadow.id;
-}
 
 Shadow::~Shadow()
 {
@@ -52,14 +48,14 @@ void Shadow::AddBuffer()
 GLuint DirectionShadow::AddBuffer(GLint ShadowId)
 {
     id = ShadowId;
-    glNamedFramebufferTextureLayer(*FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0, id);
-    return *FBO;
+    glNamedFramebufferTextureLayer(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0, id);
+    return FBO;
 }
 GLuint PointShadow::AddBuffer(GLint ShadowId)
 {
     id = ShadowId;
-    glNamedFramebufferTexture(*FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
-    return *FBO;
+    glNamedFramebufferTexture(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
+    return FBO;
 }
 
 void DirectionShadow::InitOffsetTex(std::size_t size, int64_t samplesU, int64_t samplesV)

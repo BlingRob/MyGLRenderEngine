@@ -57,6 +57,11 @@ public:
 		direction = dl.direction;
 		_mShadow = dl._mShadow;
 	}
+	DirectionalLight(DirectionalLight&& dl):BLight(dl)
+	{
+		std::swap(direction, dl.direction);
+		std::swap(_mShadow, dl._mShadow);
+	}
 	virtual void SendToShader(const Shader& shader);
 	void ChangeDirection(const glm::vec3&);
 	glm::vec3 GetDir();
@@ -76,6 +81,11 @@ class PointLight : public virtual BLight
 			tr = pl.tr;
 			_mShadow = pl._mShadow;
 		}
+		PointLight(PointLight&& pl):BLight(pl)
+		{
+			std::swap(tr, pl.tr);
+			std::swap(_mShadow, pl._mShadow);
+		}
 
 	Transformation tr;
 	/*Set new pos*/
@@ -85,19 +95,24 @@ class PointLight : public virtual BLight
 	virtual void SendToShader(const Shader& shader);
 };
 
-class SpotLight : public PointLight, public DirectionalLight
+class SpotLight : public virtual PointLight, public virtual DirectionalLight
 {
 	float Theta; //angel of big cone
 	float Alpha; //angel of small cone
 	public:
+		SpotLight() {}
 		explicit SpotLight(const glm::vec3& a, const glm::vec3& d, const glm::vec3& s,
 			const glm::vec3& CLQ, const glm::vec3& p, const glm::vec3& dir,
 			float BigAngel = 60, float SmallAngel = 30):
 			PointLight(a, d, s, CLQ, p), DirectionalLight(a, d, s, CLQ, dir),
 			Theta(BigAngel),Alpha(SmallAngel){}
-		template<typename L>
-		explicit SpotLight(const L& sp): BLight(sp), L(sp)
+		explicit SpotLight(const SpotLight& sp): BLight(sp), DirectionalLight(sp), Theta(sp.Theta), Alpha(sp.Alpha)
 		{
+			position = sp.position;
+		};
+		explicit SpotLight(SpotLight&& sp) : BLight(sp), DirectionalLight(std::move(sp)), Theta(sp.Theta), Alpha(sp.Alpha)
+		{
+			std::swap(position, sp.position);
 		};
 
 	void SendToShader(const Shader& shader);
@@ -142,7 +157,6 @@ class Light_Indexes
 		Destructor();
 	}
 	private:
-	
 	template<typename Light_t>
 	struct Shadow_types
 	{
@@ -159,10 +173,21 @@ class Light:public Entity, public SpotLight
 public:
 	using const_model_iterator = std::map<std::size_t, std::shared_ptr<Model>>::const_iterator;
 	/*c,l,q - attenuation*/
-	Light() = delete;
+	Light() {};
+	Light(const Light& l) noexcept :BLight(l), SpotLight(l),
+		PointLight(l), DirectionalLight(l),
+		Initialized(l.Initialized), Type(l.Type), StrNumLight(l.StrNumLight), Indexes(l.Indexes) 
+	{}
+	Light(Light&& l) noexcept :BLight(std::forward<BLight>(l)), SpotLight(std::forward<SpotLight>(l)),
+		PointLight(std::forward<PointLight>(l)), DirectionalLight(std::forward<DirectionalLight>(l)),
+		Initialized(l.Initialized), Type(l.Type), StrNumLight(std::forward<std::string>(l.StrNumLight)), Indexes(std::forward<decltype(Indexes)> (l.Indexes))
+	{
+		l.Initialized = false;
+	}
+
 	~Light();
-	template<typename L>
-	explicit Light(L lig) : BLight(lig), SpotLight(lig)
+	template<typename L, typename = std::enable_if_t<std::is_base_of<std::decay_t<L>,SpotLight>::value>>
+	explicit Light(L&& lig) : BLight(std::forward<L>(lig)),std::remove_reference_t<L>(std::forward<L>(lig))
 	{
 		try 
 		{
@@ -180,16 +205,16 @@ public:
 		BLight::SetNumStr(StrNumLight);
 		StrNumLight = StrNumLight + "index";	
 
-		if constexpr (std::is_same<L, PointLight>::value)
+		if constexpr (std::is_same<std::remove_reference_t<L>, PointLight>::value)
 		{
 			Type = LightTypes::Point;
-			Indexes->_FBO_id = L::_mShadow->AddBuffer(Indexes->_Shadow_id);
+			Indexes->_FBO_id = std::remove_reference_t<L>::_mShadow->AddBuffer(Indexes->_Shadow_id);
 		}
-		else if constexpr (std::is_same<L, DirectionalLight>::value)
+		else if constexpr (std::is_same<std::remove_reference_t<L>, DirectionalLight>::value)
 		{
 			Type = LightTypes::Directional;
-			Indexes->_FBO_id = L::_mShadow->AddBuffer(Indexes->_Shadow_id);
-			L::_mShadow->SetStrNumLight(BLight::_mStrNumLight);
+			Indexes->_FBO_id = std::remove_reference_t<L>::_mShadow->AddBuffer(Indexes->_Shadow_id);
+			std::remove_reference_t<L>::_mShadow->SetStrNumLight(BLight::_mStrNumLight);
 		}
 		else
 		{
@@ -197,17 +222,19 @@ public:
 		}
 
 		_mFBO.push_back(Indexes->_FBO_id);
+		Initialized = true;
 	}
 
 	void SendToShader(const Shader& shader);
 	void DrawShadows(std::pair<const_model_iterator, const_model_iterator> models);
 	static void ClearBuffers();
 	LightTypes GetType() const;
-
+	bool IsInit() { return Initialized; };
 	private:
 	LightTypes Type = LightTypes::Point;
 	std::string StrNumLight;
 	std::shared_ptr<Light_Indexes> Indexes;
+	bool Initialized{ false };
 
 	static inline std::list <GLuint> _mFBO;
 }; 

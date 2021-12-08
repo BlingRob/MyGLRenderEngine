@@ -1,8 +1,7 @@
 //#include "CommonHeaders.h"
 //#include "MemoryManager.h"
-#include "../Headers/Scene.h"
+//#include "../Headers/Scene.h"
 #include "../Headers/Application.h"
-
 
 void rend() 
 	{
@@ -11,7 +10,7 @@ void rend()
 		std::shared_ptr<Light> lig;
 		while(eng.MainLoop())
 		{
-			//lig = eng.GetScen()->get()->GetLight("Default light");//Sun_Orientation
+			//lig = eng.GetScen()->GetLight("Default light");//Sun_Orientation
 			//if (lig)
 			//	lig->ChangeDirection(glm::vec3(3 * sin(eng.GetTime()), 3.0f, 3 * cos(eng.GetTime())));
 			//	lig->SetPos(5.0f * glm::vec3(1.3f * sin(eng.GetTime()), 2.0f, 0.2f));
@@ -19,19 +18,10 @@ void rend()
 		}
 	}
 
-	
+//#include "../Headers/Loaders/ResourceManager.h"
 int main(int argc, char* args[])
 {
-	#if defined(__WIN32__)
-		//Logging
-		FILE* stdinStream, * stderrStream;
-		freopen_s(&stdinStream, "Log.txt", "w", stdout);
-		freopen_s(&stderrStream, "ErrLog.txt", "w", stderr);
-	#else
-		freopen("Log.txt", "w", stdout);
-		freopen("ErrLog.txt", "w", stderr);
-	#endif
-		/*
+	/*
 		Manager mgr;
 		{
 			std::shared_ptr<glm::mat4> mat = mgr.GetMat<glm::mat4>(); 
@@ -42,21 +32,10 @@ int main(int argc, char* args[])
 			mat.reset();
 			mat2.reset();
 		}*/
-	try
-	{
-		rend();
-	}
-	catch(std::exception e)
-	{
-		std::cerr << e.what() << "\n";
-	}
-	catch (const char* err) 
-	{
-		std::cerr << err << "\n";
-	}
-	catch(std::string err) 
-	{
-		std::cerr << err << "\n";
-	}
+
+	rend();
+
+	//ResourceManager mgr;
+	//mgr.LoadSkyBox();
 	return 0;
 }

@@ -11,7 +11,7 @@ struct Image
 {
 	Image() {}
 	Image(Image& img) noexcept = default;
-	Image(Image&& img) noexcept :w(img.w), h(img.h), nrComponents(img.nrComponents) { std::swap(_mdata,img._mdata); }
+	Image(Image&& img) noexcept :w(img.w), h(img.h), nrComponents(img.nrComponents) { std::swap(_mdata,img._mdata); std::swap(deleter, img.deleter);}
 	Image&& operator= (Image&& img) noexcept
 	{
 		w = img.w;
@@ -21,9 +21,10 @@ struct Image
 		std::swap(deleter, img.deleter);
 	}
 	Image(std::size_t width, std::size_t height, std::uint8_t channel = 4, unsigned char* data = nullptr, PDelFun del = [](void* ptr) {delete ptr; }) :
-		//_mdata(!data ? new void[, deleter] : std::make_shared<void>(data, deleter)),
 		deleter(del), w(width), h(height), nrComponents(channel)
 		{
+		//texture load option
+		//stbi_set_flip_vertically_on_load(true);
 			if (data == nullptr)
 				_mdata = new unsigned char[width * height * channel];
 			else
@@ -47,7 +48,6 @@ struct ImageLoader
 {
 	static std::shared_ptr<Image> LoadTexture(const char* path);
 	static std::shared_ptr<Image> LoadTexture(const void* memoryPtr, int width);
-	static std::vector<std::shared_ptr<Image>> LoadTexture(std::vector<std::string_view> paths);
 		
 private:
 	static inline int w, h, chs;

@@ -22,14 +22,13 @@ struct Position_Controller:public Matrices
 {
 	Position_Controller()
 	{
-		dt = std::make_shared<float>(0.0f);
+		dt = 0.0f;
 		cam = std::make_shared<Camera>(glm::vec3(10.0f, 10.0f, 10.0f), glm::vec3(0.0f, 0.0f, 0.0f));
 	}
 
 	std::shared_ptr<Camera> cam;
 	//delta time
-	std::shared_ptr<float> dt;
-	
+	float dt;	
 };
 
 

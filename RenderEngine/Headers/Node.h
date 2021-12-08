@@ -1,5 +1,5 @@
 #pragma once
-#include "OGLSpec/OGLSpec.h"
+#include "OGLSpec/OGLMesh.h"
 #include "Shader.h"
 #include "Transformation.h"
 #include "Entity.h"
@@ -9,7 +9,7 @@
 class Node:public Entity
 {
 	std::list<std::shared_ptr<Node>> Children;
-	std::list<std::shared_ptr <Mesh>> Meshes;
+	std::list<std::shared_ptr<Mesh>> Meshes;
 public:
 	using MIt = std::list <std::shared_ptr<Mesh>>::const_iterator;
 	using NIt = std::list <std::shared_ptr<Node>>::const_iterator;

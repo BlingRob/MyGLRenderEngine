@@ -13,6 +13,8 @@ public:
 		   LastTime = 
 	   startProgram = std::chrono::high_resolution_clock::now();
 	}
+	/*Return time since start programme*/
 	double GetTime();
+	/*Return time since last call this operator*/
 	double operator()();
 };

@@ -1,10 +1,10 @@
 #include "../Headers/GUI.h"
 
-GUI::GUI(std::shared_ptr < SDL_Window> window, std::shared_ptr <void> context, std::shared_ptr<std::unique_ptr<Scene>> scene, std::shared_ptr<Position_Controller> contr)
+GUI::GUI(const Window* window, void* context, std::shared_ptr<std::unique_ptr<Scene>> scene, std::shared_ptr<Position_Controller> contr)
 {
-	_mScene = scene;
-	_mWindow = window;
-	_mContr = contr;
+	_ppScene = scene;
+	_pWindow = window;
+	_pContr = contr;
 	//GUI Initialization
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -18,7 +18,7 @@ GUI::GUI(std::shared_ptr < SDL_Window> window, std::shared_ptr <void> context, s
 	//ImGui::StyleColorsClassic();
 
 	// Setup Platform/Renderer backends for imgui
-	ImGui_ImplSDL2_InitForOpenGL(window.get(), context.get());
+	ImGui_ImplSDL2_InitForOpenGL(window->GetWindow(), context);
 	ImGui_ImplOpenGL3_Init("#version 450");
 	// Setup file dialog
 	fileDialog.SetTitle("Choosing scene");
@@ -48,7 +48,7 @@ void GUI::Interface()
 {
 	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(_mWindow.get());
+	ImGui_ImplSDL2_NewFrame(_pWindow->GetWindow());
 
 	ImGui::NewFrame();
 	{
@@ -83,11 +83,11 @@ void GUI::Interface()
 			}
 			if (ImGui::BeginMenu("Background"))
 			{
-				if (ImGui::MenuItem("Turn on havens", NULL,&(*_mScene)->SkyBoxSetted)){}
+				if (ImGui::MenuItem("Turn on havens", NULL,&(*_ppScene)->SkyBoxSetted)){}
 				{
-					glm::vec4 col = (*_mScene)->GetBackGround();
+					glm::vec4 col = (*_ppScene)->GetBackGround();
 					ImGui::ColorEdit4("Choose color", &col[0]);
-					(*_mScene)->SetBackGround(col);
+					(*_ppScene)->SetBackGround(col);
 				}
 				ImGui::EndMenu();
 			}
@@ -98,28 +98,28 @@ void GUI::Interface()
 
 			if (fileDialog.HasSelected())
 			{
-				std::shared_ptr<Scene> OldScene = std::move(*_mScene);
+				std::shared_ptr<Scene> OldScene = std::move(*_ppScene);
 				OldScene.reset();
 				SceneLoader loader;
 				SDL_SetCursor(LoadingCursor);
-				*_mScene = loader.GetScene(fileDialog.GetSelected().string());
-				_mScene->get()->SetController(_mContr);
+				*_ppScene = loader.GetScene(fileDialog.GetSelected().string());
+				_ppScene->get()->SetController(_pContr);
 				fileDialog.ClearSelected();
 				SDL_SetCursor(DefaultCursor);
 			}
 		}
 		{
 			static int SCR_WIDTH, SCR_HEIGHT;
-			if (_mScene)
+			if (_ppScene)
 			{
-				Scene_Information info = (*_mScene)->GetInfo();
-				SDL_GetWindowSize(_mWindow.get(), &SCR_WIDTH, &SCR_HEIGHT);
+				Scene_Information info = (*_ppScene)->GetInfo();
+				//SDL_GetWindowSize(_pWindow->GetWindow(), &SCR_WIDTH, &SCR_HEIGHT);
 				ImGui::SetNextWindowPos(ImVec2(0, 20));
-				ImGui::SetNextWindowSize(ImVec2(SCR_WIDTH / 3.0f, SCR_HEIGHT / 3.0f));
+				ImGui::SetNextWindowSize(ImVec2(_pWindow->SCR_WIDTH/ 3.0f, _pWindow->SCR_HEIGHT / 3.0f));
 				ImGui::Begin("Statistics", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove);
 					//ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", TimeOnFrame, 1000.0f / TimeOnFrame);
 					ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-					ImGui::Text("Time on frame %.6f ms", *_mContr->dt);
+					ImGui::Text("Time on frame %.6f ms", _pContr->dt);
 					ImGui::Text("Models in scene %d", info.Amount_models);
 					ImGui::Text("Lights in scene %d", info.Amount_lights);
 					ImGui::Text("Shaders in scene %d", info.Amount_shaders);

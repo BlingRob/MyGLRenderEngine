@@ -12,7 +12,7 @@
 class GUI
 {
 public:
-	GUI(std::shared_ptr <SDL_Window> window, std::shared_ptr <void> context, std::shared_ptr<std::unique_ptr<Scene>> scene, std::shared_ptr<Position_Controller>);
+	GUI(const Window* window, void* context, std::shared_ptr<std::unique_ptr<Scene>> scene, std::shared_ptr<Position_Controller>);
 	~GUI();
 	void Draw();
 
@@ -21,9 +21,9 @@ public:
 	bool convolution = false;
 	std::shared_ptr<glm::mat3> Core;
 private:
-	std::shared_ptr<std::unique_ptr<Scene>> _mScene;
-	std::shared_ptr<SDL_Window> _mWindow;
-	std::shared_ptr<Position_Controller> _mContr;
+	std::shared_ptr<std::unique_ptr<Scene>> _ppScene;
+	const Window* _pWindow;
+	std::shared_ptr<Position_Controller> _pContr;
 	ImGui::FileBrowser fileDialog;
 	SDL_Cursor *DefaultCursor,
 			   *LoadingCursor;

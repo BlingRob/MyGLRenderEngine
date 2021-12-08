@@ -49,7 +49,14 @@ GLuint Shader::CreateShader(const GLchar* Path, GLenum types)
 	ShaderFile.exceptions(std::ifstream::failbit);
 
 	// ќткрываем файлы
-	ShaderFile.open(Path);
+	try
+	{
+		ShaderFile.open(Path);
+	}
+	catch(std::exception exc)
+	{
+		throw(std::string(exc.what()) + "\n File:" + Path + " doesn't exist!");
+	}
 	if (!ShaderFile.is_open())
 		throw("File with shaders is not opened!");
 	// —читываем данные в потоки

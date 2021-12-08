@@ -48,10 +48,12 @@ add_library(IMGUI STATIC ${IMGUI_HEADERS} ${IMGUI_SOURCE})
 add_library(STB STATIC ${CMAKE_CURRENT_SOURCE_DIR}/stb/stb_image.h ${CMAKE_CURRENT_SOURCE_DIR}/stb/stb_image.cpp)
 ###########################################################
 ############################SDL############################
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/sqlite ${CMAKE_CURRENT_BINARY_DIR}/sqlite)
+####################SQLite#################################
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/sdl ${CMAKE_CURRENT_BINARY_DIR}/sdl)
-###########################################################
+############################SDL############################
 # Put all libraries into a variable
-set(LIBS IMGUI assimp SDL2 SDL2main OpenGL STB PARENT_SCOPE)
+set(LIBS IMGUI assimp SDL2 SDL2main OpenGL SQLLite STB PARENT_SCOPE)
 
 # Include target directories
 target_include_directories(IMGUI PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/sdl/include/)

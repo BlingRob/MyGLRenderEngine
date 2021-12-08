@@ -17,7 +17,6 @@
 class SceneLoader
 {
 public:
-	static std::unique_ptr<Node> LoadSkyBox(std::vector<std::string_view> paths);
 	std::unique_ptr<Scene> GetScene(std::string_view path);
 	std::unique_ptr<Model> GetModel(uint32_t);
 	std::unique_ptr<Light> GetLight();
@@ -34,7 +33,6 @@ public:
 	void Destroy();
 	~SceneLoader();
 private:
-
 	const aiScene* _mscene;
 	std::shared_ptr <Assimp::Importer> importer;
 	std::string directory;

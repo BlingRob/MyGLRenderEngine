@@ -17,23 +17,27 @@ source_group(TREE ${CMAKE_SOURCE_DIR}/RenderEngine FILES ${HEADER_FILES})
 add_subdirectory(${CMAKE_SOURCE_DIR}/dependencies/)
 #include dependencies headers
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/)
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/sqlite)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/assimp/include)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/glm/)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/imgui)
 
+find_package(OpenMP REQUIRED)
+
 if(WIN32)
 	add_executable(${PROJECT_NAME} WIN32 ${HEADER_FILES} ${SOURCE_FILES})
 else()
-	add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES} )
+	add_executable(${PROJECT_NAME} ${HEADER_FILES} ${SOURCE_FILES})
 endif()
 
 # Define the link libraries
 #LIBS from subdirs
-target_link_libraries(${PROJECT_NAME} ${LIBS})
+target_link_libraries(${PROJECT_NAME} ${LIBS} "${OpenMP_CXX_FLAGS}")
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_SOURCE_DIR}/dependencies/sdl/include/)
 ###Collect resources
 file(GLOB RESOURCE_FILES ${CMAKE_SOURCE_DIR}/Shaders/*)
 set_target_properties(${PROJECT_NAME} PROPERTIES RESOURCE "${RESOURCE_FILES}")
+target_compile_options(${PROJECT_NAME} PRIVATE "${OpenMP_CXX_FLAGS}")
 ###########################################################
 ############################Special unix###################
 if(NOT WIN32)

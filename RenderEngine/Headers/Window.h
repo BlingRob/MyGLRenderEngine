@@ -1,16 +1,28 @@
 #pragma once
-#include <SDL.h>
+#include "SDL.h"
 #include "Camera.h"
 #include "Transformation.h"
+//#include "OGLSpec/OGLRenderer.h"
 //GUI
-#include "GUI.h"
+#include "imgui_impl_sdl.h"
 #include <memory>
 
 class Window
 {
+public:
+	Window(std::shared_ptr<Position_Controller>);
+	bool ProcEvents();
+
+	//Size of window
+	uint32_t SCR_WIDTH = 800,
+		     SCR_HEIGHT = 800;
+	std::pair<int32_t, int32_t> MaxSize();
+	SDL_Window* GetWindow() const;
+	void SwapBuffer();
+	~Window();
+private:
 	//windows
-	std::shared_ptr<SDL_Window> window;
-	std::shared_ptr<void> context;
+	SDL_Window* _pWindow;
 	//queue of pressed keys
 	bool keys[1024] = { false };
 
@@ -25,16 +37,5 @@ class Window
 	
 	//Data for connect with render engine
 	std::shared_ptr<Position_Controller> _mcontr;
-public:
-	Window(std::shared_ptr<Position_Controller>);
-	bool ProcEvents();
-	void SwapBuffer();
-
-	//Size of window
-	GLuint SCR_WIDTH = 800,
-		SCR_HEIGHT = 800;
-	std::pair<int32_t, int32_t> MaxSize();
-	std::shared_ptr <void> GetContext();
-	std::shared_ptr<SDL_Window> GetWindow();
 };
 
