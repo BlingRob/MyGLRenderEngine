@@ -21,7 +21,7 @@ void ResourceManager::LoadDefaultSkyBox()
         vecs.reserve(Default_SkyBox_names.size());
         for (const auto& ImgName : Default_SkyBox_names)
         {
-            auto [bytes, ptr] = _pDBContr->Load("image", "Textures", "name = '" + ImgName + "'");
+            auto [ptr, bytes] = _pDBContr->Load("image", "Textures", "name = '" + ImgName + "'");
             if (bytes)
                 vecs.push_back(ImageLoader::LoadTexture(ptr.get(), bytes));
         }
@@ -65,44 +65,41 @@ void ResourceManager::LoadDefaultSkyBox()
 }
 void ResourceManager::LoadDefaultModelPointLight() 
 {
+    SceneLoader lod;
     if (_pDBContr->IsOpen())
     {
+        auto [ptr, bytes] = _pDBContr->Load("data", "Models", "name = 'PointLight';");
         
+        char* text = static_cast<char*>(ptr.get());
 
+        lod.LoadScene(ptr.get(), bytes, "obj");
     }
     else
     {
         constexpr std::size_t BufSize = 128;
         char buffer[BufSize];
         bool PointLightFound = false;
+        const char* FileName = "PointLight.obj";
 
         //Textures in current dir ?
-        snprintf(buffer, BufSize, Default_textures_paths[0], Default_textures_paths[1], Default_textures_paths[3], (Default_SkyBox_names[0] + extension).c_str());
+        snprintf(buffer, BufSize, Default_paths[4], Default_paths[1], FileName);
         if (FileIsExist(buffer))
-        {
-            snprintf(buffer, BufSize, Default_textures_paths[0], Default_textures_paths[1], Default_textures_paths[3]);
-            SkyBoxFound = !SkyBoxFound;
-        }
+            PointLightFound = !PointLightFound;
         else
         {
             //Textures in prevent dir ?
-            snprintf(buffer, BufSize, Default_textures_paths[0], Default_textures_paths[2], Default_textures_paths[3], (Default_SkyBox_names[0] + extension).c_str());
+            snprintf(buffer, BufSize, Default_paths[4], Default_paths[2], FileName);
             if (FileIsExist(buffer))
-            {
-                SkyBoxFound = !SkyBoxFound;
-                snprintf(buffer, BufSize, Default_textures_paths[0], Default_textures_paths[2], Default_textures_paths[3]);
-            }
+                PointLightFound = !PointLightFound;
         }
-        if (SkyBoxFound)
-        {
-            std::vector<std::string_view> paths(CubicalTexturesSize);
-            for (std::size_t i = 0; i < Default_SkyBox_names.size(); ++i)
-            {
-                snprintf(buffer, BufSize, (Default_SkyBox_names[i] + extension).c_str());
-                paths[i] = buffer;
-            }
-            Scene::DefaultSkyBox = CreateSkyBox(LoadSkyBoxTextures(std::move(paths)));
-        }
+        if (PointLightFound)
+            lod.LoadScene(buffer);
+    }
+
+    if (lod.IsLoad())
+    {
+        Scene::DefaultPointLightModel = lod.GetModel(0);
+        Scene::DefaultPointLightModel->SetName("PointModel");
     }
 }
 

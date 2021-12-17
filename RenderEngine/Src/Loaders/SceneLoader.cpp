@@ -3,170 +3,218 @@
 SceneLoader::SceneLoader()
 {
     loaded = false;
-    IndexModel = -1;
-    IndexLight = -1;
-};
+}
+
 bool SceneLoader::LoadScene(std::string_view path)
 {
     // read file via ASSIMP
-    importer = std::make_shared<Assimp::Importer>();
-    importer->ReadFile(path.data(), aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
-    //_mscene = std::unique_ptr<aiScene>(importer.GetOrphanedScene());
+    _pImporter = std::make_shared<Assimp::Importer>();
+    _pImporter->ReadFile(path.data(), aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace);
     // check for errors
-    _mscene = importer->GetScene();
-    if (!_mscene || _mscene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !_mscene->mRootNode) // if is Not Zero
+    _pScene = _pImporter->GetScene();
+    if (!_pScene || _pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !_pScene->mRootNode) // if is Not Zero
     {
         error = "ERROR::ASSIMP ";
         loaded = false;
         return false;
     }
-    // retrieve the directory path of the filepath
-    #if defined(__WIN32__)
-        directory = path.substr(0, path.find_last_of('\\'));
-    #else
-        directory = path.substr(0, path.find_last_of('/'));
-    #endif
-    IndexModel = _mscene->mRootNode->mNumChildren - 1;
-    IndexLight = _mscene->mNumLights - 1;
 
     loaded = true;
 
-    return true;
-}
-
-void SceneLoader::Destroy()
-{
-}
-
-SceneLoader::SceneLoader(std::string_view path)
-{
-    loaded = LoadScene(path);
-}
-
-bool SceneLoader::Is_Load()
-{
     return loaded;
 }
 
-bool SceneLoader::Has_Camera()
+bool SceneLoader::LoadScene(void* memAdr, size_t bytes,const char* FileExtension)
 {
-    return _mscene->HasCameras();
-}
-bool SceneLoader::Has_Light()
-{
-    return _mscene->HasLights();
-}
-
-std::unique_ptr<Light> SceneLoader::GetLight()
-{
-    if (!Has_Light() || IndexLight == -1)
-        return std::unique_ptr<Light>();
-    aiNode* LightNode = _mscene->mRootNode->FindNode(_mscene->mLights[IndexLight]->mName);
-    if(LightNode == nullptr)
-        return std::unique_ptr<Light>();
-
-    glm::vec3 amb =  glm::vec3(_mscene->mLights[IndexLight]->mColorAmbient.r,
-                                _mscene->mLights[IndexLight]->mColorAmbient.g,
-                                _mscene->mLights[IndexLight]->mColorAmbient.b),
-              dif =  glm::vec3(_mscene->mLights[IndexLight]->mColorDiffuse.r,
-                              _mscene->mLights[IndexLight]->mColorDiffuse.g,
-                              _mscene->mLights[IndexLight]->mColorDiffuse.b),
-              spec = glm::vec3(_mscene->mLights[IndexLight]->mColorSpecular.r,
-                              _mscene->mLights[IndexLight]->mColorSpecular.g,
-                              _mscene->mLights[IndexLight]->mColorSpecular.b),
-              pos =  glm::vec3(LightNode->mParent->mTransformation[0][3],
-                               LightNode->mParent->mTransformation[1][3],
-                               LightNode->mParent->mTransformation[2][3]),
-              dir = glm::vec3(_mscene->mLights[IndexLight]->mDirection.x,
-                              _mscene->mLights[IndexLight]->mDirection.y,
-                              _mscene->mLights[IndexLight]->mDirection.z),
-              clq = glm::vec3(_mscene->mLights[IndexLight]->mAttenuationConstant,
-                              _mscene->mLights[IndexLight]->mAttenuationLinear,
-                              _mscene->mLights[IndexLight]->mAttenuationQuadratic);
-    glm::mat4 transform;
-    GetTransform(transform, LightNode->mParent->mTransformation);
-
-    std::unique_ptr<Light> light;
-    switch(_mscene->mLights[IndexLight]->mType)
+    // read file via ASSIMP from memory
+    _pImporter = std::make_shared<Assimp::Importer>();
+    _pImporter->ReadFileFromMemory(memAdr, bytes, aiProcessPreset_TargetRealtime_MaxQuality | aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_CalcTangentSpace, FileExtension);
+    // check for errors
+    _pScene = _pImporter->GetScene();
+    if (!_pScene || _pScene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) // if is Not Zero
     {
-        case aiLightSource_POINT:
-            light = std::make_unique<Light>(PointLight(amb, dif, spec, clq, pos));
-        break;
-        case aiLightSource_SPOT:
-            light = std::make_unique<Light>(SpotLight(amb, dif, spec, clq, pos, dir,
-                _mscene->mLights[IndexLight]->mAngleOuterCone,
-                _mscene->mLights[IndexLight]->mAngleInnerCone));
-        break;
-        default:
-        case aiLightSource_DIRECTIONAL:
-            light = std::make_unique<Light>(DirectionalLight(amb, dif, spec, clq, glm::mat3(transform) * dir));
-        break;
+        error = _pImporter->GetErrorString();
+        loaded = false;
+        return false;
     }
-    light->SetName(_mscene->mLights[IndexLight]->mName.C_Str());
-    --IndexLight;
-    return light;
+    loaded = true;
+
+    return loaded;
 }
-std::unique_ptr<Camera> SceneLoader::GetCamera()
+
+std::unique_ptr<Light> SceneLoader::GetLight(std::uint32_t index)
 {
-    if (!Has_Camera())
+    if (!HasLight() || index > NumLights())
+        return std::unique_ptr<Light>();
+    aiLight* OriginLight = _pScene->mLights[index];
+
+    glm::mat4 transform;
+    GetTransform(transform, _pScene->mRootNode->FindNode(OriginLight->mName)->mParent->mTransformation);
+    return processLight(OriginLight, transform);
+}
+
+std::unique_ptr<Camera> SceneLoader::GetCamera(std::uint32_t index)
+{
+    if (!HasCamera() || index > NumCameras())
         return nullptr;
 
+    aiCamera* OriginCam = _pScene->mCameras[index];
+
     glm::mat4 transform;
+    GetTransform(transform, _pScene->mRootNode->FindNode(OriginCam->mName)->mParent->mTransformation);
+        
+    return processCamera(OriginCam, transform);
+}
 
-    aiNode* CameraNode = _mscene->mRootNode->FindNode(_mscene->mCameras[0]->mName);
+std::unique_ptr<Model> SceneLoader::GetModel(uint32_t index)
+{
+    if (index > NumModels())
+        return nullptr;
 
-    if (CameraNode->mParent != nullptr)
-        GetTransform(transform, CameraNode->mParent->mTransformation);
+    return processModel(_pScene->mRootNode->mChildren[index]);
+}
 
+std::unique_ptr<Model>  SceneLoader::GetModel(std::string_view name) 
+{
+    if (NumModels() < 1)
+        return nullptr;
+
+    return processModel(_pScene->mRootNode->FindNode(name.data()));
+}
+std::unique_ptr<Light>  SceneLoader::GetLight(std::string_view name) 
+{
+    if (!HasLight())
+        return std::unique_ptr<Light>();
+    
+    aiNode* nativeNode = _pScene->mRootNode->FindNode(name.data());
+
+    if(!nativeNode)
+        return std::unique_ptr<Light>();
+
+    glm::mat4 transform;
+    GetTransform(transform, nativeNode->mParent->mTransformation);
+
+    aiLight* OriginLight;
+
+    for (uint32_t i = 0; i < NumLights(); ++i)
+        if (!std::strcmp(name.data(), _pScene->mLights[i]->mName.C_Str()))
+        {
+            OriginLight = _pScene->mLights[i];
+            break;
+        }
+    return processLight(OriginLight, transform);
+}
+std::unique_ptr<Camera> SceneLoader::GetCamera(std::string_view name) 
+{
+    if (!HasCamera())
+        return nullptr;
+
+    aiNode* nativeNode = _pScene->mRootNode->FindNode(name.data());
+
+    glm::mat4 transform;
+    GetTransform(transform, nativeNode->mParent->mTransformation);
+
+    aiCamera* OriginCamera;
+
+    for (uint32_t i = 0; i < NumCameras(); ++i)
+        if (!std::strcmp(name.data(), _pScene->mCameras[i]->mName.C_Str()))
+        {
+            OriginCamera = _pScene->mCameras[i];
+            break;
+        }
+    return processCamera(OriginCamera, transform);
+}
+
+std::unique_ptr<Model> SceneLoader::processModel(aiNode* root)
+{
+    std::unique_ptr<Model> model = std::make_unique<Model>([_pImporter = _pImporter]() {});
+    model->SetName(root->mName.C_Str());
+    model->SetRoot(processNode(root));
+    return model;
+}
+
+std::unique_ptr<Light>  SceneLoader::processLight(aiLight* OriginLight, const glm::mat4& transform)
+{
+    glm::vec3 amb = glm::vec3(OriginLight->mColorAmbient.r,
+        OriginLight->mColorAmbient.g,
+        OriginLight->mColorAmbient.b),
+        dif = glm::vec3(OriginLight->mColorDiffuse.r,
+            OriginLight->mColorDiffuse.g,
+            OriginLight->mColorDiffuse.b),
+        spec = glm::vec3(OriginLight->mColorSpecular.r,
+            OriginLight->mColorSpecular.g,
+            OriginLight->mColorSpecular.b),
+        pos = glm::vec3(transform[3][0], transform[3][0], transform[3][0]),
+        dir = glm::vec3(OriginLight->mDirection.x,
+            OriginLight->mDirection.y,
+            OriginLight->mDirection.z),
+        clq = glm::vec3(OriginLight->mAttenuationConstant,
+            OriginLight->mAttenuationLinear,
+            OriginLight->mAttenuationQuadratic);
+
+    std::unique_ptr<Light> light;
+    switch (OriginLight->mType)
+    {
+    case aiLightSource_POINT:
+        light = std::make_unique<Light>(PointLight(amb, dif, spec, clq, pos));
+        break;
+    case aiLightSource_SPOT:
+        light = std::make_unique<Light>(SpotLight(amb, dif, spec, clq, pos, dir,
+            OriginLight->mAngleOuterCone,
+            OriginLight->mAngleInnerCone));
+        break;
+    default:
+    case aiLightSource_DIRECTIONAL:
+        light = std::make_unique<Light>(DirectionalLight(amb, dif, spec, clq, glm::mat3(transform) * dir));
+        break;
+    }
+    light->SetName(OriginLight->mName.C_Str());
+    return light;
+}
+
+std::unique_ptr<Camera> SceneLoader::processCamera(aiCamera* OriginCam, const glm::mat4& transform)
+{
+    if (!OriginCam)
+        return nullptr;
     std::unique_ptr<Camera> cam = std::make_unique<Camera>();
 
-    cam->Position = transform * glm::vec4(cam->Position, 1.0f);
-    cam->Front = glm::mat3(transform) * glm::vec3(_mscene->mCameras[0]->mLookAt.x,
-                                            _mscene->mCameras[0]->mLookAt.y,
-                                            _mscene->mCameras[0]->mLookAt.z);
-    cam->WorldUp = glm::vec3(_mscene->mCameras[0]->mUp.x,
-                            _mscene->mCameras[0]->mUp.y,
-                            _mscene->mCameras[0]->mUp.z);// * glm::mat3(transform);
-    /*
-    
-    if (CameraNode->mParent != nullptr)
-    {
-        scene->mCameras[0]->mPosition.x = CameraNode->mParent->mTransformation[0][3];
-        scene->mCameras[0]->mPosition.y = CameraNode->mParent->mTransformation[1][3];
-        scene->mCameras[0]->mPosition.z = CameraNode->mParent->mTransformation[2][3];
-    }
+    cam->Position = transform *
+                 glm::vec4(cam->Position, 1.0f);
+    cam->Front = glm::mat3(transform) *
+                 glm::vec3(OriginCam->mLookAt.x,
+                  OriginCam->mLookAt.y,
+                  OriginCam->mLookAt.z);
+    cam->WorldUp = glm::vec3(OriginCam->mUp.x,
+                  OriginCam->mUp.y,
+                  OriginCam->mUp.z);// * glm::mat3(transform);
+/*
 
-    std::unique_ptr<Camera> cam = std::make_unique<Camera>
-        (
-            glm::vec3(scene->mCameras[0]->mPosition.x, 
-                      scene->mCameras[0]->mPosition.y, 
-                      scene->mCameras[0]->mPosition.z),
-            glm::vec3(scene->mCameras[0]->mLookAt.x,
-                      scene->mCameras[0]->mLookAt.y,
-                      scene->mCameras[0]->mLookAt.z),
-            glm::vec3(scene->mCameras[0]->mUp.x,
-                      scene->mCameras[0]->mUp.y,
-                      scene->mCameras[0]->mUp.z)
-        );*/
-    cam->SetName(_mscene->mCameras[0]->mName.C_Str());
+if (CameraNode->mParent != nullptr)
+{
+    scene->mCameras[0]->mPosition.x = CameraNode->mParent->mTransformation[0][3];
+    scene->mCameras[0]->mPosition.y = CameraNode->mParent->mTransformation[1][3];
+    scene->mCameras[0]->mPosition.z = CameraNode->mParent->mTransformation[2][3];
+}
+
+std::unique_ptr<Camera> cam = std::make_unique<Camera>
+    (
+        glm::vec3(scene->mCameras[0]->mPosition.x,
+                  scene->mCameras[0]->mPosition.y,
+                  scene->mCameras[0]->mPosition.z),
+        glm::vec3(scene->mCameras[0]->mLookAt.x,
+                  scene->mCameras[0]->mLookAt.y,
+                  scene->mCameras[0]->mLookAt.z),
+        glm::vec3(scene->mCameras[0]->mUp.x,
+                  scene->mCameras[0]->mUp.y,
+                  scene->mCameras[0]->mUp.z)
+    );*/
+    cam->SetName(OriginCam->mName.C_Str());
 
     return cam;
 }
 
-std::unique_ptr<Model> SceneLoader::GetModel(uint32_t Indx)
-{
-    if (!_mscene || !_mscene->mRootNode || Indx == -1)
-        return nullptr;
-    
-    std::unique_ptr<Model> model = std::make_unique<Model>();
-    model->SetName(_mscene->mRootNode->mChildren[Indx]->mName.C_Str());
-    model->SetRoot(processNode(_mscene->mRootNode->mChildren[Indx]));
-    return model;
-}
-
 std::shared_ptr<Node> SceneLoader::processNode(aiNode* node)
 {
-    const uint16_t MatSize = 4;
     // process each mesh located at the current node
     std::shared_ptr<Node> curNode = std::make_shared<Node>(),tmp;
     curNode->SetName(node->mName.C_Str());
@@ -177,11 +225,11 @@ std::shared_ptr<Node> SceneLoader::processNode(aiNode* node)
     {
         // the node object only contains indices to index the actual objects in the scene. 
         // the scene contains all the data, node is just to keep stuff organized (like relations between nodes).
-        auto IterMesh = GlobalMeshes.find(std::hash<std::string>{}(std::string(_mscene->mMeshes[node->mMeshes[i]]->mName.C_Str())));
+        auto IterMesh = GlobalMeshes.find(std::hash<std::string>{}(std::string(_pScene->mMeshes[node->mMeshes[i]]->mName.C_Str())));
         if(IterMesh != GlobalMeshes.end())
             curNode->addMesh(IterMesh->second.lock());
         else
-            curNode->addMesh(processMesh(_mscene->mMeshes[node->mMeshes[i]]));
+            curNode->addMesh(processMesh(_pScene->mMeshes[node->mMeshes[i]]));
     }
     // after we've processed all of the meshes (if any) we then recursively process each of the children nodes
     for (std::size_t i = 0; i < node->mNumChildren; ++i)
@@ -200,7 +248,7 @@ std::shared_ptr <Mesh> SceneLoader::processMesh(aiMesh* mesh)
     std::shared_ptr<Mesh> CurMesh = std::make_shared<Mesh>();
     CurMesh->SetName(mesh->mName.C_Str());
     // process materials
-    aiMaterial* mat = _mscene->mMaterials[mesh->mMaterialIndex];
+    aiMaterial* mat = _pScene->mMaterials[mesh->mMaterialIndex];
 
     //Create additional thread for load geometry and material of mesh
    // walk through each of the mesh's vertices
@@ -238,31 +286,31 @@ std::shared_ptr <Mesh> SceneLoader::processMesh(aiMesh* mesh)
     }
 
     //load materials
-    CurMesh->material = loadMaterial(mat, mesh->mMaterialIndex);
+    CurMesh->material = processMaterial(mat, mesh->mMaterialIndex);
 
     // Loading texture's maps
     std::vector<std::shared_ptr<Texture>> texes;
     // 1. diffuse maps
-    texes = loadTexture(mat, aiTextureType_DIFFUSE, Texture_Types::Diffuse);
+    texes = processTexture(mat, aiTextureType_DIFFUSE, Texture_Types::Diffuse);
     //CurMesh->textures.emplace_back(CurMesh->textures.end(), texes.begin(), texes.end());
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 2. specular maps
-    texes = loadTexture(mat, aiTextureType_SPECULAR, Texture_Types::Specular);
+    texes = processTexture(mat, aiTextureType_SPECULAR, Texture_Types::Specular);
     //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 3. normal maps
-    texes = loadTexture(mat, aiTextureType_NORMALS, Texture_Types::Normal);//aiTextureType_HEIGHT
+    texes = processTexture(mat, aiTextureType_NORMALS, Texture_Types::Normal);//aiTextureType_HEIGHT
     //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 4. height maps
-    texes = loadTexture(mat, aiTextureType_AMBIENT, Texture_Types::Height);
+    texes = processTexture(mat, aiTextureType_AMBIENT, Texture_Types::Height);
     //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     // 5. emissive maps
-    texes = loadTexture(mat, aiTextureType_EMISSIVE, Texture_Types::Emissive);
+    texes = processTexture(mat, aiTextureType_EMISSIVE, Texture_Types::Emissive);
     //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
-    texes = loadTexture(mat, aiTextureType_UNKNOWN, Texture_Types::Metallic_roughness);
+    texes = processTexture(mat, aiTextureType_UNKNOWN, Texture_Types::Metallic_roughness);
     //CurMesh->textures.emplace_back(std::move(texes));
     //CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
     /*// 6. metallic maps
@@ -272,7 +320,7 @@ std::shared_ptr <Mesh> SceneLoader::processMesh(aiMesh* mesh)
     texes = loadTexture(mat, aiTextureType_DIFFUSE_ROUGHNESS, "texture_roughness");
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());*/
     // 8. ambient_occlusion
-    texes = loadTexture(mat, aiTextureType_AMBIENT_OCCLUSION, Texture_Types::Ambient_occlusion);
+    texes = processTexture(mat, aiTextureType_AMBIENT_OCCLUSION, Texture_Types::Ambient_occlusion);
     //CurMesh->textures.emplace_back(std::move(texes));
     CurMesh->textures.insert(CurMesh->textures.end(), texes.begin(), texes.end());
 
@@ -280,7 +328,7 @@ std::shared_ptr <Mesh> SceneLoader::processMesh(aiMesh* mesh)
     return CurMesh;
 }
 
-std::vector<std::shared_ptr<Texture>> SceneLoader::loadTexture(aiMaterial* mat, aiTextureType type, Texture_Types typeName)
+std::vector<std::shared_ptr<Texture>> SceneLoader::processTexture(aiMaterial* mat, aiTextureType type, Texture_Types typeName)
 {
     std::vector<std::shared_ptr<Texture>> textures;
     aiString path, name;
@@ -314,35 +362,33 @@ std::vector<std::shared_ptr<Texture>> SceneLoader::loadTexture(aiMaterial* mat, 
         }
         std::shared_ptr <Texture> texture(std::make_shared<Texture>());
 
-        if (_mscene->HasTextures())// textures are embedded in scene file
+        if (_pScene->HasTextures())// textures are embedded in scene file
         {
              //assimp docs, if tex embedded: path's string has format *TextureIndex
-             tex = _mscene->GetEmbeddedTexture(Path.c_str());
+             tex = _pScene->GetEmbeddedTexture(Path.c_str());
              if (!tex->mHeight)
                  texture->imgs.push_back(ImageLoader::LoadTexture(tex->pcData, tex->mWidth));
              else
                  texture->imgs.push_back(std::make_shared<Image>(tex->mWidth, tex->mHeight, 4, (unsigned char*)tex->pcData, [](void* ptr) {}));
         }
         else // textures place in external files 
-           //str = this->directory + '\\' + path.C_Str();
            texture->imgs.push_back(ImageLoader::LoadTexture(Path.c_str()));        
 
          texture->name = std::move(Name);
          texture->path = std::move(Path);
          texture->type = typeName;
 
-         textures.push_back(texture);
-         GlobalTextures[hash] = texture;// store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.    
+         textures.emplace_back(std::move(texture));
+         GlobalTextures[hash] = textures.back();// store it as texture loaded for entire model, to ensure we won't unnecesery load duplicate textures.    
     }
     return textures;
 }
 
-Material SceneLoader::loadMaterial(aiMaterial* mat, uint16_t indx)
+Material SceneLoader::processMaterial(aiMaterial* mat, uint16_t indx)
 {
     Material MeshMaterial;
 
     MeshMaterial.id = indx;
-    //mat->Get(AI_MATKEY_COLOR_AMBIENT, MeshMaterial.ambient);
     mat->Get(AI_MATKEY_COLOR_AMBIENT, MeshMaterial.ambient);
     mat->Get(AI_MATKEY_COLOR_DIFFUSE, MeshMaterial.diffuse);
     mat->Get(AI_MATKEY_COLOR_SPECULAR, MeshMaterial.specular);
@@ -355,20 +401,17 @@ SceneLoader::~SceneLoader()
 {
 }
 
-std::unique_ptr<Scene> SceneLoader::GetScene(std::string_view path)
+std::unique_ptr<Scene> SceneLoader::GetScene()
 {
-    LoadScene(path);
+    if (!IsLoad())
+        return nullptr;
 
-    if (!Is_Load())
-        throw(std::string("Problem with scene loading!"));
-    std::shared_ptr<Assimp::Importer> CopyImporter = importer;
-    std::unique_ptr<Scene> scen = std::make_unique<Scene>(nullptr, [CopyImporter]() {CopyImporter->FreeScene(); });
-    if (Has_Camera())
-        scen->SetCam(GetCamera());
-
+    std::unique_ptr<Scene> scen = std::make_unique<Scene>(nullptr);
+    if (HasCamera())
+        scen->SetCam(GetCamera(0));
 
     std::shared_ptr <Light> light;
-    if (!Has_Light())
+    if (!HasLight())
     {
         //default light
         
@@ -382,15 +425,15 @@ std::unique_ptr<Scene> SceneLoader::GetScene(std::string_view path)
         scen->AddLight(light);
     }
     else
-        while ((light = std::shared_ptr<Light>(GetLight())))
+        for (int32_t i = 0; i < NumLights(); ++i)
         {
+            light = std::shared_ptr<Light>(GetLight(i));
             scen->AddLight(light);
             if (light->GetType() == LightTypes::Point && Scene::DefaultPointLightModel)
             {
-                std::shared_ptr<Model> ModelPointLight(std::make_shared<Model>(*Scene::DefaultPointLightModel.get()));
+                std::shared_ptr<Model> ModelPointLight = std::make_shared<Model>(*Scene::DefaultPointLightModel);
                 ModelPointLight->GetRoot()->tr = light->tr.Get();
                 ModelPointLight->SetName(light->GetName());
-                //Scene::DefaultPointLightModel->GetRoot()->tr.Set(light->tr.Get());
                 scen->AddModel(ModelPointLight);
             }
         }
@@ -398,7 +441,7 @@ std::unique_ptr<Scene> SceneLoader::GetScene(std::string_view path)
     std::shared_ptr<Shader> sh = scen->GetShader("Default");
     //#pragma omp parallel for shared(sh, scen)
     #pragma omp parallel for
-    for (int32_t i = 0; i <= IndexModel; ++i)
+    for (int32_t i = 0; i < NumModels(); ++i)
     {
         std::unique_ptr<Model> mod = GetModel(i);
         if (mod)
@@ -413,7 +456,7 @@ std::unique_ptr<Scene> SceneLoader::GetScene(std::string_view path)
 
     std::pair<Scene::MIt, Scene::MIt> models = scen->GetModels();
     for (Scene::MIt it = models.first; it != models.second; ++it)
-        CreateGLObjects(it->second->GetRoot());
+        InitMeshes(it->second->GetRoot());
     
     return scen;
 }
@@ -426,18 +469,13 @@ void SceneLoader::GetTransform(glm::mat4& whereTo, const aiMatrix4x4& FromWhere)
     whereTo[3] = glm::vec4(FromWhere[0][3], FromWhere[1][3], FromWhere[2][3], FromWhere[3][3]);
 }
 
-
-void SceneLoader::CreateGLObjects(std::shared_ptr<Node> node)
+void SceneLoader::InitMeshes(std::shared_ptr<Node> node)
 {
     std::pair<Node::MIt, Node::MIt> meshes = node->GetMeshes();
     for (Node::MIt it = meshes.first; it != meshes.second; ++it)
-    {
         it->get()->setupMesh();
-        for (auto& tex : it->get()->textures)
-            if(!tex->IsCreated())
-                tex->createGLTex();
-    }
+
     std::pair<Node::NIt, Node::NIt> chld = node->GetChildren();
     for (Node::NIt it = chld.first; it != chld.second; ++it)
-        CreateGLObjects(*it);
+        InitMeshes(*it);
 }

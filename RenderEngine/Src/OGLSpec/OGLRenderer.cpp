@@ -48,7 +48,7 @@ void MessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLs
 		<< id << ": "
 		<< message << std::endl;
 	else
-		std::cout
+		std::clog
 		<< source_str << ", "
 		<< type_str << ", "
 		<< severity_str << ", "

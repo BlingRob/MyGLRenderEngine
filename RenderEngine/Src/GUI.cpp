@@ -102,7 +102,9 @@ void GUI::Interface()
 				OldScene.reset();
 				SceneLoader loader;
 				SDL_SetCursor(LoadingCursor);
-				*_ppScene = loader.GetScene(fileDialog.GetSelected().string());
+				loader.LoadScene(fileDialog.GetSelected().string());
+				if(loader.IsLoad())
+					*_ppScene = loader.GetScene();
 				_ppScene->get()->SetController(_pContr);
 				fileDialog.ClearSelected();
 				SDL_SetCursor(DefaultCursor);

@@ -21,6 +21,7 @@ include_directories(${CMAKE_SOURCE_DIR}/dependencies/sqlite)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/assimp/include)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/glm/)
 include_directories(${CMAKE_SOURCE_DIR}/dependencies/imgui)
+include_directories(${CMAKE_SOURCE_DIR}/dependencies/imgui-filebrowser)
 
 find_package(OpenMP REQUIRED)
 

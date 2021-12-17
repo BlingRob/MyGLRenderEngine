@@ -31,9 +31,9 @@ public:
 
         if (res == SQLITE_OK)
             if (sqlite3_step(statement) == SQLITE_ROW)
-                return std::make_pair<int, std::unique_ptr<void, decltype(deleter)>>(sqlite3_column_bytes(statement, 0), std::unique_ptr<void, decltype(deleter)>((void*)sqlite3_column_blob(statement, 0), deleter));
+                return std::make_pair<std::unique_ptr<void, decltype(deleter)>, int>(std::unique_ptr<void, decltype(deleter)>((void*)sqlite3_column_blob(statement, 0), deleter), sqlite3_column_bytes(statement, 0));
 
-        return std::make_pair(0, std::unique_ptr<void, decltype(deleter)>(nullptr, deleter));
+        return std::make_pair(std::unique_ptr<void, decltype(deleter)>(nullptr, deleter), 0);
     }
 
 private:

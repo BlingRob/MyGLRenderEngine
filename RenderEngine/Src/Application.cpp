@@ -15,15 +15,6 @@
 			//GUI Initialization
 			gui = std::make_unique<GUI>(_pWindow.get(), _pContext.get(), _ppScene, _pContr);
 
-			//Setup default scene and its settings
-			SceneLoader pointloader;
-			pointloader.LoadScene("../Models/PointLight.obj");
-			if (pointloader.Is_Load())
-			{
-				Scene::DefaultPointLightModel = pointloader.GetModel(0);
-				Scene::DefaultPointLightModel->SetName("PointModel");
-			}
-
 			//Create addition frame buffer
 			std::pair<uint32_t, uint32_t> DM = _pWindow->MaxSize();
 			frame = std::make_unique<PostProcessBuffer>(DM.first, DM.second);

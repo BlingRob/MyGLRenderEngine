@@ -23,14 +23,15 @@ const std::shared_ptr <Shader> Model::GetShader()
     return shader;
 }
 
-Model::Model() 
+Model::Model(std::function<void()> del):DeleterAssimpScene(del)
 {
 }
 Model::Model(const Model& mod) 
 {
-    mRootNode = std::make_shared<Node>(*mod.mRootNode);
+    mRootNode = mod.mRootNode;
     shader = mod.shader;
     tr = mod.tr;
+    DeleterAssimpScene = mod.DeleterAssimpScene;
 }
 
 std::shared_ptr<Node> Model::GetRoot() 

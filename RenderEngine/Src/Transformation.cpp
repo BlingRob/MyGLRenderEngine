@@ -10,7 +10,6 @@ void Matrices::SendToShader(const Shader& shader)
 
 void Transformation::Set(const std::shared_ptr <glm::mat4> matr)
 {
-	Model.reset();
 	Model = std::shared_ptr <glm::mat4>(matr);
 	updateNormal();
 }

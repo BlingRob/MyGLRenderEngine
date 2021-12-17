@@ -42,15 +42,15 @@ void Scene::AddLight(std::shared_ptr<Light> lig)
 	Lights[std::hash<std::string_view>{}(lig->GetName())] = lig;
 }
 
-std::shared_ptr<Model> Scene::GetModel(std::string_view  name)
+std::shared_ptr<Model> Scene::GetModel(std::string_view name)
 {
-	if (auto iter = Models.find(std::hash<std::string_view >{}(name)); iter != Models.end())
+	if (auto iter = Models.find(std::hash<std::string_view>{}(name)); iter != Models.end())
 		return iter->second;
 	return nullptr;
 }
-std::shared_ptr<Light> Scene::GetLight(std::string_view  name)
+std::shared_ptr<Light> Scene::GetLight(std::string_view name)
 {
-	if (auto iter = Lights.find(std::hash<std::string_view >{}(name)); iter != Lights.end())
+	if (auto iter = Lights.find(std::hash<std::string_view>{}(name)); iter != Lights.end())
 		return iter->second;
 	return nullptr;
 }
@@ -74,7 +74,7 @@ const std::pair<Scene::MIt, Scene::MIt> Scene::GetModels() const
 	return make_pair(Models.cbegin(), Models.cend());
 }
 
-void Scene::SetBackGround(glm::vec4 col) 
+void Scene::SetBackGround(const glm::vec4& col) 
 {
 	BackGroundColour = col;
 	glClearColor(BackGroundColour.x, BackGroundColour.y, BackGroundColour.z, BackGroundColour.w);
@@ -96,7 +96,7 @@ std::shared_ptr<Camera> Scene::GetCam() const
 }
 
 
-Scene::Scene(std::shared_ptr <Position_Controller> contr, std::function<void()> fun)
+Scene::Scene(std::shared_ptr <Position_Controller> contr)
 {
 	//default background
 	BackGroundColour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -119,7 +119,6 @@ Scene::Scene(std::shared_ptr <Position_Controller> contr, std::function<void()> 
 		SkyBoxSetted = true;
 	}
 	SetController(contr);
-	DeleterAssimpScene = fun;
 };
 
 void Scene::SetBackGround(std::shared_ptr<Node> box)
@@ -145,5 +144,4 @@ void Scene::SetController(std::shared_ptr <Position_Controller> contr)
 
 Scene::~Scene() 
 {
-	DeleterAssimpScene();
 }

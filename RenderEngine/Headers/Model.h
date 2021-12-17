@@ -4,6 +4,7 @@
 #include "Transformation.h"
 #include "Entity.h"
 #include <memory>
+#include <functional>
 
 class Model:public Entity
 {
@@ -16,11 +17,12 @@ public:
     void SetShader(std::shared_ptr <Shader> sh);
     const std::shared_ptr <Shader> GetShader();
 
-    Model();
+    Model(std::function<void()> ResourceDeleter = []() {});
     Model(const Model&);
 private:
+    std::function<void()> DeleterAssimpScene;
     /*  Model's data  */
-    std::shared_ptr<Node> mRootNode;
-    std::shared_ptr <Shader> shader;
+    std::shared_ptr<Node>   mRootNode;
+    std::shared_ptr<Shader> shader;
     Transformation tr;
 };

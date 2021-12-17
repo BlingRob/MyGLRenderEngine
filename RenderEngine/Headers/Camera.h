@@ -5,15 +5,15 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include <math.h>
 
-// Параметры камеры по умолчанию
-const float YAW = -90.0f;
-const float PITCH = 0.0f;
-const float SPEED = 4.0f;
+// Default cameras options
+const float YAW         = -90.0f;
+const float PITCH       = 0.0f;
+const float SPEED       = 4.0f;
 const float SENSITIVITY = 0.1f;
-const float ZOOM = 45.0f;
+const float ZOOM        = 45.0f;
 
-// Абстрактный класс камеры, который обрабатывает входные данные и вычисляет соответствующие Эйлеровы углы, векторы и матрицы для использования в OpenGL
 class Camera:public Entity
 {
 public:
@@ -24,38 +24,40 @@ public:
         LEFT,
         RIGHT
     };
-    // Атрибуты камеры
+    // Camera attributes
     glm::vec3 Position;
     glm::vec3 Front;
     glm::vec3 Up;
     glm::vec3 Right;
     glm::vec3 WorldUp;
-    // углы Эйлера
+    // Euler's angels
     float Yaw;
     float Pitch;
-    // Настройки камеры
+    // Camera's options
     float MovementSpeed;
     float MouseSensitivity;
     float Zoom;
+    //Limits
+    static constexpr float PitchLimit    = glm::radians(89.0f);
+    static constexpr float ZoomLowLimit  = 1.0f;
+    static constexpr float ZoomHighLimit = 45.0f;
 
-    // Конструктор, использующий векторы
     Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH): MovementSpeed(SPEED), MouseSensitivity(SENSITIVITY), Zoom(ZOOM)
     {
         Position = position;
         Front = target;
-        WorldUp = up;
-        Yaw = yaw;
-        Pitch = pitch;
+        WorldUp = glm::normalize(up);
+        Yaw = glm::radians(yaw);
+        Pitch = glm::radians(pitch);
         updateCameraVectors();
     }
 
-    // Возвращает матрицу вида, вычисленную с использованием углов Эйлера и LookAt-матрицы 
-    glm::mat4 GetViewMatrix()
+    inline glm::mat4 GetViewMatrix()
     {
         return glm::lookAt(Position, Position + Front, Up);
     }
 
-    //Обрабатываем входные данные, полученные от любой клавиатуроподобной системы ввода. Принимаем входной параметр в виде определенного камерой перечисления (для абстрагирования его от оконных систем)
+    //Process key pressing
     void ProcessKeyboard(Camera_Movement direction, float deltaTime)
     {
         float velocity = MovementSpeed * deltaTime;
@@ -76,52 +78,47 @@ public:
         }
     }
 
-    //Обрабатываем входные данные, полученные от системы ввода с помощью мыши. Ожидаем в качестве параметров значения смещения как в направлении X, так и в направлении Y.
+    // Process mouse movement
     void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true)
     {
         xoffset *= MouseSensitivity;
         yoffset *= MouseSensitivity;
 
-        Yaw += xoffset;
-        Pitch += yoffset;
+        Yaw   += glm::radians(xoffset);
+        Pitch += glm::radians(yoffset);
 
-        // Убеждаемся, что когда тангаж выходит за пределы обзора, экран не переворачивается
+        // Controll pitch range
         if (constrainPitch)
-        {
-            if (Pitch > 89.0f)
-                Pitch = 89.0f;
-            if (Pitch < -89.0f)
-                Pitch = -89.0f;
-        }
+            if(glm::abs(Pitch) > PitchLimit)
+                Pitch = std::copysignf(PitchLimit, Pitch);
 
-        // Обновляем значения вектора-прямо, вектора-вправо и вектора-вверх, используя обновленные значения углов Эйлера
+        // Update vectors
         updateCameraVectors();
     }
 
-    // Обрабатывает входные данные, полученные от события колеса прокрутки мыши. Интересуют только входные данные на вертикальную ось колесика 
+    // Process mouse scroll
     void ProcessMouseScroll(float yoffset)
     {
-        if (Zoom >= 1.0f && Zoom <= 45.0f)
+        if (Zoom >= ZoomLowLimit && Zoom <= ZoomHighLimit)
             Zoom -= yoffset;
-        if (Zoom <= 1.0f)
-            Zoom = 1.0f;
-        if (Zoom >= 45.0f)
-            Zoom = 45.0f;
+        else if (Zoom <= ZoomLowLimit)
+            Zoom = ZoomLowLimit;
+        else if (Zoom >= ZoomHighLimit)
+            Zoom = ZoomHighLimit;
     }
 
 private:
-    // Вычисляет вектор-прямо по (обновленным) углам Эйлера камеры
+    // Process up vector based Euler's angels
     void updateCameraVectors()
     {
-        // Вычисляем новый вектор-прямо
-        glm::vec3 front;
-        front.x = cos(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-        front.y = sin(glm::radians(Pitch));
-        front.z = sin(glm::radians(Yaw)) * cos(glm::radians(Pitch));
-        Front = glm::normalize(front);
-        // Также пересчитываем вектор-вправо и вектор-вверх
-        Right = glm::normalize(glm::cross(Front, WorldUp));  // Нормализуем векторы, потому что их длина становится стремится к 0 тем больше, чем больше вы смотрите вверх или вниз, что приводит к более медленному движению.
-        Up = glm::normalize(glm::cross(Right, Front));
+        // Process new right vector
+        Front.x = cos(Yaw) * cos(Pitch);
+        Front.y = sin(Pitch);
+        Front.z = sin(Yaw) * cos(Pitch);
+        Front   = glm::normalize(Front);
+        // Reculculation right and up vectors
+        Right   = glm::cross(Front, WorldUp);
+        Up      = glm::cross(Right, Front);
     }
 };
 #endif

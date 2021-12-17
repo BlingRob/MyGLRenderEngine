@@ -155,6 +155,11 @@ void OGLMesh::setupMesh()
     glVertexArrayAttribBinding(VAO, 4, 4);
     glVertexArrayVertexBuffer(VAO, 4, VBO, Biases[3], sizeof(GLfloat) * BaseMesh::CardCoordsPerPoint);
     glVertexArrayAttribFormat(VAO, 4, BaseMesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
+
+    //Create mesh's textures
+    for (auto& tex : textures)
+        if (!tex->IsCreated())
+            tex->createGLTex();
 }
 void OGLMesh::Draw(const Shader* shader)
 {
