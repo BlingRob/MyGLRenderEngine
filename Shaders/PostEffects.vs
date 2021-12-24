@@ -1,5 +1,5 @@
 #version 450 core
-layout (location = 0) in vec2 position;
+layout (location = 2) in vec2 position;
 
 out vec2 TexCoords;
 uniform float wAspect;

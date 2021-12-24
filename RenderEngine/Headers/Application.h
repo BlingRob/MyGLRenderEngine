@@ -10,10 +10,8 @@
 #include "Loaders/ResourceManager.h"
 //Frame buffer
 #include "OGLSpec/OGLRenderer.h"
-#include "FrameBuffer.h"
 
-
-	class RenderEngine
+class RenderEngine
 	{
 		std::shared_ptr<Position_Controller> _pContr;
 		//Pointer of window class
@@ -28,15 +26,12 @@
 		std::unique_ptr<GUI> gui;
 		//Logger
 		std::unique_ptr<Logger> _pLog;
-		//Frame Buffer
-		std::unique_ptr<PostProcessBuffer> frame;
 		//Resource manager
 		std::unique_ptr<ResourceManager> _pResMgr;
 		public:
 			RenderEngine();
-			~RenderEngine()
-			{
-			}
+			~RenderEngine();
+
 			bool MainLoop();
 			double GetTime();
 			void SetScen(std::unique_ptr<Scene>);

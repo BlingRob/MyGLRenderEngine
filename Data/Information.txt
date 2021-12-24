@@ -1,0 +1,2 @@
+data.bin is SQL file. It's saved skybox textures in table "Textures(name varchar(32) primary key,type varchar(16),image BLOB)" and default model of point light - sphere in table "Models(name varchar(32) primary key, data BLOB)".
+For using: copy data.bin in folder with executable file.

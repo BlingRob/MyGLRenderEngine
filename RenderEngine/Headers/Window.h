@@ -16,7 +16,7 @@ public:
 	//Size of window
 	uint32_t SCR_WIDTH = 800,
 		     SCR_HEIGHT = 800;
-	std::pair<int32_t, int32_t> MaxSize();
+	std::pair<int32_t, int32_t> MaxSize() const;
 	SDL_Window* GetWindow() const;
 	void SwapBuffer();
 	~Window();

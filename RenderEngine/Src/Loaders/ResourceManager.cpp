@@ -1,17 +1,5 @@
 #include "../../Headers/Loaders/ResourceManager.h"
 
-bool FileIsExist(std::string_view filePath)
-{
-    bool isExist = false;
-    std::ifstream fin(filePath.data());
-
-    if (fin.is_open())
-        isExist = true;
-
-    fin.close();
-    return isExist;
-}
-
 void ResourceManager::LoadDefaultSkyBox() 
 {
     //Data base is opened? Load from it
@@ -23,7 +11,7 @@ void ResourceManager::LoadDefaultSkyBox()
         {
             auto [ptr, bytes] = _pDBContr->Load("image", "Textures", "name = '" + ImgName + "'");
             if (bytes)
-                vecs.push_back(ImageLoader::LoadTexture(ptr.get(), bytes));
+                vecs.emplace_back(ImageLoader::LoadTexture(ptr.get(), bytes));
         }
 
         Scene::DefaultSkyBox = CreateSkyBox(std::move(vecs));
@@ -108,6 +96,7 @@ ResourceManager::ResourceManager()
     _pDBContr = std::make_unique<DBController>("./data.bin");
     LoadDefaultSkyBox();
     LoadDefaultModelPointLight();
+    LoadDefaultShaders();
 }
 
 std::vector<std::shared_ptr<Image>> ResourceManager::LoadSkyBoxTextures(std::vector<std::string_view>&& paths)
@@ -121,24 +110,25 @@ std::vector<std::shared_ptr<Image>> ResourceManager::LoadSkyBoxTextures(std::vec
 
 std::unique_ptr<Node> ResourceManager::CreateSkyBox(std::vector<std::shared_ptr<Image>>&& imgs)
 {
+    const float cubePos[24] =
+    {
+         -1.0f,   1.0f,  -1.0f,
+         1.0f,    1.0f,  -1.0f,
+         1.0f,    -1.0f,  -1.0f,
+         -1.0f,  -1.0f,  -1.0f,
+         -1.0f,  1.0f,   1.0f,
+         1.0f,   1.0f,   1.0f,
+         1.0f, -1.0f,   1.0f,
+         -1.0f,  -1.0f,  1.0f
+    };
     std::unique_ptr<Node> curNode = std::make_unique<Node>();
     curNode->SetName("SkyBox");
     std::shared_ptr<Mesh> curMesh = std::make_shared<Mesh>();
     //Cube's vertices
-    curMesh->vertices._msizes[Vertexes::PointTypes::positions] = 24;
-    curMesh->vertices.Positions = new aiVector3D[8]
-    {
-        aiVector3D {-1.0f,   1.0f,  -1.0f},
-        aiVector3D {1.0f,    1.0f,  -1.0f},
-        aiVector3D {1.0f,    -1.0f,  -1.0f},
-        aiVector3D {-1.0f,  -1.0f,  -1.0f},
-        aiVector3D {-1.0f,  1.0f,   1.0f},
-        aiVector3D {1.0f,   1.0f,   1.0f},
-        aiVector3D {1.0f, -1.0f,   1.0f},
-        aiVector3D {-1.0f,  -1.0f,  1.0f}
-    };
-
-    curMesh->indices = std::vector<GLuint>
+    curMesh->vertices.VectorsSize = 24;
+    curMesh->vertices.HasPointType[Vertexes::positions] = true;
+    curMesh->vertices.vectors[Vertexes::PointTypes::positions] = cubePos;
+    curMesh->vertices.indices = std::vector<std::uint32_t>
         (
             {
                 0, 1, 2,
@@ -154,23 +144,56 @@ std::unique_ptr<Node> ResourceManager::CreateSkyBox(std::vector<std::shared_ptr<
                 6, 5, 4,
                 6, 4, 7
             }
-    );
+       );
 
     std::shared_ptr <Texture> texture = std::make_shared<Texture>();
     texture->imgs = std::move(imgs);// ImageLoader::LoadTexture(paths);
     texture->type = Texture_Types::Skybox;
-    texture->createGLTex();
     texture->name = "SkyBox";
     texture->path = "Unknown";
 
     curMesh->textures.push_back(texture);
-
     curMesh->setupMesh();
     curNode->addMesh(curMesh);
 
     return curNode;
 }
 
+void ResourceManager::LoadDefaultShaders() 
+{
+    std::shared_ptr<Shader> shader;
+
+    shader = std::make_shared<Shader>(LoadTextFile("../Shaders/Base.vs"), LoadTextFile("../Shaders/Base.frag"));
+    shader->SetName("Default");
+    ShadersBank::AddShader(shader);
+
+    shader = std::make_shared<Shader>(LoadTextFile("../Shaders/Light.vs"), LoadTextFile("../Shaders/Light.frag"));
+    shader->SetName("PointLight");
+    ShadersBank::AddShader(shader);
+
+    shader = std::make_shared<Shader>(LoadTextFile("../Shaders/SkyBox.vs"), LoadTextFile("../Shaders/SkyBox.frag"));
+    shader->SetName("SkyBox");
+    ShadersBank::AddShader(shader);
+
+    shader = std::make_shared<Shader>(LoadTextFile("../Shaders/PointDepthMap.vs"), LoadTextFile("../Shaders/PointDepthMap.frag"), LoadTextFile("../Shaders/PointDepthMap.gs"));
+    shader->SetName("PointShadow");
+    ShadersBank::AddShader(shader);
+
+    shader = std::make_shared<Shader>(LoadTextFile("../Shaders/DirectDepthMap.vs"), LoadTextFile("../Shaders/DirectDepthMap.frag"));
+    shader->SetName("DirectShadow");
+    ShadersBank::AddShader(shader);
+
+    shader = std::make_shared<Shader>(LoadTextFile("../Shaders/PostEffects.vs"), LoadTextFile("../Shaders/PostEffects.frag"));
+    shader->SetName("PostEffect");
+    ShadersBank::AddShader(shader);
+}
+
+ResourceManager::~ResourceManager()
+{
+    Scene::DefaultSkyBox.reset();
+    Scene::DefaultPointLightModel.reset();
+    ShadersBank::Clear();
+}
 /*
 bool Scene::LoadModels(const std::string& path)
 {

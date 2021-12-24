@@ -252,37 +252,37 @@ std::shared_ptr <Mesh> SceneLoader::processMesh(aiMesh* mesh)
 
     //Create additional thread for load geometry and material of mesh
    // walk through each of the mesh's vertices
-
+    CurMesh->vertices.VectorsSize = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
     if (mesh->HasPositions())
     {
-        CurMesh->vertices._msizes[Vertexes::PointTypes::positions] = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
-        CurMesh->vertices.Positions = mesh->mVertices;
+        CurMesh->vertices.HasPointType[Vertexes::PointTypes::positions] = true;
+        CurMesh->vertices.vectors[Vertexes::PointTypes::positions] = reinterpret_cast<float*>(mesh->mVertices);
     }
     if (mesh->HasNormals()) 
     {
-        CurMesh->vertices._msizes[Vertexes::PointTypes::normals] = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
-        CurMesh->vertices.Normals = mesh->mNormals;
+        CurMesh->vertices.HasPointType[Vertexes::PointTypes::normals] = true;
+        CurMesh->vertices.vectors[Vertexes::PointTypes::normals] = reinterpret_cast<float*>(mesh->mNormals);
     }
     if (mesh->HasTangentsAndBitangents()) 
     {
-        CurMesh->vertices._msizes[Vertexes::PointTypes::tangent] = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
-        CurMesh->vertices.Tangents = mesh->mTangents;
+        CurMesh->vertices.HasPointType[Vertexes::PointTypes::tangent] = true;
+        CurMesh->vertices.vectors[Vertexes::PointTypes::tangent] = reinterpret_cast<float*>(mesh->mTangents);
 
-        CurMesh->vertices._msizes[Vertexes::PointTypes::bitangent] = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
-        CurMesh->vertices.Bitangents = mesh->mBitangents;
+        CurMesh->vertices.HasPointType[Vertexes::PointTypes::bitangent] = true;
+        CurMesh->vertices.vectors[Vertexes::PointTypes::bitangent] = reinterpret_cast<float*>(mesh->mBitangents);
     }
     if (mesh->HasTextureCoords(0)) 
     {
-        CurMesh->vertices._msizes[Vertexes::PointTypes::texture] = mesh->mNumVertices * Mesh::CardCoordsPerPoint;
-        CurMesh->vertices.TexCoords = mesh->mTextureCoords[0];
+        CurMesh->vertices.HasPointType[Vertexes::PointTypes::texture] = true;
+        CurMesh->vertices.vectors[Vertexes::PointTypes::texture] = reinterpret_cast<float*>(mesh->mTextureCoords[0]);
     }
    
-    CurMesh->indices.reserve(mesh->mNumFaces * mesh->mFaces[0].mNumIndices);//Indices = 3 * card of face's number
+    CurMesh->vertices.indices.reserve(mesh->mNumFaces * mesh->mFaces[0].mNumIndices);//Indices = 3 * card of face's number
     for (std::size_t i = 0; i < mesh->mNumFaces; ++i)
     {
            // retrieve all indices of the face and store them in the indices vector
         for (std::size_t j = 0; j < mesh->mFaces[i].mNumIndices; j++)
-            CurMesh->indices.push_back(mesh->mFaces[i].mIndices[j]);
+            CurMesh->vertices.indices.push_back(mesh->mFaces[i].mIndices[j]);
     }
 
     //load materials
@@ -438,7 +438,7 @@ std::unique_ptr<Scene> SceneLoader::GetScene()
             }
         }
 
-    std::shared_ptr<Shader> sh = scen->GetShader("Default");
+    std::shared_ptr<Shader> sh = ShadersBank::GetShader("Default");
     //#pragma omp parallel for shared(sh, scen)
     #pragma omp parallel for
     for (int32_t i = 0; i < NumModels(); ++i)

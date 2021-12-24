@@ -10,7 +10,6 @@ public:
     Material material;
     /*  Functions  */
     virtual ~BaseMesh() {};
-    /*  Functions    */
     void virtual setupMesh() {};
     void virtual Draw(const Shader* shader) {};
     /* Mesh's constants */

@@ -21,7 +21,6 @@ class OGLMesh: public BaseMesh
 {
 public:
     std::vector<std::shared_ptr<OGLTexture>> textures;
-    std::vector<GLuint> indices;
     /*  Functions  */
     ~OGLMesh();
     /*  Functions    */

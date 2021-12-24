@@ -92,69 +92,44 @@ OGLMesh::~OGLMesh()
 }
 void OGLMesh::setupMesh()
 {
+    //Culcs bytes layouts
     std::array<std::size_t, 5> Biases;
+    std::size_t sum = 0;
+    for (size_t i = 0; i < Biases.size(); ++i)
+    {
+        Biases[i] = sizeof(float) * sum;
+        if (vertices.HasPointType[i])
+            sum += vertices.VectorsSize;
+    }
+    std::size_t Bytes = sizeof(float) * sum;
+    std::size_t BytesPerVector = sizeof(float) * BaseMesh::CardCoordsPerPoint;
+    std::size_t BytesPerOneTypeVector = sizeof(float) * vertices.VectorsSize;
+    const std::array<std::size_t, 5> points({ BaseMesh::CardCoordsPerPoint, BaseMesh::CardCoordsPerPoint, BaseMesh::CardCoordsPerTextPoint,BaseMesh::CardCoordsPerPoint,BaseMesh::CardCoordsPerPoint });
     // create buffers/arrays
-
-    // load data into vertex buffers
-
-    // A great thing about structs is that their memory layout is sequential for all its items.
-    // The effect is that we can simply pass a pointer to the struct and it translates perfectly to a glm::vec3/2 array which
-    // again translates to 3/2 floats which translates to a byte array.
     glCreateBuffers(1, &EBO);
-    glNamedBufferStorage(EBO, sizeof(GLuint) * indices.size(), indices.data(), 0);
-
-    std::size_t i = 0, sum = 0;
-    std::size_t Bytes = sizeof(GLfloat) * std::accumulate(vertices._msizes.begin(), vertices._msizes.end(), 0, [&Biases, &i, &sum](auto& accum, auto& x)
-        {
-            sum = (accum + x);
-            Biases[i++] = sizeof(GLfloat) * sum;
-            return sum;
-        });
-
+    glCreateBuffers(1, &VBO);
+    glCreateVertexArrays(1, &VAO);
+    // load indices buffer
+    glNamedBufferStorage(EBO, sizeof(std::uint32_t) * vertices.indices.size(), vertices.indices.data(), GL_DYNAMIC_STORAGE_BIT);
+    //Allocate vertex buffer memory
+    glNamedBufferStorage(VBO, Bytes, nullptr, GL_DYNAMIC_STORAGE_BIT);
+    //Connect vertex and indices buffer
+    glVertexArrayElementBuffer(VAO, EBO);
     //pos - 3,nor - 3, tex - 2, tan - 3, btan - 3 = 14 
 
-    glCreateBuffers(1, &VBO);
     //glNamedBufferData(VBO[0], sizeof(GLfloat) * (vertices.Positions.size() + vertices.Normals.size() + vertices.TexCoords.size() + vertices.Tangents.size() + vertices.Bitangents.size()), NULL, GL_STATIC_DRAW);
-    glNamedBufferStorage(VBO, Bytes, NULL, GL_DYNAMIC_STORAGE_BIT);
-    glNamedBufferSubData(VBO, 0, Biases[0], vertices.Positions);
-    glNamedBufferSubData(VBO, Biases[0], sizeof(GLfloat) * vertices._msizes[Vertexes::PointTypes::normals], vertices.Normals);
-    glNamedBufferSubData(VBO, Biases[1], sizeof(GLfloat) * vertices._msizes[Vertexes::PointTypes::texture], vertices.TexCoords);
-    glNamedBufferSubData(VBO, Biases[2], sizeof(GLfloat) * vertices._msizes[Vertexes::PointTypes::tangent], vertices.Tangents);
-    glNamedBufferSubData(VBO, Biases[3], sizeof(GLfloat) * vertices._msizes[Vertexes::PointTypes::bitangent], vertices.Bitangents);
-
-    // set the vertex attribute pointers
-
-    glCreateVertexArrays(1, &VAO);
-    //glBindVertexArray(VAO);
-    glVertexArrayElementBuffer(VAO, EBO);
-    for (uint16_t i = 0; i < 5; ++i)
-        glEnableVertexArrayAttrib(VAO, i);
-
-
-    // vertex Positions
-    glVertexArrayAttribBinding(VAO, 0, 0);
-    glVertexArrayVertexBuffer(VAO, 0, VBO, 0, sizeof(GLfloat) * BaseMesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 0, BaseMesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
-
-    // vertex normals
-    glVertexArrayAttribBinding(VAO, 1, 1);
-    glVertexArrayVertexBuffer(VAO, 1, VBO, Biases[0], sizeof(GLfloat) * BaseMesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 1, BaseMesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);//vertices.Positions.size() * sizeof(GLfloat)
-
-    // vertex texture coords
-    glVertexArrayAttribBinding(VAO, 2, 2);
-    glVertexArrayVertexBuffer(VAO, 2, VBO, Biases[1], sizeof(GLfloat) * BaseMesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 2, BaseMesh::CardCoordsPerTextPoint, GL_FLOAT, GL_FALSE, 0);
-
-    // vertex tangent
-    glVertexArrayAttribBinding(VAO, 3, 3);
-    glVertexArrayVertexBuffer(VAO, 3, VBO, Biases[2], sizeof(GLfloat) * BaseMesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 3, BaseMesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
-
-    // vertex bitangent
-    glVertexArrayAttribBinding(VAO, 4, 4);
-    glVertexArrayVertexBuffer(VAO, 4, VBO, Biases[3], sizeof(GLfloat) * BaseMesh::CardCoordsPerPoint);
-    glVertexArrayAttribFormat(VAO, 4, BaseMesh::CardCoordsPerPoint, GL_FLOAT, GL_FALSE, 0);
+    
+    for (size_t i = 0; i < Biases.size(); ++i)
+        if (vertices.HasPointType[i])
+        {
+            //Load vectors of vertices
+            glNamedBufferSubData(VBO, Biases[i], BytesPerOneTypeVector, static_cast<const void*>(vertices.vectors[i]));
+            glEnableVertexArrayAttrib(VAO, i);
+            //bind point with shader
+            glVertexArrayAttribBinding(VAO, i, i);
+            glVertexArrayVertexBuffer(VAO, i, VBO, Biases[i], BytesPerVector);
+            glVertexArrayAttribFormat(VAO, i, points[i], GL_FLOAT, GL_FALSE, 0);
+        }
 
     //Create mesh's textures
     for (auto& tex : textures)
@@ -163,7 +138,7 @@ void OGLMesh::setupMesh()
 }
 void OGLMesh::Draw(const Shader* shader)
 {
-    for (GLuint i = 0; i < textures.size(); ++i)
+    for (std::size_t i = 0; i < textures.size(); ++i)
     {
         switch (textures[i]->type)
         {
@@ -201,7 +176,7 @@ void OGLMesh::Draw(const Shader* shader)
 
     // draw mesh
     glBindVertexArray(VAO);
-    glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, nullptr, 1, 0, 0);
+    glDrawElementsInstancedBaseVertexBaseInstance(GL_TRIANGLES, static_cast<GLsizei>(vertices.indices.size()), GL_UNSIGNED_INT, nullptr, 1, 0, 0);
     //glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, indices.data());
     glBindVertexArray(0);
 }

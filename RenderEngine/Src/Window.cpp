@@ -11,7 +11,7 @@ Window::Window(std::shared_ptr<Position_Controller> contr)
 
 	//SDL init
 	SDL_SetMainReady();
-	if (SDL_Init(SDL_INIT_EVERYTHING) == -1)
+	if (SDL_Init(SDL_INIT_VIDEO) == -1)
 		throw(std::string("Failed SDL init ") + SDL_GetError());
 	//Creating SDL window
 	_pWindow = SDL_CreateWindow("Render engine", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCR_WIDTH, SCR_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);// | SDL_WINDOW_FULLSCREEN_DESKTOP
@@ -141,7 +141,7 @@ void Window::change_matrixes()
 	}
 }
 
-std::pair<int32_t, int32_t> Window::MaxSize()
+std::pair<int32_t, int32_t> Window::MaxSize() const
 {
 	SDL_DisplayMode DM;
 	SDL_GetCurrentDisplayMode(0, &DM);

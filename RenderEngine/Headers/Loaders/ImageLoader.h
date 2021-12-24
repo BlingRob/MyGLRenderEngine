@@ -19,6 +19,8 @@ struct Image
 		nrComponents = img.nrComponents;
 		std::swap(_mdata, img._mdata);
 		std::swap(deleter, img.deleter);
+		
+		return std::move(*this);
 	}
 	Image(std::size_t width, std::size_t height, std::uint8_t channel = 4, unsigned char* data = nullptr, PDelFun del = [](void* ptr) {delete ptr; }) :
 		deleter(del), w(width), h(height), nrComponents(channel)

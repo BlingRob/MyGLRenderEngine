@@ -14,15 +14,6 @@
 			_ppScene = std::make_shared<std::unique_ptr<Scene>>(std::make_unique<Scene>(_pContr));
 			//GUI Initialization
 			gui = std::make_unique<GUI>(_pWindow.get(), _pContext.get(), _ppScene, _pContr);
-
-			//Create addition frame buffer
-			std::pair<uint32_t, uint32_t> DM = _pWindow->MaxSize();
-			frame = std::make_unique<PostProcessBuffer>(DM.first, DM.second);
-			frame->AddFrameBuffer(BufferType::Color);
-			frame->AddRenderBuffer(BufferType::Depth_Stencil);
-			frame->Core = gui->Core;
-			if (!frame->IsCorrect())
-				std::cerr << "Creating addition buffer is failed";
 		}
 		catch (std::exception err)
 		{
@@ -38,6 +29,17 @@
 		}
 	}
 
+	RenderEngine::~RenderEngine() 
+	{
+		gui.reset(nullptr);
+		_ppScene.get()->reset(nullptr);
+		_pResMgr.reset(nullptr);
+		_pContext.reset(nullptr);
+		_pLog.reset(nullptr);
+		_pWindow.reset(nullptr);
+		_pContr.reset();
+	}
+
 	bool RenderEngine::MainLoop()
 	{
 		try
@@ -45,16 +47,9 @@
 			_pContr->dt = static_cast<float>(chron());
 			if (!_pWindow->ProcEvents())
 				return false;
-			if (gui->FrameClicked)
-				frame->AttachBuffer();
+			
 			(*_ppScene)->Draw();
-			if (gui->FrameClicked)
-			{
-				frame->invertion = gui->invertion;
-				frame->convolution = gui->convolution;
-				frame->DetachBuffer();
-				frame->Draw(_pWindow->SCR_WIDTH, _pWindow->SCR_HEIGHT);
-			}
+
 			gui->Draw();
 			_pWindow->SwapBuffer();
 		}

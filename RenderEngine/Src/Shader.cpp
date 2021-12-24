@@ -1,23 +1,21 @@
 #include "../Headers/Shader.h"
 
-Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLchar* geometryPath)
+Shader::Shader(std::string_view VertexSource, std::string_view fragmentSource, std::string_view geometrySource)
 {
 		// Link shaders
 		GLint success;
 		GLchar infoLog[512];
-		GLuint fragmentShader, vertexShader,geometryShader;
+		std::vector<std::uint64_t> shaders;
 
-		fragmentShader = CreateShader(fragmentPath, GL_FRAGMENT_SHADER);
-		vertexShader = CreateShader(vertexPath, GL_VERTEX_SHADER);
-		if (geometryPath)
-			geometryShader = CreateShader(geometryPath,GL_GEOMETRY_SHADER);
+		if(VertexSource.empty() || fragmentSource.empty())
+			throw(std::string("ERROR::SHADER::THERE AREN'T VERTEX OR FRAGEMNT SHADERS\n"));
+		shaders.push_back(CreateShader(fragmentSource.data(), Shader_t::Fragment));
+		shaders.push_back(CreateShader(VertexSource.data(), Shader_t::Vertex));
+		if (!geometrySource.empty())
+			shaders.push_back(CreateShader(geometrySource.data(), Shader_t::Geometry));
 
-		Program = glCreateProgram();
-		glAttachShader(Program, vertexShader);
-		glAttachShader(Program, fragmentShader);
-		if (geometryPath)
-			glAttachShader(Program, geometryShader);
-		glLinkProgram(Program);
+		CreateProgramm(shaders);
+
 		// Check for linking errors
 		glGetProgramiv(Program, GL_LINK_STATUS, &success);
 		if (!success)
@@ -25,49 +23,17 @@ Shader::Shader(const GLchar* vertexPath, const GLchar* fragmentPath, const GLcha
 			glGetProgramInfoLog(Program, 512, NULL, infoLog);
 			throw(std::string("ERROR::SHADER::PROGRAM::LINKING_FAILED\n") + infoLog);
 		}
-		glDeleteShader(vertexShader);
-		glDeleteShader(fragmentShader);
-		if (geometryPath)
-			glDeleteShader(geometryShader);
-}
 
-void Shader::setTexture(std::string_view name, GLuint TextureIndx, GLuint PointBindIndex) const
-{
-	glBindTextureUnit(PointBindIndex, TextureIndx);
-	glUniform1i(glGetUniformLocation(Program, name.data()), PointBindIndex);
+		for (const auto& sh : shaders)
+			glDeleteShader(sh);
 }
 
 void Shader::Use() { glUseProgram(Program); }
 
-GLuint Shader::CreateShader(const GLchar* Path, GLenum types)
+GLuint Shader::CreateShader(const char* source, Shader_t type)
 {
-	// 1. Получаем исходный код шейдера из filePath
-	std::string ShaderCode;
-	std::ifstream ShaderFile;
-	std::stringstream ShaderStream;
-	// Удостоверимся, что ifstream объекты могут выкидывать исключения
-	ShaderFile.exceptions(std::ifstream::failbit);
-
-	// Открываем файлы
-	try
-	{
-		ShaderFile.open(Path);
-	}
-	catch(std::exception exc)
-	{
-		throw(std::string(exc.what()) + "\n File:" + Path + " doesn't exist!");
-	}
-	if (!ShaderFile.is_open())
-		throw("File with shaders is not opened!");
-	// Считываем данные в потоки
-	ShaderStream << ShaderFile.rdbuf();
-	// Закрываем файлы
-	ShaderFile.close();
-	ShaderCode = ShaderStream.str();
-	const GLchar* CShaderCode = ShaderCode.c_str();
-
-	GLuint Shader = glCreateShader(types);
-	glShaderSource(Shader, 1, &CShaderCode, NULL);
+	GLuint Shader = glCreateShader(GLenum(type));
+	glShaderSource(Shader, 1, &source, NULL);
 	glCompileShader(Shader);
 	// Check for compile time errors
 	GLint success;
@@ -79,6 +45,21 @@ GLuint Shader::CreateShader(const GLchar* Path, GLenum types)
 		throw(std::string("ERROR::SHADER::COMPILATION_FAILED\n") + infoLog);
 	}
 	return Shader;
+}
+
+void Shader::CreateProgramm(const std::vector<std::uint64_t>& shaders) 
+{
+	Program = glCreateProgram();
+	for (const auto& sh : shaders)
+		glAttachShader(Program, sh);
+
+	glLinkProgram(Program);
+}
+
+void Shader::setTexture(std::string_view name, GLuint TextureIndx, GLuint PointBindIndex) const
+{
+	glBindTextureUnit(PointBindIndex, TextureIndx);
+	glUniform1i(glGetUniformLocation(Program, name.data()), PointBindIndex);
 }
 
 void Shader::setScal(std::string_view name, const float num) const
@@ -137,4 +118,16 @@ void Shader::setSubroutine(std::string_view name, GLenum ShaderType) const
 void Shader::setMats(std::string_view name, const GLfloat* ArrayOfMatrices, GLsizei n) const
 {
 	glUniformMatrix4fv(glGetUniformLocation(Program, name.data()), n, GL_FALSE, ArrayOfMatrices);
+}
+
+const std::shared_ptr<Shader> ShadersBank::GetShader(std::string_view name)
+{
+	if (auto iter = Shaders.find(std::hash<std::string_view>{}(name)); iter != Shaders.end())
+		return iter->second;
+	return nullptr;
+}
+
+void ShadersBank::AddShader(std::shared_ptr<Shader> sh)
+{
+	Shaders[std::hash<std::string_view>{}(sh->GetName())] = sh;
 }

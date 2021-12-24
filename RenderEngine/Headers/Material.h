@@ -9,20 +9,13 @@ struct Vertexes
     {
         positions = 0, normals, texture, tangent, bitangent
     };
-    std::array<std::size_t, 5> _msizes{0, 0, 0, 0, 0};
-    // positions
-    aiVector3D* Positions;
-    // normals
-    aiVector3D* Normals;
-    // texCoords
-    aiVector3D* TexCoords;
-    // tangents
-    aiVector3D* Tangents;
-    // bitangents
-    aiVector3D* Bitangents;
+    std::array<bool, 5> HasPointType{false};
+    std::size_t VectorsSize;
+    std::array<const float*, 5> vectors;
+    std::vector<std::uint32_t> indices;
 };
 
-enum class Texture_Types:uint64_t {Diffuse = 0, Normal = 1, Specular = 2, Emissive = 3, Height = 4, Metallic_roughness = 5, Ambient_occlusion = 6, Skybox = 7};
+enum class Texture_Types:uint8_t {Diffuse = 0, Normal = 1, Specular = 2, Emissive = 3, Height = 4, Metallic_roughness = 5, Ambient_occlusion = 6, Skybox = 7};
 
 struct BaseTexture
 {

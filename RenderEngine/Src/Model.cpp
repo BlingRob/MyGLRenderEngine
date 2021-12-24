@@ -2,10 +2,7 @@
 
 void Model::Draw(const Shader* sh)
 {
-    if(sh != nullptr)
-        mRootNode->Draw(sh);
-    else
-        mRootNode->Draw(shader.get());
+    mRootNode->Draw(sh ? sh : shader.get());
 }
 
 void Model::SetRoot(std::shared_ptr<Node> root)

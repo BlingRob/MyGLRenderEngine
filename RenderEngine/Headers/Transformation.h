@@ -13,8 +13,7 @@ struct Matrices
 		Projection = std::make_shared<glm::mat4>(1.0f);
 		View = std::make_shared<glm::mat4>(1.0f);
 	}
-	std::shared_ptr<glm::mat4> Projection,
-		View;
+	std::shared_ptr<glm::mat4> Projection, View;
 	void SendToShader(const Shader& shader);
 };
 
@@ -25,6 +24,8 @@ struct Position_Controller:public Matrices
 		dt = 0.0f;
 		cam = std::make_shared<Camera>(glm::vec3(10.0f, 10.0f, 10.0f));
 	}
+
+	void SendToShader(const Shader& shader);
 
 	std::shared_ptr<Camera> cam;
 	//delta time

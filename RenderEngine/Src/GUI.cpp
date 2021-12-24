@@ -5,6 +5,8 @@ GUI::GUI(const Window* window, void* context, std::shared_ptr<std::unique_ptr<Sc
 	_ppScene = scene;
 	_pWindow = window;
 	_pContr = contr;
+	std::pair<uint32_t, uint32_t> rect = _pWindow->MaxSize();
+	_pPostEffect = std::make_unique<ProcessEffect>(rect.first, rect.second);
 	//GUI Initialization
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -26,9 +28,6 @@ GUI::GUI(const Window* window, void* context, std::shared_ptr<std::unique_ptr<Sc
 	//init cursors
 	DefaultCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
 	LoadingCursor = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_WAIT);
-	//Post process matrix
-	Core = std::make_shared<glm::mat3>(0.0f);
-	(*Core)[1][1] = 1.0f;
 }
 GUI::~GUI() 
 {
@@ -40,9 +39,18 @@ GUI::~GUI()
 }
 void GUI::Draw() 
 {
+	if (FrameClicked)
+	{
+		_pPostEffect->DetachBuffer();
+		_pPostEffect->Draw(_pWindow->SCR_WIDTH, _pWindow->SCR_HEIGHT);
+	}
+
 	Interface();
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	if (FrameClicked)
+		_pPostEffect->AttachBuffer();
 }
 void GUI::Interface() 
 {
@@ -70,13 +78,13 @@ void GUI::Interface()
 				{
 				}
 				ImGui::Separator();
-				if (ImGui::MenuItem("Inversion", NULL, &invertion, FrameClicked))
+				if (ImGui::MenuItem("Inversion", NULL, &_pPostEffect->invertion, FrameClicked))
 				{
-					convolution = false;
+					_pPostEffect->convolution = false;
 				}
-				if (ImGui::MenuItem("Convolution", NULL, &convolution, FrameClicked))
+				if (ImGui::MenuItem("Convolution", NULL, &_pPostEffect->convolution, FrameClicked))
 				{
-					invertion = false;
+					_pPostEffect->invertion = false;
 					AddWindowActive = true;
 				}
 				ImGui::EndMenu();
@@ -128,7 +136,7 @@ void GUI::Interface()
 				ImGui::End();
 			}
 
-			if (convolution & AddWindowActive)
+			if (_pPostEffect->convolution & AddWindowActive)
 			{
 				const char* buff[] = {"1","2","3","4","5","6","7","8","9"};
 				ImGui::Begin("Matrix of convolution",&AddWindowActive,ImGuiWindowFlags_NoDecoration);
@@ -140,13 +148,13 @@ void GUI::Interface()
 							if(!(i % 3))
 								ImGui::TableNextRow(0, 20.0f);
 							ImGui::TableSetColumnIndex(i % 3);
-							ImGui::InputFloat(buff[i], &(*Core)[i / 3][i % 3]);
+							ImGui::InputFloat(buff[i], &(*_pPostEffect->Core)[i / 3][i % 3]);
 						}
 					}
 					ImGui::EndTable();
 					if (ImGui::Button("Ok")) { AddWindowActive = false; };
 					ImGui::SameLine();
-					if (ImGui::Button("Cancel")) { AddWindowActive = false; convolution = false; };
+					if (ImGui::Button("Cancel")) { AddWindowActive = false; _pPostEffect->convolution = false; };
 				}
 				ImGui::End();
 			}

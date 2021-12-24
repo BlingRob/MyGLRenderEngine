@@ -16,7 +16,7 @@ PointShadow::PointShadow()
 {
     if (!init) 
     {      
-        shader = std::make_shared<Shader>("../Shaders/PointDepthMap.vs", "../Shaders/PointDepthMap.frag", "../Shaders/PointDepthMap.gs");
+        shader = ShadersBank::GetShader("PointShadow");
         glCreateTextures(GL_TEXTURE_CUBE_MAP_ARRAY, 1, &ShadowArrayID);
 
         glTextureStorage3D(ShadowArrayID, 1, GL_DEPTH_COMPONENT16, Shadow::ShadowMapSize, Shadow::ShadowMapSize, MAX_LIGHTS_ONE_TYPE * 6);
@@ -135,7 +135,7 @@ DirectionShadow::DirectionShadow()
 {
     if (!init) 
     {
-        shader = std::make_shared<Shader>("../Shaders/DirectDepthMap.vs", "../Shaders/DirectDepthMap.frag");
+        shader = ShadersBank::GetShader("DirectShadow");
 
         glCreateTextures(GL_TEXTURE_2D_ARRAY, 1, &ShadowArrayID);
 

@@ -24,27 +24,27 @@ public:
 	std::unique_ptr<Light>  GetLight(std::string_view);
 	std::unique_ptr<Camera> GetCamera(std::string_view);
 
-	inline bool SceneLoader::IsLoad()
+	inline bool IsLoad()
 	{
 		return loaded;
 	}
-	inline bool SceneLoader::HasCamera()
+	inline bool HasCamera()
 	{
 		return IsLoad() ? _pScene->HasCameras() : false;
 	}
-	inline bool SceneLoader::HasLight()
+	inline bool HasLight()
 	{
 		return IsLoad() ? _pScene->HasLights() : false;
 	}
-	inline uint32_t SceneLoader::NumLights()
+	inline uint32_t NumLights()
 	{
 		return IsLoad() ? _pScene->mNumLights : 0;
 	}
-	inline uint32_t SceneLoader::NumCameras()
+	inline uint32_t NumCameras()
 	{
 		return IsLoad() ? _pScene->mNumCameras : 0;
 	}
-	inline uint32_t SceneLoader::NumModels()
+	inline uint32_t NumModels()
 	{
 		return IsLoad() ? _pScene->mRootNode->mNumChildren : 0;
 	}

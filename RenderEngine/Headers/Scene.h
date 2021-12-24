@@ -5,7 +5,6 @@
 #include "Camera.h"
 #include "Model.h"
 #include "Transformation.h"
-#include "FrameBuffer.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -31,9 +30,7 @@ class Scene
 
 	void AddModel(std::shared_ptr<Model> obj);
 	void AddLight(std::shared_ptr<Light> lig);
-	void AddShader(std::shared_ptr<Shader> sh);
 
-	const std::shared_ptr<Shader> GetShader(std::string_view name) const;
 	std::shared_ptr<Model>		  GetModel(std::string_view  name);
 	std::shared_ptr<Light>        GetLight(std::string_view  name);
 	/*Return const pointer to std::map container with pairs (NameHash-pointerToLight)*/
@@ -51,9 +48,9 @@ class Scene
 	bool SkyBoxSetted = false;
 
 	Scene_Information GetInfo();
-	void SetController(std::shared_ptr <Position_Controller>);
+	void SetController(std::shared_ptr<Position_Controller>);
 
-	Scene(std::shared_ptr <Position_Controller>);
+	Scene(std::shared_ptr<Position_Controller>);
 	~Scene();
 private:
 	std::shared_ptr<Camera> camera;
@@ -61,7 +58,6 @@ private:
 
 	std::map<std::size_t, std::shared_ptr<Model>> Models;
 	std::map<std::size_t, std::shared_ptr<Light>> Lights;
-	std::map<std::size_t, std::shared_ptr<Shader>> Shaders;
 
 	glm::vec4 BackGroundColour;
 	std::shared_ptr<Node> SkyBox;
