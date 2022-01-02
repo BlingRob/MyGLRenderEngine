@@ -1,3 +1,4 @@
+//Base lighting fragment shader
 #version 450 core
 
 const float PI = 3.14159265359;
@@ -42,14 +43,14 @@ struct Light
 
 struct Texture
 {
-    layout (binding = 0) sampler2D diffuse;
-    layout (binding = 1) sampler2D normal;
-    layout (binding = 2) sampler2D specular;
-    layout (binding = 3) sampler2D emissive;
-    layout (binding = 4) sampler2D height;
-    layout (binding = 5) sampler2D metallic_roughness;
+    sampler2D diffuse;
+    sampler2D normal;
+    sampler2D specular;
+    sampler2D emissive;
+    sampler2D height;
+    sampler2D metallic_roughness;
     //sampler2D roughness;
-    layout (binding = 6) sampler2D ao;
+    sampler2D ao;
 };
 
 uniform Material mat;
@@ -60,7 +61,6 @@ uniform vec3 viewPos;
 uniform Light light[MAX_LIGHTS];
 //uniform vec4 LightPositions[MAX_LIGHTS];
 uniform mat4 lightProjection;
-
 layout (binding = 10) uniform samplerCubeArray PointShadowMaps;
 /////////////////////////////
 //Direction or spot lights uniforms
@@ -121,12 +121,12 @@ void main()
 
     //FragColor = texture(DirLightShadowMaps,vec3(fs_in.ShadowCoords[0].xy / fs_in.ShadowCoords[0].w, 0));
     /*vec3 N = fs_in.Normal;
-    FragColor = vec4(0.0f);
-    for(int i = 0;i < NumLights;++i)
-        if(light[i].LightPositions.w == 0)
+    //FragColor = vec4(0.0f);
+    //for(int i = 0;i < NumLights;++i)
+    //    if(light[i].LightPositions.w == 0)
         //    FragColor += vec4(PointShadowCalculation(i, N));///point
        //else
-            FragColor += vec4(ShadowCalculationDirect(i, fs_in.ShadowCoords[i]));*////spot or dir
+      //      FragColor += vec4(ShadowCalculationDirect(i, fs_in.ShadowCoords[i]));*////spot or dir
 
     //FragColor = vec4(vec3(PointShadowCalculation(0)),1.0f);
     //vec3 fragToLight0 = fs_in.FragPos - vec3(LightPositions[0]); 

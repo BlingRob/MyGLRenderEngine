@@ -1,3 +1,4 @@
+//Base lighting vertex shader
 #version 450 core
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 VertexNormal;
@@ -15,11 +16,11 @@ struct Transform
 	mat4 model;
 	mat4 view;
 	mat4 projection;
-    mat4 PV;
+	mat4 PV;
 }; 
 
 struct Light
- {    
+{    
     int index;
     
     vec3 clq;
@@ -44,7 +45,7 @@ out VS_OUT {
     vec3 TangentViewPos;
     vec2 TexCoords;
     vec3 TangentFragPos;
-  //  vec4 TangentLightPositions[MAX_LIGHTS];
+  //vec4 TangentLightPositions[MAX_LIGHTS];
     vec3 Normal;
     vec4 ShadowCoords[NUM_SPOT_DIR_LIGHTS];
 } vs_out;
@@ -60,7 +61,7 @@ void main()
 
     mat3 TBN = transpose(mat3(T,B,N));
     //translate coordinats in tangent space
-    vs_out.TangentViewPos            = TBN * viewPos;
+    vs_out.TangentViewPos     = TBN * viewPos;
     vs_out.TangentFragPos     = TBN * vs_out.FragPos;
     
     vs_out.Normal = NormalMatrix * VertexNormal;   

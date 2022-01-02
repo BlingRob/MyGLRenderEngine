@@ -17,7 +17,7 @@ public:
     * In: Column name, table name, searching conditions
     * Out:Return pair - lengh in bytes and std::unique_ptr with deleter
     */
-    decltype(auto) DBController::Load(std::string&& name, std::string&& from, std::string&& Where)
+    decltype(auto) Load(std::string&& name, std::string&& from, std::string&& Where)
     {
         constexpr std::size_t BufSize = 128;
         char buffer[BufSize];

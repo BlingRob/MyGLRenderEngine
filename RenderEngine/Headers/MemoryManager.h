@@ -4,6 +4,8 @@
 #include <stack>
 #include <list>
 #include <numeric>
+#include <tuple>
+#include <algorithm>
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 
@@ -22,7 +24,7 @@ struct Vertexess
 	float* Tangents;
 	// bitangents
 	float* Bitangents;
-	
+
 };
 
 const std::array<std::size_t, 5> CoordsPerPoint({ 3,3,2,3,3 });
@@ -30,7 +32,7 @@ const std::array<std::size_t, 5> CoordsPerPoint({ 3,3,2,3,3 });
 class Manager
 {
 	public:
-		Manager() 
+		Manager()
 		{
 			MatrixMemPtr = new unsigned char[AmountMaxtrix * (sizeof(glm::mat4) + sizeof(glm::mat3))];
 
@@ -68,7 +70,7 @@ class Manager
 
 		std::shared_ptr<Vertexess> GetVertexes(std::array<std::size_t, 5> sizes);
 
-		~Manager() 
+		~Manager()
 		{
 			delete[] MatrixMemPtr;//glm::mat is simple class without pointers, can delete all memory
 			delete[] VertMemPtr;

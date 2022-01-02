@@ -21,7 +21,7 @@ Shader::Shader(std::string_view VertexSource, std::string_view fragmentSource, s
 		if (!success)
 		{
 			glGetProgramInfoLog(Program, 512, NULL, infoLog);
-			throw(std::string("ERROR::SHADER::PROGRAM::LINKING_FAILED\n") + infoLog);
+			throw(std::string("ERROR::SHADER::PROGRAM::LINKING_FAILED\n") + VertexSource.substr(0, VertexSource.find_first_of('\n')).data() + fragmentSource.substr(0, fragmentSource.find_first_of('\n')).data() + infoLog);
 		}
 
 		for (const auto& sh : shaders)
@@ -47,7 +47,7 @@ GLuint Shader::CreateShader(const char* source, Shader_t type)
 	return Shader;
 }
 
-void Shader::CreateProgramm(const std::vector<std::uint64_t>& shaders) 
+void Shader::CreateProgramm(const std::vector<std::uint64_t>& shaders)
 {
 	Program = glCreateProgram();
 	for (const auto& sh : shaders)

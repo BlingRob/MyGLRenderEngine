@@ -1,7 +1,7 @@
 #include "../Headers/MemoryManager.h"
 
 /*
-std::shared_ptr<glm::mat4> Manager::GetMat4() 
+std::shared_ptr<glm::mat4> Manager::GetMat4()
 {
 	glm::mat4* ptr = Matrix4.top();
 	Matrix4.pop();
@@ -49,12 +49,13 @@ std::shared_ptr<Vertexess> Manager::GetVertexes(std::array<std::size_t, 5> sizes
 		},
 		std::multiplies<>()
 	) * sizeof(float);
+	std::pair<std::size_t,unsigned char*> bytes = std::make_pair(NeedBytes,(unsigned char*)nullptr);
 	//std::size_t NeedBytes = std::inner_product(sizes.cbegin(),sizes.cend(), CoordsPerPoint.cbegin(), 0) * sizeof(float);
-	auto Block = std::lower_bound(FreeBlocks.begin(), FreeBlocks.end(), NeedBytes, [](const std::pair<std::size_t, unsigned char*>& p1, auto val) {return p1.first < val; });
+	auto Block = std::lower_bound(FreeBlocks.begin(), FreeBlocks.end(), bytes, [](auto& p1, auto& val) {return p1.first < val.first; });
 	if (Block != FreeBlocks.end())
 	{
 		FreeBlocks.push_front(std::make_pair(Block->first - NeedBytes, Block->second + NeedBytes));
-		
+
 		return std::make_shared<Vertexess>
 			(
 				sizes,

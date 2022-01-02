@@ -1,6 +1,6 @@
 #version 450 core 
 
-layout (location = 2) in vec2 TexCoords; 
+in vec2 TexCoords; 
 layout (binding = 10) uniform sampler2D scene;
 subroutine vec4 TypeAffect();
 subroutine uniform TypeAffect affect; 

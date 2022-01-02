@@ -19,10 +19,10 @@ struct Image
 		nrComponents = img.nrComponents;
 		std::swap(_mdata, img._mdata);
 		std::swap(deleter, img.deleter);
-		
+
 		return std::move(*this);
 	}
-	Image(std::size_t width, std::size_t height, std::uint8_t channel = 4, unsigned char* data = nullptr, PDelFun del = [](void* ptr) {delete ptr; }) :
+	Image(std::size_t width, std::size_t height, std::uint8_t channel = 4, unsigned char* data = nullptr, PDelFun del = [](void* ptr) {delete static_cast<unsigned char*>(ptr); }) :
 		deleter(del), w(width), h(height), nrComponents(channel)
 		{
 		//texture load option
@@ -36,8 +36,8 @@ struct Image
 	{
 		return !w && !h;
 	}
-	~Image() 
-	{ 
+	~Image()
+	{
 		deleter(_mdata);
 	}
 	unsigned char* _mdata;
@@ -50,7 +50,7 @@ struct ImageLoader
 {
 	static std::shared_ptr<Image> LoadTexture(const char* path);
 	static std::shared_ptr<Image> LoadTexture(const void* memoryPtr, int width);
-		
+
 private:
 	static inline int w, h, chs;
 	static inline PDelFun STB_deleter = [](void* ptr) {stbi_image_free(ptr); };
