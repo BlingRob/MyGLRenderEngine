@@ -88,15 +88,18 @@ void ResourceManager::LoadDefaultModelPointLight()
     {
         Scene::DefaultPointLightModel = lod.GetModel(0);
         Scene::DefaultPointLightModel->SetName("PointModel");
+        SceneLoader::InitMeshes(Scene::DefaultPointLightModel->GetRoot());
+        if (Scene::DefaultPointLightModel)
+            Scene::DefaultPointLightModel->SetShader(ShadersBank::GetShader("PointLight"));
     }
 }
 
 ResourceManager::ResourceManager()
 {
     _pDBContr = std::make_unique<DBController>("./data.bin");
+    LoadDefaultShaders();
     LoadDefaultSkyBox();
     LoadDefaultModelPointLight();
-    LoadDefaultShaders();
 }
 
 std::vector<std::shared_ptr<Image>> ResourceManager::LoadSkyBoxTextures(std::vector<std::string_view>&& paths)
@@ -123,12 +126,8 @@ std::unique_ptr<Node> ResourceManager::CreateSkyBox(std::vector<std::shared_ptr<
     };
     std::unique_ptr<Node> curNode = std::make_unique<Node>();
     curNode->SetName("SkyBox");
-    std::shared_ptr<Mesh> curMesh = std::make_shared<Mesh>();
     //Cube's vertices
-    curMesh->vertices.VectorsSize = 24;
-    curMesh->vertices.HasPointType[Vertexes::positions] = true;
-    curMesh->vertices.vectors[Vertexes::PointTypes::positions] = cubePos;
-    curMesh->vertices.indices = std::vector<std::uint32_t>
+    std::vector<std::uint32_t> indices = std::vector<std::uint32_t>
         (
             {
                 0, 1, 2,
@@ -146,13 +145,8 @@ std::unique_ptr<Node> ResourceManager::CreateSkyBox(std::vector<std::shared_ptr<
             }
        );
 
-    std::shared_ptr <Texture> texture = std::make_shared<Texture>();
-    texture->imgs = std::move(imgs);// ImageLoader::LoadTexture(paths);
-    texture->type = Texture_Types::Skybox;
-    texture->name = "SkyBox";
-    texture->path = "Unknown";
-
-    curMesh->textures.push_back(texture);
+    std::shared_ptr<Texture> texture = std::make_shared<Texture>(std::string("SkyBox"), std::string("Unknown"), Texture_Types::Skybox, std::move(imgs));
+    std::shared_ptr<Mesh> curMesh = std::make_shared<Mesh>(std::make_unique<Vertexes>(24, cubePos, std::move(indices)), nullptr, std::move(std::vector<std::shared_ptr<Texture>>(1, texture)));
     curMesh->setupMesh();
     curNode->addMesh(curMesh);
 

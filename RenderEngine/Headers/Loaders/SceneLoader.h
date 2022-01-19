@@ -54,6 +54,9 @@ public:
 
 	SceneLoader();
 	~SceneLoader();
+
+	static void InitMeshes(std::shared_ptr<Node>);
+	static void GetTransform(glm::mat4& whereTo, const aiMatrix4x4& FromWhere);
 private:
 	const aiScene* _pScene;
 	std::shared_ptr<Assimp::Importer> _pImporter;
@@ -65,15 +68,12 @@ private:
 	ParallelMap<std::size_t, std::weak_ptr<Texture>> GlobalTextures;
 
 	std::unique_ptr<Model>					processModel(aiNode* root);
-	std::shared_ptr<Node>					processNode(aiNode* node);
-	std::shared_ptr<Mesh>					processMesh(aiMesh* mesh);
+	std::unique_ptr<Node>					processNode(aiNode* node);
+	std::unique_ptr<Mesh>					processMesh(aiMesh* mesh);
 	std::unique_ptr<Light>					processLight(aiLight*, const glm::mat4&);
 	std::unique_ptr<Camera>					processCamera(aiCamera*, const glm::mat4&);
-	std::vector< std::shared_ptr<Texture>>  processTexture(aiMaterial* mat, aiTextureType type, Texture_Types MyType);
-	Material								processMaterial(aiMaterial* mat, uint16_t indx);
-
-	void GetTransform(glm::mat4& whereTo, const aiMatrix4x4& FromWhere);
-	void InitMeshes(std::shared_ptr<Node>);
+	std::vector<std::shared_ptr<Texture>>  processTexture(aiMaterial* mat, aiTextureType type, Texture_Types MyType);
+	std::unique_ptr<Material>				processMaterial(aiMaterial* mat, uint16_t indx);
 };
 
 

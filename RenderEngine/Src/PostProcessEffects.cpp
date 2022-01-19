@@ -3,14 +3,8 @@
 ProcessEffect::ProcessEffect(uint32_t weight, uint32_t height):FrameBuffer(weight, height)
 {
 	_pShader = ShadersBank::GetShader("PostEffect");
-
-	_pMesh = std::make_unique<Mesh>();
-	_pMesh->vertices.HasPointType[Vertexes::texture] = true;
-	_pMesh->vertices.VectorsSize = 12;
-	_pMesh->vertices.vectors[Vertexes::texture] = VerticesOfQuad;
-	_pMesh->vertices.indices.reserve(6);
-	for (std::size_t i = 0; i < 6; ++i)
-		_pMesh->vertices.indices.push_back(Indices[i]);
+    std::vector<uint32_t> CopyInds = std::vector<uint32_t>(Indices);
+	_pMesh = std::make_unique<Mesh>(std::make_unique<Vertexes>(12, nullptr, std::move(CopyInds), VerticesOfQuad));
     Core = std::make_shared<glm::mat3>(1.0f);
     _pMesh->setupMesh();
     AddFrameBuffer(BufferType::Color);

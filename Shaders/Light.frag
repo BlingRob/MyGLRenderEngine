@@ -2,20 +2,9 @@
 
 out vec4 color;
 
-struct Light
- {    
-    vec3 position;
-    
-    vec3 clq;  
-
-    vec3 ambient;
-    vec3 diffuse;
-    vec3 specular;
-};  
-
-uniform Light light[1];
+uniform vec3 Colour;
 
 void main()
 {
-	color = vec4(light[0].diffuse,1.0f);
+	color = vec4(Colour,1.0f);
 }

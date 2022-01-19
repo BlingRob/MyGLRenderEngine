@@ -7,34 +7,34 @@
 
 class Shadow:public FrameBuffer
 {
+public:
+	using const_model_iterator = std::map<std::size_t, std::shared_ptr<Model>>::const_iterator;
+	using Models = std::pair<const_model_iterator, const_model_iterator>;
+	Shadow();
+	Shadow(const Shadow&) = default;
+	virtual void Draw(Models& models, glm::vec4&) = 0;
+	virtual void SendToShader(const Shader & sh) = 0;
+	GLuint GetFBO() const;
+	~Shadow();
+	GLint id;
 private:
 
 protected:
-	using const_model_iterator = std::map<std::size_t, std::shared_ptr<Model>>::const_iterator;
 	const GLfloat Far_Plane = 64.0f;
 	const GLuint ShadowMapSize = 1024;
 	const GLfloat borderColor[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	glm::vec4 LightVector;
-	GLint id;
 	const uint16_t MAX_LIGHTS_ONE_TYPE = 5;
-	void AddBuffer();
-public:
-	Shadow();
-	Shadow(const Shadow&) = default;
-	~Shadow();
 };
 
 class PointShadow:public Shadow
 {
-	
 public:
 	PointShadow();
-	PointShadow(const PointShadow& ) noexcept;
+	PointShadow(const PointShadow& ) noexcept = default;
 	~PointShadow();
-	//Return FBO
-	GLuint AddBuffer(GLint ShadowId);
-	void SendToShader(const Shader& sh);
-	void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4);
+	void SendToShader(const Shader& sh) override;
+	void Draw(Models&, glm::vec4&) override;
 private:
 	static inline GLuint ShadowArrayID;
 	static inline std::shared_ptr<Shader> shader;
@@ -47,6 +47,8 @@ private:
 
 	const uint16_t PointShadowBind = 10;
 	const std::string_view PointNameShadowUniformTexture = { "PointShadowMaps" };
+
+	static inline std::list<GLint> ShadowIdxes;
 };
 
 class DirectionShadow : public Shadow
@@ -65,14 +67,13 @@ class DirectionShadow : public Shadow
 		std::string _mStrNumLight;
 	public:
 		DirectionShadow();
-		DirectionShadow(const DirectionShadow&) noexcept;
-		//return FBO
-		GLuint AddBuffer(GLint ShadowId);
-		void SetStrNumLight(const std::string& StrNumLight);
+		DirectionShadow(const DirectionShadow&) noexcept = default;
 		~DirectionShadow();
-	void SendToShader(const Shader& sh);
-	void Draw(std::pair<const_model_iterator, const_model_iterator> models, glm::vec4);
+	void SendToShader(const Shader& sh) override;
+	void Draw(Models& models, glm::vec4&) override;
 
 	const uint16_t SpotAndDirShadowBind = 11;
 	const std::string_view SpotAndDirNameShadowUniformTexture = { "DirLightShadowMaps" };
+
+	static inline std::list<GLint> ShadowIdxes;
 };

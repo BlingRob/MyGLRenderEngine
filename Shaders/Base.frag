@@ -12,12 +12,12 @@ const vec3 sampleOffsetDirections[27] = vec3[]
 (
    vec3( 0,  0,  0), vec3( 0,  0,  1),  vec3(0,  1,  0), vec3(0,  1,  1), 
    vec3( 1,  0, 0),  vec3( 1, 0, 1),    vec3(1, 1, 0),   vec3(1,  1, 1),
-   vec3( 0,  0,  -1), vec3(0,  -1,  0), vec3(0,  -1,  -1), 
-   vec3( -1,  0, 0),  vec3( -1, 0, -1), vec3(-1, -1, 0),  vec3(-1,  -1, -1),
-   vec3(0,  1,  -1),vec3(0,  -1,  1), 
-   vec3( 1, 0, -1), vec3( -1, 0, 1),vec3(1, -1, 0),vec3(-1, 1, 0),
-   vec3(1, 1, -1), vec3(1,  -1, 1),vec3(1,  -1, -1),
-   vec3(-1, 1, 1), vec3(-1,  1, -1),vec3(-1,  -1, 1)
+   vec3( 0,  0,  -1),vec3(0,  -1,  0), vec3(0,  -1,  -1), 
+   vec3( -1,  0, 0), vec3( -1, 0, -1), vec3(-1, -1, 0),  vec3(-1,  -1, -1),
+   vec3(0,  1,  -1), vec3(0,  -1,  1), 
+   vec3( 1, 0, -1),  vec3( -1, 0, 1),vec3(1, -1, 0),vec3(-1, 1, 0),
+   vec3(1, 1, -1),   vec3(1,  -1, 1),vec3(1,  -1, -1),
+   vec3(-1, 1, 1),   vec3(-1,  1, -1),vec3(-1,  -1, 1)
 );
 
 struct Material
@@ -38,7 +38,6 @@ struct Light
     vec3 specular;
 
     vec4 LightPositions;
-    mat4 ShadowMatrix;
 };  
 
 struct Texture
@@ -59,13 +58,11 @@ uniform Texture tex;
 uniform uint NumLights;
 uniform vec3 viewPos;
 uniform Light light[MAX_LIGHTS];
-//uniform vec4 LightPositions[MAX_LIGHTS];
 uniform mat4 lightProjection;
 layout (binding = 10) uniform samplerCubeArray PointShadowMaps;
 /////////////////////////////
 //Direction or spot lights uniforms
 const uint NUM_SPOT_DIR_LIGHTS = 2 * MAX_LIGHTS_ONE_TYPE;
-//uniform mat4 ShadowMatrix[NUM_SPOT_DIR_LIGHTS];
 layout (binding = 11) uniform sampler2DArray DirLightShadowMaps;
 //////////////////////////////
 layout (binding = 12) uniform sampler3D OffsetTex;
@@ -110,30 +107,35 @@ void main()
 { 
     vec3 viewDir   = normalize(fs_in.TangentViewPos - fs_in.TangentFragPos);
     //FragColor = vec4(texture(tex[0].normal, fs_in.TexCoords).rgb,0.0f);
-    //FragColor = vec4(vec3(textureProj(shadowMap,fs_in.FragPosLightSpace)),0.0f);
     //FragColor = vec4(vec3(ShadowCalculation(0)),1.0f);
     FragColor = vec4(ImproveLight(mat, tex, fs_in.TexCoords),1.0f);//ParallaxMapping(fs_in.TexCoords,viewDir)
     //FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
-
+	//FragColor = vec4(fs_in.FragPos.z);
 
     ////FragColor = vec4(fs_in.FragPos,1.0f);
-    //vec3 N = getNormalFromMap(); 
-
-    //FragColor = texture(DirLightShadowMaps,vec3(fs_in.ShadowCoords[0].xy / fs_in.ShadowCoords[0].w, 0));
+	
+    //vec3 fragToLight = fs_in.FragPos - vec3(light[2].LightPositions);
+	//FragColor = texture(PointShadowMaps, vec4(fragToLight, light[2].index));
+    
+   ///////////////// float closestDepth = texture(DirLightShadowMaps,vec3(fs_in.ShadowCoords[0].xy / fs_in.ShadowCoords[0].w,0)).r;
+   //////////////// float currentDepth = fs_in.ShadowCoords[0].z;
+    // check whether current frag pos is in shadow
+	////////////FragColor = vec4(currentDepth);
+    //FragColor = vec4(currentDepth > closestDepth  ? 0.0 : 1.0);
+	
+	//FragColor = texture(DirLightShadowMaps,vec3(fs_in.ShadowCoords[0].xy / fs_in.ShadowCoords[0].w,0));
+	//FragColor = vec4(ShadowCalculationDirect(0, fs_in.ShadowCoords[0]));
     /*vec3 N = fs_in.Normal;
     //FragColor = vec4(0.0f);
+	//vec3 N = getNormalFromMap(); 
     //for(int i = 0;i < NumLights;++i)
-    //    if(light[i].LightPositions.w == 0)
-        //    FragColor += vec4(PointShadowCalculation(i, N));///point
+    //   if(light[i].LightPositions.w == 0)
+     //       FragColor += vec4(PointShadowCalculation(i, N));///point
        //else
-      //      FragColor += vec4(ShadowCalculationDirect(i, fs_in.ShadowCoords[i]));*////spot or dir
+    //        FragColor = vec4(ShadowCalculationDirect(i, fs_in.ShadowCoords[light[i].index]));*////spot or dir
 
     //FragColor = vec4(vec3(PointShadowCalculation(0)),1.0f);
-    //vec3 fragToLight0 = fs_in.FragPos - vec3(LightPositions[0]); 
-    //vec3 fragToLight1 = fs_in.FragPos - vec3(LightPositions[1]); 
     //FragColor += texture(shadowMaps, vec4(fragToLight1, 1.0f));
-    //FragColor = vec4(1.0f - 1.0/pow(length(fs_in.FragPos - vec3(LightPositions[1])) + 0.0001,0.1f));
-    //FragColor += vec4(1.0f - 1.0/(length(fs_in.FragPos - vec3(LightPositions[1]))+ 0.0001));
 }
 
 float ShadowCalculationDirect(int index, vec4 fragPosLightSpace)
@@ -148,8 +150,6 @@ float ShadowCalculationDirect(int index, vec4 fragPosLightSpace)
     //closestDepth += textureOffset(DirLightShadowMaps, vec3(fragPosLightSpace.xy, light[index].index),ivec2(-1,1)).r;
     //closestDepth += textureOffset(DirLightShadowMaps, vec3(fragPosLightSpace.xy, light[index].index),ivec2(1,-1)).r;
     //closestDepth += textureOffset(DirLightShadowMaps, vec3(fragPosLightSpace.xy, light[index].index),ivec2(1,1)).r;
-
-    //return shadow;// * 0.2;
     
     ivec3 offsetCoord;
     offsetCoord.xy = ivec2( mod( gl_FragCoord.xy, OffsetTexSize.xy ) );
@@ -190,47 +190,22 @@ float ShadowCalculationDirect(int index, vec4 fragPosLightSpace)
 
 float PointShadowCalculation(int index,vec3 normal)
 {
-    // perform perspective divide
-    //fragPosLightSpace /= fragPosLightSpace.w;
-    //vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    // transform to [0,1] range
-    //projCoords = projCoords * 0.5 + 0.5;
-    // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    //float shadow = textureProj(shadowMap,fragPosLightSpace);//texture(shadowMap, projCoords.xy).r; 
-
-    /*vec3 fragToLight = fs_in.FragPos - vec3(LightPositions[index]); 
-    float closestDepth = texture(shadowMaps, vec4(fragToLight, index)).r;
-    closestDepth *= far_plane; 
-    float currentDepth = length(fragToLight);
-    float shadow = currentDepth - bias  > closestDepth ? 0.0 : 1.0;
-    return shadow;*/  
     vec3 fragToLight = fs_in.FragPos - vec3(light[index].LightPositions);
     if(min(dot(fragToLight,normal),0.0f) == 0.0f)
         return 0.0f; 
-    //float closestDepth = texture(shadowMaps, vec4(fragToLight, index)).r;
-    //closestDepth *= far_plane; 
     float currentDepth = length(fragToLight);
 
     float shadow = 0.0;
     float bias   = 0.005;
     int samples  = 27;
     float viewDistance = length(viewPos - fs_in.FragPos);
-    //float diskRadius = 1.0f;
-    //float diskRadius = (1.0 + (viewDistance / far_plane)) / 25.0f;
 
     currentDepth /= far_plane;
     float Dbl = texture(PointShadowMaps, vec4(fragToLight, light[index].index)).r;
     float Drec = abs(currentDepth - Dbl);
-    //float diskRadius = 1000.0f * min((Drec / Dbl) - 1.0f,0.001f);
-    //return texture(PointShadowMaps, vec4(fragToLight, light[index].index)).r;
-    //float diskRadius = (1.0 + currentDepth) / 20.0;
     
     float diskRadius = 0.05;
-    //float diskRadius = abs(length(fs_in.FragPos - vec3(light[index].LightPositions)) / length(far_plane - vec3(light[index].LightPositions)) );
 
-    //float closestDepth = texture(PointShadowMaps, vec4(fragToLight, index)).r;
-    //if(currentDepth - bias < closestDepth)
-    //        shadow = 1.0;
     for(int i = 0; i < samples; ++i)
     {
         float closestDepth = texture(PointShadowMaps, vec4(fragToLight + sampleOffsetDirections[i] * smoothstep(0.0f, 15.0f, abs(1.0f - currentDepth / (Dbl + 0.0001))), light[index].index)).r;

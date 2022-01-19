@@ -7,7 +7,6 @@ Shadow::Shadow():FrameBuffer(ShadowMapSize, ShadowMapSize)
     LightVector = glm::vec4(0.0f);
 }
 
-
 Shadow::~Shadow()
 {
 }
@@ -27,36 +26,31 @@ PointShadow::PointShadow()
         glTextureParameteri(ShadowArrayID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glTextureParameterfv(ShadowArrayID, GL_TEXTURE_BORDER_COLOR, borderColor);
 
+        ShadowIdxes.resize(MAX_LIGHTS_ONE_TYPE);
+        std::iota(ShadowIdxes.begin(), ShadowIdxes.end(), 0);
+
         init = true;
     }
-    ShadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, Shadow::Far_Plane);
-}
+    if (ShadowIdxes.empty())
+        return;
 
-PointShadow::PointShadow(const PointShadow& ps) noexcept
-{
-    ShadowProj = ps.ShadowProj;
+    id = *ShadowIdxes.begin();
+    ShadowIdxes.pop_front();
+
+    glNamedFramebufferTexture(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
+    ShadowProj = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, Shadow::Far_Plane);
 }
 
 PointShadow::~PointShadow()
 {
+    ShadowIdxes.insert(std::lower_bound(ShadowIdxes.begin(), ShadowIdxes.end(), id), id);
 }
 
-void Shadow::AddBuffer()
+GLuint Shadow::GetFBO() const
 {
+    return FBO;
+}
 
-}
-GLuint DirectionShadow::AddBuffer(GLint ShadowId)
-{
-    id = ShadowId;
-    glNamedFramebufferTextureLayer(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0, id);
-    return FBO;
-}
-GLuint PointShadow::AddBuffer(GLint ShadowId)
-{
-    id = ShadowId;
-    glNamedFramebufferTexture(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0);
-    return FBO;
-}
 
 void DirectionShadow::InitOffsetTex(std::size_t size, int64_t samplesU, int64_t samplesV)
 {
@@ -122,6 +116,7 @@ void PointShadow::SendToShader(const Shader& sh)
     sh.setScal("far_plane", Far_Plane);
     sh.setMat("lightProjection", ShadowProj);
 }
+
 void DirectionShadow::SendToShader(const Shader& sh)
 {
     sh.setMat(_mStrNumLight, scale_bias_matrix * (*LightMat.Projection) * (*LightMat.View));
@@ -156,19 +151,27 @@ DirectionShadow::DirectionShadow()
 
         InitOffsetTex(16, 8, 8);
         init = true;
+
+        ShadowIdxes.resize(2 * MAX_LIGHTS_ONE_TYPE);
+        std::iota(ShadowIdxes.begin(), ShadowIdxes.end(), 0);
     }
+    if (ShadowIdxes.empty())
+        return;
+    
+    id = *ShadowIdxes.begin();
+    ShadowIdxes.pop_front();
+
+    glNamedFramebufferTextureLayer(FBO, GL_DEPTH_ATTACHMENT, ShadowArrayID, 0, id);
 
     LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-100.0f, 100.0f, -100.0f, 100.0f, -30.0f, 30.0f));
+    char TmpBuff[32];
+    snprintf(TmpBuff, 32, "ShadowMatrix[%d]", id);
+    _mStrNumLight = TmpBuff;
     //LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-static_cast<float>(ShadowMapSize)/2, static_cast<float>(ShadowMapSize) / 2, -static_cast<float>(ShadowMapSize) / 2, static_cast<float>(ShadowMapSize) / 2, 0.1f, Shadow::Far_Plane));
     //LightMat.Projection = std::make_shared<glm::mat4>(glm::ortho(-static_cast<float>(ShadowMapSize), static_cast<float>(ShadowMapSize), 0.1f, Shadow::Far_Plane));
 }
 
-void DirectionShadow::SetStrNumLight(const std::string& StrNumLight)
-{
-    _mStrNumLight = (StrNumLight + "ShadowMatrix");
-}
-
-void PointShadow::Draw(std::pair<const_model_iterator, const_model_iterator> models,glm::vec4 lightPos)
+void PointShadow::Draw(Models& models,glm::vec4& lightPos)
 {
     static GLfloat OldView[4];
     AttachBuffer();
@@ -207,7 +210,7 @@ void PointShadow::Draw(std::pair<const_model_iterator, const_model_iterator> mod
     glViewport(0, 0, OldView[2], OldView[3]);
 }
 
-void DirectionShadow::Draw(std::pair<const_model_iterator, const_model_iterator> Models, glm::vec4 direction)
+void DirectionShadow::Draw(Models& models, glm::vec4& direction)
 {
     GLfloat OldView[4];
     AttachBuffer();
@@ -216,16 +219,12 @@ void DirectionShadow::Draw(std::pair<const_model_iterator, const_model_iterator>
     glEnable(GL_POLYGON_OFFSET_FILL);
     glPolygonOffset(2.5f, 10.0f);
     glCullFace(GL_FRONT);
-    //const glm::vec3 SceneCenter(0.0f,2.0f,0.0f);
-    //LightMat.View = std::make_shared<glm::mat4>(glm::lookAt(SceneCenter,
-   //     SceneCenter + glm::vec3(direction),
-   //        glm::vec3(0.0f, 1.0f, 0.0f)));
    LightMat.View = std::make_shared<glm::mat4>(glm::lookAt(glm::vec3(0.0f),
-        -glm::vec3(direction),
-           glm::vec3(0.0f, -1.0f, 0.0f)));
+           -glm::vec3(direction),
+           glm::vec3(1.0f, 0.0f, 0.0f)));
     shader->Use();
     LightMat.SendToShader(*shader);
-    for (auto& it = Models.first; it != Models.second; ++it)
+    for (auto& it = models.first; it != models.second; ++it)
         it->second->Draw(shader.get());
     DetachBuffer();
     glDisable(GL_POLYGON_OFFSET_FILL);
@@ -233,17 +232,8 @@ void DirectionShadow::Draw(std::pair<const_model_iterator, const_model_iterator>
     glViewport(0, 0, OldView[2], OldView[3]);
 }
 
-
-DirectionShadow::DirectionShadow(const DirectionShadow& ds) noexcept
-{
-    LightMat = ds.LightMat;
-    _3dTexture = ds._3dTexture;
-    radius = ds.radius;
-    OffsetTexSize = ds.OffsetTexSize;
-    //StrShadowMatrix = ds.StrShadowMatrix;
-}
-
 DirectionShadow::~DirectionShadow() 
 {
     glDeleteTextures(1, &_3dTexture);
+    ShadowIdxes.insert(std::lower_bound(ShadowIdxes.begin(), ShadowIdxes.end(), id), id);
 }

@@ -21,7 +21,7 @@ Window::Window(std::shared_ptr<Position_Controller> contr)
 
 bool Window::ProcEvents()
 {
-	SDL_Event e;
+	SDL_Event e,NextEvent;
 	while (SDL_PollEvent(&e))
 	{
 		ImGui_ImplSDL2_ProcessEvent(&e);
@@ -99,6 +99,15 @@ bool Window::ProcEvents()
 					SCR_HEIGHT = static_cast<uint32_t>(e.window.data2);
 					glViewport(0, 0, SCR_WIDTH, SCR_HEIGHT);
 					ChangedProj = true;
+					break;
+				//App isn't working, take on sleep mode
+				case SDL_WINDOWEVENT_MINIMIZED:
+					SDL_PollEvent(&NextEvent);
+					if (NextEvent.type == SDL_WINDOWEVENT && NextEvent.window.event != SDL_WINDOWEVENT_MAXIMIZED)
+					{
+						SDL_PushEvent(&e);
+						std::this_thread::sleep_for(std::chrono::duration<double, std::milli>(100));
+					}
 					break;
 				default:
 					break;

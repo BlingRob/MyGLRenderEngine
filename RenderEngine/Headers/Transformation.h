@@ -6,9 +6,9 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
-struct Matrices 
+struct Matrices
 {
-	Matrices() 
+	Matrices()
 	{
 		Projection = std::make_shared<glm::mat4>(1.0f);
 		View = std::make_shared<glm::mat4>(1.0f);
@@ -29,26 +29,39 @@ struct Position_Controller:public Matrices
 
 	std::shared_ptr<Camera> cam;
 	//delta time
-	float dt;	
+	float dt;
 };
 
 
 class Transformation
 {
 	public:
-		Transformation(std::shared_ptr<glm::mat4> mod = std::make_shared<glm::mat4>(1.0f)):Model(mod), NormalMatrix(glm::mat3(glm::transpose(glm::inverse(*Model)))){}
+		Transformation(glm::mat4 mod = glm::mat4(1.0f)):Model(mod), NormalMatrix(glm::mat3(glm::transpose(glm::inverse(Model)))) {}
+		Transformation(std::shared_ptr<glm::mat4> mod):Model(*mod), NormalMatrix(glm::mat3(glm::transpose(glm::inverse(Model)))){}
 		void SendToShader(const Shader& shader);
 
-		void Set(const std::shared_ptr <glm::mat4>);
-		std::shared_ptr <glm::mat4> Get() const;
+		void SetTransform(const std::shared_ptr <glm::mat4>);
+		void SetTransform(const glm::mat4&);
+		glm::mat4 GetTransform() const;
 
 		void Translate(const glm::vec3& trans);
 		void Rotate(float alph, const glm::vec3& axes);
 		void Scale(const glm::vec3& coefs);
 
 	private:
-		std::shared_ptr<glm::mat4> Model;
+		glm::mat4 Model;
 		glm::mat3 NormalMatrix;
 		void updateNormal();
 };
 
+class Transformation_interface
+{
+	public:
+		virtual void SetTransform(const std::shared_ptr <glm::mat4>) = 0;
+		virtual void SetTransform(const glm::mat4&) = 0;
+		virtual glm::mat4 GetTransform() const = 0;
+
+		virtual void Translate(const glm::vec3& trans) = 0;
+		virtual void Rotate(float alph, const glm::vec3& axes) = 0;
+		virtual void Scale(const glm::vec3& coefs) = 0;
+};

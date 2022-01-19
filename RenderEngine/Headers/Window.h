@@ -6,6 +6,8 @@
 //GUI
 #include "imgui_impl_sdl.h"
 #include <memory>
+#include <thread>
+#include <chrono>
 
 class Window
 {

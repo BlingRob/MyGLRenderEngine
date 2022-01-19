@@ -20,8 +20,8 @@ Shader::Shader(std::string_view VertexSource, std::string_view fragmentSource, s
 		glGetProgramiv(Program, GL_LINK_STATUS, &success);
 		if (!success)
 		{
-			glGetProgramInfoLog(Program, 512, NULL, infoLog);
-			throw(std::string("ERROR::SHADER::PROGRAM::LINKING_FAILED\n") + VertexSource.substr(0, VertexSource.find_first_of('\n')).data() + fragmentSource.substr(0, fragmentSource.find_first_of('\n')).data() + infoLog);
+			glGetProgramInfoLog(Program, 512, NULL, infoLog);//+ VertexSource.substr(0, VertexSource.find_first_of('\n')).data() + fragmentSource.substr(0, fragmentSource.find_first_of('\n')).data()
+			throw(std::string("ERROR::SHADER::PROGRAM::LINKING_FAILED\n")  + infoLog);
 		}
 
 		for (const auto& sh : shaders)

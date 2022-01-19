@@ -64,6 +64,6 @@ std::shared_ptr<Vertexess> Manager::GetVertexes(std::array<std::size_t, 5> sizes
 				(float*)(Block->second + Biases[2]),
 				(float*)(Block->second + Biases[3]),
 				(float*)(Block->second + Biases[4])
-				);
+            );
 	}
 }

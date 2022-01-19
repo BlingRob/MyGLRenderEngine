@@ -16,8 +16,20 @@ void Scene::Draw()
 		matrs->SendToShader(*sh);//Needing use uniform buffer
 		for (const auto& lig : Lights)
 			lig.second->SendToShader(*sh);
-		mod.second->Draw(nullptr);
+		mod.second->Draw();
 	}	
+
+	for (const auto& lig : Lights)
+	{
+		if (lig.second->GetType() == LightTypes::Point)
+		{
+			sh = lig.second->GetModel()->GetShader();
+			sh->Use();
+			matrs->SendToShader(*sh);
+			lig.second->Draw();
+		}
+	}
+
 	if (SkyBoxSetted)
 	{
 		glFrontFace(GL_CW);
@@ -89,9 +101,6 @@ Scene::Scene(std::shared_ptr <Position_Controller> contr)
 {
 	//default background
 	BackGroundColour = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-	//default shaders;
-	if (DefaultPointLightModel)
-		DefaultPointLightModel->SetShader(ShadersBank::GetShader("PointLight"));
 
 	if (DefaultSkyBox)
 	{

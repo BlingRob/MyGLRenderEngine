@@ -29,7 +29,7 @@ struct Light
     vec3 specular;
 
     vec4 LightPositions;
-    mat4 ShadowMatrix;
+    //mat4 ShadowMatrix;
 }; 
 
 uniform Light light[MAX_LIGHTS];
@@ -37,8 +37,7 @@ uniform Transform transform;
 uniform mat3 NormalMatrix;
 uniform vec3 viewPos;
 uniform uint NumLights;
-//uniform vec4 LightPositions[MAX_LIGHTS];
-//uniform mat4 ShadowMatrix[NUM_SPOT_DIR_LIGHTS];
+uniform mat4 ShadowMatrix[NUM_SPOT_DIR_LIGHTS];
 
 out VS_OUT {
     vec3 FragPos;
@@ -53,8 +52,9 @@ out VS_OUT {
 void main()
 {
     vs_out.FragPos = vec3(transform.model * vec4(position,1.0f));
-
-    vec3 N = normalize(NormalMatrix * VertexNormal);
+	vs_out.Normal = NormalMatrix * VertexNormal;  
+	
+    vec3 N = normalize(vs_out.Normal);
     vec3 T = normalize(NormalMatrix * aTangent);
     vec3 B = normalize(NormalMatrix * aBitangent);
     //T = normalize(T - dot(T, N) * N);
@@ -63,15 +63,13 @@ void main()
     //translate coordinats in tangent space
     vs_out.TangentViewPos     = TBN * viewPos;
     vs_out.TangentFragPos     = TBN * vs_out.FragPos;
-    
-    vs_out.Normal = NormalMatrix * VertexNormal;   
+     
     for(uint i = 0;i < NumLights;++i)
     {
         //vs_out.TangentLightPositions[i].xyz = TBN * light[i].LightPositions.xyz; 
         //vs_out.TangentLightPositions[i].w = light[i].LightPositions.w; 
-        vs_out.ShadowCoords[i] = light[i].ShadowMatrix * vec4(vs_out.FragPos, 1.0);
+        vs_out.ShadowCoords[i] = ShadowMatrix[i] * vec4(vs_out.FragPos, 1.0);
     }
     vs_out.TexCoords = texCoord;
 	gl_Position = transform.PV * vec4(vs_out.FragPos,1.0f);
-
 };
